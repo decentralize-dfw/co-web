@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Contemporary Artifacts - Dinnerware Collection</title>
+    <title>DFW Design Collection</title>
     <style>
         * {
             margin: 0;
@@ -28,7 +28,6 @@
             height: 100vh;
         }
 
-        /* Loading screen */
         #loading {
             position: fixed;
             top: 0;
@@ -70,7 +69,6 @@
             transition: width 0.3s;
         }
 
-        /* Hover label */
         #hoverLabel {
             position: fixed;
             background: rgba(0, 0, 0, 0.8);
@@ -85,7 +83,6 @@
             transition: opacity 0.2s;
         }
 
-        /* Detail panel */
         #detailPanel {
             position: fixed;
             right: -500px;
@@ -140,7 +137,7 @@
             color: #333;
         }
 
-        .detail-collection {
+        .detail-tags {
             font-size: 18px;
             color: #666;
             margin-bottom: 30px;
@@ -150,9 +147,26 @@
             font-size: 16px;
             line-height: 1.6;
             color: #555;
+            margin-bottom: 20px;
         }
 
-        /* Zoom controls */
+        .detail-links a {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #333;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-right: 10px;
+            margin-top: 10px;
+            transition: all 0.2s;
+        }
+
+        .detail-links a:hover {
+            background: #555;
+            transform: translateY(-2px);
+        }
+
         .zoom-controls {
             position: fixed;
             bottom: 40px;
@@ -188,7 +202,7 @@
     <canvas id="canvas"></canvas>
 
     <div id="loading">
-        <div class="loader">Loading collection...</div>
+        <div class="loader">Loading DFW Design collection...</div>
         <div class="progress-bar">
             <div class="progress-fill" id="progressFill"></div>
         </div>
@@ -200,8 +214,9 @@
         <button class="close-btn" onclick="closeDetail()">×</button>
         <img class="detail-image" id="detailImage" src="" alt="">
         <h2 class="detail-title" id="detailTitle"></h2>
-        <p class="detail-collection" id="detailCollection"></p>
+        <p class="detail-tags" id="detailTags"></p>
         <p class="detail-info" id="detailInfo"></p>
+        <div class="detail-links" id="detailLinks"></div>
     </div>
 
     <div class="zoom-controls">
@@ -209,39 +224,33 @@
         <button class="zoom-btn" onclick="zoomIn()">+</button>
     </div>
 
-    <!-- GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
     <script>
-        // Items data
-        const items = [
-            { name: "Miami Cup 29 cl", collection: "Miami", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d96ff7007ac9e6adec49c9_Miami%20Cup%2029.webp", info: "The refreshing aquatic colouring on this stoneware collection is as inviting as the ocean on a summer's day." },
-            { name: "Ruston Deep Plate ⌀ 22 cm", collection: "Ruston", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d970f693523015543171c7_Ruston%20Deep%20plate%2022.webp", info: "This dramatic dark chocolate glaze on stoneware features an enticingly touchable textured finish." },
-            { name: "Lotus Plate ⌀ 27,5 cm", collection: "Lotus", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d96fc713c57d797697764a_Lotus%20Plate%2027%2C5.webp", info: "Vibrantly alive with bursts of turquoise and glaze, the stoneware finished with a matte black edging." },
-            { name: "Antigo Light Blue Plate ⌀ 28 cm", collection: "Antigo Light Blue", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d96be3fd9b1c20bb3d0bfd_Antigo%20Lightblue%20Plate%2028.webp", info: "Deceptively strong porcelain speckled in calming lightblue glazes with darker detailing at the edge." },
-            { name: "Miami Deep Plate ⌀ 22 cm", collection: "Miami", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d97012741b605f32ba31c2_Miami%20Deep%20plate%2022.webp", info: "The refreshing aquatic colouring on this stoneware collection is as inviting as the ocean on a summer's day." },
-            { name: "Antigo Blue Deep Plate ⌀ 19 cm", collection: "Antigo Blue", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d96b54786ce434bda8e599_Antigo%20blue%20Deep%20plate%2019.webp", info: "Deceptively strong porcelain speckled in calming blue glazes with darker detailing at the edge." },
-            { name: "Coco Pink Bowl ⌀ 12 cm", collection: "Coco Pink", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/6836df1e54830ce31b5fd72a_Bowl%2013.webp", info: "A fusion of organic design and artisanal craftsmanship defines this porcelain collection." },
-            { name: "Antigo Blue Plate ⌀ 19 cm", collection: "Antigo Blue", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d96b612294f58747319457_Antigo%20blue%20Plate%2019.webp", info: "Deceptively strong porcelain speckled in calming blue glazes with darker detailing at the edge." },
-            { name: "Kiryu Bowl ⌀ 14 cm", collection: "Kiryu", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d96e9e117eab84723eb18b_Kiryu%20Bowl%2014.webp", info: "Deep blue glaze and soft forms. Perfectly finished porcelain from centuries of Japanese craftsmanship." },
-            { name: "Sandy Loam Grey Plate ⌀ 28 cm", collection: "Sandy Loam Grey", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d971d33163f9824c3b53d5_Sandy%20Loam%20Grey%20Plate%2028.webp", info: "Gentle hues of sandy grey remind us of the beach at dawn." },
-            { name: "Coco Green Plate ⌀ 19 cm", collection: "Coco Green", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/6836dfe00c3d21f37b42b89b_Plate%2019-2.webp", info: "Nature-inspired hues seamlessly blend with modern elegance." },
-            { name: "Eccentric Bowl ⌀ 11 cm", collection: "Eccentric", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d96d82c5610dcb465b9e24_Eccentric%20Bowl%2011.webp", info: "A luminous blue swirling with inviting glimpses of richer colours invites the eye to explore." },
-            { name: "Midori Bowl ⌀ 12,5 cm", collection: "Midori", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d97091b598af20f0a5b912_Midori%20Bowl%2012%2C5.webp", info: "A deep jungle green gives perfect porcelain an exotic edge in this exciting collection." },
-            { name: "Lotus Deep Plate ⌀ 21 cm", collection: "Lotus", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d96faa29e92d2c7a7ca681_Lotus%20Deep%20plate%2021.webp", info: "Vibrantly alive with bursts of turquoise and glaze, the stoneware finished with a matte black edging." },
-            { name: "Midori Bowl ⌀ 14 cm", collection: "Midori", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d970a40f53ceaad652bcfa_Midori%20Bowl%2014.webp", info: "A deep jungle green gives perfect porcelain an exotic edge in this exciting collection." },
-            { name: "Kiryu Bowl ⌀ 12,5 cm", collection: "Kiryu", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d96e928ecc7b3bd19d4b83_Kiryu%20Bowl%2012%2C5.webp", info: "Deep blue glaze and soft forms. Perfectly finished porcelain from centuries of Japanese craftsmanship." },
-            { name: "Eccentric Deep Plate ⌀ 22 cm", collection: "Eccentric", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d96df2ab0def13c182eddf_Eccentric%20deep%20plate%2022.webp", info: "A luminous blue swirling with inviting glimpses of richer colours invites the eye to explore." },
-            { name: "Antigo Creme Plate ⌀ 28 cm", collection: "Antigo Creme", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d96b9356d92c0249950136_Antigo%20Creme%20Plate%2028.webp", info: "Deceptively strong porcelain speckled in antique cream glazes with darker detailing at the edge." },
-            { name: "Light Blue Sea Plate ⌀ 28,5 cm", collection: "Light Blue Sea", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d96f69fa52228ca041aadb_Light%20Blue%20Sea%20Plate%2028.webp", info: "Enticing, gentle blues washed over stoneware evoke gentle waves under a golden sky." },
-            { name: "Light Blue Sea Bowl ⌀ 16 cm", collection: "Light Blue Sea", image: "https://cdn.prod.website-files.com/677b8a552071e1f09b594a24/67d96efac6037c23fa15d6c4_Light%20Blue%20Sea%20Bowl%2016.webp", info: "Enticing, gentle blues washed over stoneware evoke gentle waves under a golden sky." },
-        ];
+        // DFW Design Collection
+        const dfwCollection = {
+            furniture: [
+                { id: 'furn-1-og', type: 'glb', name: 'mermaidchair_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/mermaid-chair-og-v2.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/mermaidchair-og.png', description: 'TAGS: furniture chair OG\n\nmermaidchair (OG).', tags: ['furniture', 'chair', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/1', name: 'OpenSea' }] },
+                { id: 'furn-1-blck', type: 'glb', name: 'mermaidchair_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/mermaid-chair-black-v4.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/mermaidchair-b.png', description: 'TAGS: furniture chair BLCK\n\nmermaidchair (BLCK).', tags: ['furniture', 'chair', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/2', name: 'OpenSea' }] },
+                { id: 'furn-1-chrome', type: 'glb', name: 'mermaidchair_CHROME.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/mermaid-chair-chrome-v1.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/mermaidchair-w.png', description: 'TAGS: furniture chair CHROME\n\nmermaidchair (CHROME).', tags: ['furniture', 'chair', 'CHROME'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/3', name: 'OpenSea' }] },
+                { id: 'furn-1-red', type: 'glb', name: 'mermaidchair_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/mermaid-chair-red-v3.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/mermaidchair-red.png', description: 'TAGS: furniture chair RED\n\nmermaidchair (RED).', tags: ['furniture', 'chair', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/4', name: 'OpenSea' }] },
+                { id: 'furn-2-og', type: 'glb', name: 'fetuchair_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/fetuchair-OG.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/fetuchair-og.png', description: 'TAGS: furniture chair OG\n\nfetuchair (OG).', tags: ['furniture', 'chair', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/5', name: 'OpenSea' }] },
+                { id: 'furn-2-blck', type: 'glb', name: 'fetuchair_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/fetuchair-blck.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/fetuchair-bü,.png', description: 'TAGS: furniture chair BLCK\n\nfetuchair (BLCK).', tags: ['furniture', 'chair', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/6', name: 'OpenSea' }] },
+                { id: 'furn-2-wht', type: 'glb', name: 'fetuchair_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/fetuchair-white.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/fetuchair-w.png', description: 'TAGS: furniture chair WHT\n\nfetuchair (WHT).', tags: ['furniture', 'chair', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/7', name: 'OpenSea' }] },
+                { id: 'furn-2-red', type: 'glb', name: 'fetuchair_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/fetuchair-red.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/fetuchair-red.png', description: 'TAGS: furniture chair RED\n\nfetuchair (RED).', tags: ['furniture', 'chair', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/8', name: 'OpenSea' }] },
+                { id: 'furn-3-antrst', type: 'glb', name: 'dse_ANTRST.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/DSE-antst-v5.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dse-og.png', description: 'TAGS: furniture chair ANTRST\n\ndse (ANTRST).', tags: ['furniture', 'chair', 'ANTRST'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/9', name: 'OpenSea' }] },
+                { id: 'furn-3-blck', type: 'glb', name: 'dse_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/DSE-black-v6.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dse-b.png', description: 'TAGS: furniture chair BLCK\n\ndse (BLCK).', tags: ['furniture', 'chair', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/10', name: 'OpenSea' }] },
+                { id: 'furn-22-red', type: 'glb', name: 'genetic_carpet_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/merged-red-v85.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/genetic-r.png', description: 'TAGS: furniture carpet RED\n\ngenetic carpet (RED).', tags: ['furniture', 'carpet', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/90', name: 'OpenSea' }] },
+            ],
+            sculpture: [
+                { id: 'sculp-24-og', type: 'glb', name: 'osiris_rake_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/osirisrake-og-v126.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/rake1.png', description: 'TAGS: sculpture sculpture OG\n\nosiris rake (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/95', name: 'OpenSea' }] },
+                { id: 'sculp-24-blck', type: 'glb', name: 'osiris_rake_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/osirisrake-dark-v124.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/rake2.png', description: 'TAGS: sculpture sculpture BLCK\n\nosiris rake (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/96', name: 'OpenSea' }] },
+                { id: 'sculp-39-red', type: 'glb', name: 'mysticalarcases_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/mystical-arcases-red-v146.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/mystical-2.png', description: 'TAGS: sculpture sculpture RED\n\nmysticalarcases (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/154', name: 'OpenSea' }] }
+            ]
+        };
 
-        // Repeat items 3 times
-        const allItems = [];
-        for (let i = 0; i < 3; i++) {
-            allItems.push(...items);
-        }
+        // Combine all items
+        const allItems = [...dfwCollection.furniture, ...dfwCollection.sculpture];
 
         // Canvas setup
         const canvas = document.getElementById('canvas');
@@ -261,13 +270,13 @@
         // State
         let loadedImages = [];
         let loadedCount = 0;
-        let camera = { x: 0, y: 0, scale: 0.3 }; // Start zoomed out
+        let camera = { x: 0, y: 0, scale: 0.3 };
         let targetCamera = { ...camera };
         let isDragging = false;
         let lastMouse = { x: 0, y: 0 };
         let hoveredItem = null;
         let detailOpen = false;
-        const ZOOM_LEVELS = [0.3, 0.6, 1.0, 1.5]; // 3 zoom out levels + normal
+        const ZOOM_LEVELS = [0.3, 0.6, 1.0, 1.5];
         let currentZoomIndex = 0;
 
         // Image loader
@@ -283,24 +292,26 @@
                     loadedCount++;
                     progressFill.style.width = (loadedCount / allItems.length * 100) + '%';
 
-                    // Calculate position - horizontal spread in organized pattern
-                    const cols = 10;
+                    // Calculate position - horizontal spread
+                    const cols = 8;
                     const row = Math.floor(index / cols);
                     const col = index % cols;
-                    const spacing = 250;
+                    const spacing = 300;
 
                     loadedImages.push({
                         img: img,
-                        x: col * spacing + (row % 2) * 120 + (Math.random() - 0.5) * 40,
-                        y: row * spacing + (Math.random() - 0.5) * 40,
+                        x: col * spacing + (row % 2) * 150 + (Math.random() - 0.5) * 50,
+                        y: row * spacing + (Math.random() - 0.5) * 50,
                         scale: 0,
                         targetScale: 1,
-                        size: 150,
+                        maxSize: 200, // Max square size
                         rotation: (Math.random() - 0.5) * 0.1,
                         name: item.name,
-                        collection: item.collection,
-                        info: item.info,
-                        visible: false
+                        tags: item.tags,
+                        description: item.description,
+                        links: item.links,
+                        visible: false,
+                        originalImg: img
                     });
 
                     if (loadedCount === allItems.length) {
@@ -312,7 +323,7 @@
                 };
 
                 img.onerror = () => {
-                    console.error('Failed to load:', item.image);
+                    console.error('Failed to load:', item.thumbnailUrl);
                     loadedCount++;
                     if (loadedCount === allItems.length) {
                         loading.classList.add('hidden');
@@ -320,23 +331,22 @@
                     }
                 };
 
-                img.src = item.image;
+                img.src = item.thumbnailUrl;
             });
         }
 
         function startAnimation() {
-            // Zoom in animation
             gsap.to(targetCamera, {
                 scale: 1.0,
                 duration: 2,
                 ease: "power2.inOut"
             });
 
-            currentZoomIndex = 2; // Start at normal zoom
+            currentZoomIndex = 2;
             animate();
         }
 
-        // Mouse events
+        // Mouse events - PAN INVERTED FIX
         canvas.addEventListener('mousedown', (e) => {
             isDragging = true;
             lastMouse = { x: e.clientX, y: e.clientY };
@@ -352,12 +362,11 @@
                 const dx = e.clientX - lastMouse.x;
                 const dy = e.clientY - lastMouse.y;
 
-                targetCamera.x += dx / camera.scale;
-                targetCamera.y += dy / camera.scale;
+                // INVERTED PAN FIX
+                targetCamera.x -= dx / camera.scale;
+                targetCamera.y -= dy / camera.scale;
 
                 lastMouse = { x: e.clientX, y: e.clientY };
-
-                // Hide hover label while dragging
                 document.getElementById('hoverLabel').style.opacity = '0';
                 hoveredItem = null;
             } else {
@@ -368,7 +377,18 @@
 
                     const screenX = (item.x - camera.x) * camera.scale + window.innerWidth / 2;
                     const screenY = (item.y - camera.y) * camera.scale + window.innerHeight / 2;
-                    const screenSize = item.size * item.scale * camera.scale;
+
+                    // Calculate actual display size
+                    const imgAspect = item.img.width / item.img.height;
+                    let displayW, displayH;
+                    if (imgAspect > 1) {
+                        displayW = item.maxSize;
+                        displayH = item.maxSize / imgAspect;
+                    } else {
+                        displayH = item.maxSize;
+                        displayW = item.maxSize * imgAspect;
+                    }
+                    const screenSize = Math.max(displayW, displayH) * item.scale * camera.scale;
 
                     const dx = mouseX - screenX;
                     const dy = mouseY - screenY;
@@ -383,14 +403,13 @@
                         label.style.top = (e.clientY + 20) + 'px';
                         label.style.opacity = '1';
 
-                        item.targetScale = 1.15; // Grow on hover
+                        item.targetScale = 1.15;
                         break;
                     }
                 }
 
                 if (!hoveredItem) {
                     document.getElementById('hoverLabel').style.opacity = '0';
-                    // Reset all scales
                     loadedImages.forEach(item => item.targetScale = 1);
                 }
             }
@@ -413,7 +432,6 @@
             }
         });
 
-        // Wheel zoom
         canvas.addEventListener('wheel', (e) => {
             e.preventDefault();
             const delta = e.deltaY > 0 ? -0.1 : 0.1;
@@ -425,11 +443,21 @@
             detailOpen = true;
             document.getElementById('detailImage').src = item.img.src;
             document.getElementById('detailTitle').textContent = item.name;
-            document.getElementById('detailCollection').textContent = item.collection;
-            document.getElementById('detailInfo').textContent = item.info;
+            document.getElementById('detailTags').textContent = item.tags.join(' • ');
+            document.getElementById('detailInfo').textContent = item.description;
+
+            const linksDiv = document.getElementById('detailLinks');
+            linksDiv.innerHTML = '';
+            item.links.forEach(link => {
+                const a = document.createElement('a');
+                a.href = link.url;
+                a.textContent = link.name;
+                a.target = '_blank';
+                linksDiv.appendChild(a);
+            });
+
             document.getElementById('detailPanel').classList.add('active');
 
-            // Slide camera to left
             gsap.to(targetCamera, {
                 x: targetCamera.x - 150,
                 duration: 0.4,
@@ -441,7 +469,6 @@
             detailOpen = false;
             document.getElementById('detailPanel').classList.remove('active');
 
-            // Slide camera back
             gsap.to(targetCamera, {
                 x: targetCamera.x + 150,
                 duration: 0.4,
@@ -483,10 +510,9 @@
                 targetCamera.y = Math.max(-maxY, Math.min(maxY, targetCamera.y));
             }
 
-            // Clear
             ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-            // Check visibility and pop in items
+            // Check visibility
             const viewBounds = {
                 left: camera.x - window.innerWidth / (2 * camera.scale) - 200,
                 right: camera.x + window.innerWidth / (2 * camera.scale) + 200,
@@ -500,7 +526,6 @@
 
                 if (inView && !item.visible) {
                     item.visible = true;
-                    // Pop animation
                     gsap.to(item, {
                         scale: item.targetScale,
                         duration: 0.5,
@@ -508,7 +533,6 @@
                     });
                 }
 
-                // Smooth scale
                 if (item.scale < item.targetScale) {
                     item.scale += (item.targetScale - item.scale) * 0.15;
                 }
@@ -523,19 +547,33 @@
 
                 const x = (item.x - camera.x) * camera.scale;
                 const y = (item.y - camera.y) * camera.scale;
-                const size = item.size * item.scale * camera.scale;
+
+                // Calculate size maintaining aspect ratio
+                const imgAspect = item.img.width / item.img.height;
+                let displayW, displayH;
+                if (imgAspect > 1) {
+                    displayW = item.maxSize;
+                    displayH = item.maxSize / imgAspect;
+                } else {
+                    displayH = item.maxSize;
+                    displayW = item.maxSize * imgAspect;
+                }
+
+                const w = displayW * item.scale * camera.scale;
+                const h = displayH * item.scale * camera.scale;
 
                 ctx.save();
                 ctx.translate(x, y);
                 ctx.rotate(item.rotation);
 
-                // Shadow
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
-                ctx.shadowBlur = 15;
+                // Shadow - outline based
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                ctx.shadowBlur = 20;
+                ctx.shadowOffsetX = 0;
                 ctx.shadowOffsetY = 5;
 
                 // Draw image
-                ctx.drawImage(item.img, -size/2, -size/2, size, size);
+                ctx.drawImage(item.img, -w/2, -h/2, w, h);
 
                 ctx.restore();
             });
@@ -548,16 +586,15 @@
             let minY = Infinity, maxY = -Infinity;
 
             loadedImages.forEach(item => {
-                minX = Math.min(minX, item.x - item.size/2);
-                maxX = Math.max(maxX, item.x + item.size/2);
-                minY = Math.min(minY, item.y - item.size/2);
-                maxY = Math.max(maxY, item.y + item.size/2);
+                minX = Math.min(minX, item.x - item.maxSize/2);
+                maxX = Math.max(maxX, item.x + item.maxSize/2);
+                minY = Math.min(minY, item.y - item.maxSize/2);
+                maxY = Math.max(maxY, item.y + item.maxSize/2);
             });
 
             return { minX, maxX, minY, maxY };
         }
 
-        // Start loading
         loadImages();
     </script>
 </body>
