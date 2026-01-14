@@ -2,11 +2,13 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>DFW Design</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Jura:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/Draggable.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -14,104 +16,188 @@
             box-sizing: border-box;
         }
 
-        html {
-            scroll-behavior: smooth;
-        }
-
-        body {
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             font-family: 'Jura', sans-serif;
             background-color: #6667AB;
-            min-height: 100vh;
-            overflow-x: hidden;
             color: #fff;
+            -webkit-font-smoothing: antialiased;
         }
 
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.2);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.3);
-            border-radius: 4px;
-        }
+        ::-webkit-scrollbar { display: none; }
+        body { -ms-overflow-style: none; scrollbar-width: none; }
 
         /* LOGO */
         .logo {
             position: fixed;
-            top: 30px;
-            left: 30px;
-            z-index: 1000;
-            cursor: pointer;
+            top: 24px;
+            left: 24px;
+            z-index: 100;
+            height: 40px;
         }
-
         .logo img {
-            height: 50px;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+            height: 100%;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
         }
 
-        /* CANVAS */
-        .canvas {
-            position: relative;
-            width: 100vw;
-            min-height: 300vh;
-            padding: 120px 50px 100px;
+        /* CONTROLS */
+        .controls {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            z-index: 100;
+            background: rgba(0,0,0,0.3);
+            padding: 12px 20px;
+            border-radius: 40px;
+            backdrop-filter: blur(10px);
         }
 
-        .products-container {
-            position: relative;
-            max-width: 1600px;
-            margin: 0 auto;
-            min-height: 280vh;
+        .control-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .control-btn:hover {
+            background: rgba(255,255,255,0.25);
         }
 
-        /* PRODUCT ITEMS */
+        .control-info {
+            font-size: 12px;
+            opacity: 0.7;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .control-info svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .grid-toggle {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* CANVAS WRAPPER */
+        .canvas-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* PRODUCTS CANVAS - draggable/zoomable */
+        .products-canvas {
+            position: absolute;
+            width: 3000px;
+            height: 2000px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            cursor: grab;
+        }
+        .products-canvas:active {
+            cursor: grabbing;
+        }
+
+        /* PRODUCT ITEM */
         .product-item {
             position: absolute;
+            width: 180px;
+            height: 180px;
             cursor: pointer;
-            transition: transform 0.3s ease, z-index 0s;
+            transition: transform 0.3s ease;
         }
-
         .product-item:hover {
-            transform: scale(1.1);
-            z-index: 100;
+            transform: scale(1.08);
+            z-index: 50;
         }
-
         .product-item img {
             width: 100%;
             height: 100%;
             object-fit: contain;
-            filter: drop-shadow(0 10px 25px rgba(0,0,0,0.5));
-            transition: filter 0.3s ease;
+            filter: drop-shadow(0 8px 24px rgba(0,0,0,0.4));
+            pointer-events: none;
         }
 
-        .product-item:hover img {
-            filter: drop-shadow(0 15px 35px rgba(0,0,0,0.6));
+        /* PRODUCT LABEL */
+        .product-label {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: rgba(0,0,0,0.7);
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        .product-item:hover .product-label {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
         }
 
-        /* SIZES */
-        .size-xl { width: 350px; height: 350px; }
-        .size-lg { width: 280px; height: 280px; }
-        .size-md { width: 200px; height: 200px; }
-        .size-sm { width: 150px; height: 150px; }
+        /* GRID VIEW */
+        .products-canvas.grid-view {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: flex-start;
+            gap: 24px;
+            padding: 100px 50px;
+            width: 100vw;
+            height: auto;
+            min-height: 100vh;
+            left: 0;
+            top: 0;
+            transform: none;
+            overflow-y: auto;
+            cursor: default;
+        }
+        .products-canvas.grid-view .product-item {
+            position: relative;
+            left: auto !important;
+            top: auto !important;
+        }
 
         /* OVERLAY */
         .overlay {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0,0,0,0.6);
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
             opacity: 0;
             visibility: hidden;
-            transition: all 0.3s ease;
-            z-index: 1500;
+            transition: all 0.4s ease;
+            z-index: 200;
         }
-
         .overlay.active {
             opacity: 1;
             visibility: visible;
@@ -121,20 +207,20 @@
         .sidebar {
             position: fixed;
             top: 0;
-            left: -480px;
-            width: 460px;
-            height: 100vh;
-            background: rgba(30,30,60,0.95);
-            backdrop-filter: blur(10px);
-            z-index: 2000;
-            transition: left 0.4s ease;
+            left: 0;
+            width: 420px;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(35,35,70,0.98) 0%, rgba(25,25,55,0.98) 100%);
+            backdrop-filter: blur(20px);
+            transform: translateX(-100%);
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 300;
             display: flex;
             flex-direction: column;
-            box-shadow: 5px 0 30px rgba(0,0,0,0.4);
+            box-shadow: 4px 0 40px rgba(0,0,0,0.5);
         }
-
         .sidebar.active {
-            left: 0;
+            transform: translateX(0);
         }
 
         .sidebar-close {
@@ -143,153 +229,181 @@
             right: 20px;
             width: 40px;
             height: 40px;
-            background: rgba(255,255,255,0.1);
-            border: none;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.05);
             border-radius: 50%;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
             z-index: 10;
         }
-
         .sidebar-close:hover {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255,255,255,0.15);
+            transform: rotate(90deg);
         }
-
         .sidebar-close::before,
         .sidebar-close::after {
             content: '';
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 18px;
+            width: 16px;
             height: 2px;
             background: #fff;
         }
-
-        .sidebar-close::before {
-            transform: translate(-50%, -50%) rotate(45deg);
-        }
-
-        .sidebar-close::after {
-            transform: translate(-50%, -50%) rotate(-45deg);
-        }
+        .sidebar-close::before { transform: rotate(45deg); }
+        .sidebar-close::after { transform: rotate(-45deg); }
 
         /* SIDEBAR HEADER */
         .sidebar-header {
-            padding: 30px;
+            padding: 28px 28px 20px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
-
         .sidebar-title {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 2px;
             margin-bottom: 8px;
         }
-
         .sidebar-artist {
-            font-size: 13px;
-            color: rgba(255,255,255,0.6);
+            font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            opacity: 0.5;
             margin-bottom: 12px;
         }
-
         .sidebar-desc {
             font-size: 13px;
             line-height: 1.6;
-            color: rgba(255,255,255,0.8);
+            opacity: 0.8;
         }
 
-        /* SIDEBAR GALLERY - VERTICAL STACK */
-        .sidebar-gallery {
+        /* SIDEBAR VARIANTS - VERTICAL STACK */
+        .sidebar-variants {
             flex: 1;
-            padding: 20px 30px;
+            padding: 20px 28px;
             overflow-y: auto;
         }
-
         .variant-item {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.2);
+            overflow: hidden;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: all 0.3s;
         }
-
         .variant-item:hover {
+            background: rgba(0,0,0,0.35);
             transform: scale(1.02);
         }
-
         .variant-item:last-child {
             margin-bottom: 0;
         }
-
-        .variant-img-container {
+        .variant-img {
             width: 100%;
             aspect-ratio: 1;
-            background: rgba(0,0,0,0.2);
-            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            padding: 16px;
         }
-
-        .variant-img-container img {
-            max-width: 90%;
-            max-height: 90%;
+        .variant-img img {
+            max-width: 85%;
+            max-height: 85%;
             object-fit: contain;
-            filter: drop-shadow(0 8px 20px rgba(0,0,0,0.4));
+            filter: drop-shadow(0 6px 16px rgba(0,0,0,0.4));
         }
-
         .variant-label {
-            text-align: center;
+            padding: 10px 16px;
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: rgba(255,255,255,0.5);
-            margin-top: 8px;
+            text-align: center;
+            opacity: 0.6;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* CUSTOM CURSOR */
+        .cursor {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0,0,0,0.8);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .cursor.active {
+            opacity: 1;
+        }
+        .cursor svg {
+            width: 12px;
+            height: 12px;
         }
 
         /* RESPONSIVE */
-        @media (max-width: 1200px) {
-            .size-xl { width: 280px; height: 280px; }
-            .size-lg { width: 220px; height: 220px; }
-            .size-md { width: 160px; height: 160px; }
-            .size-sm { width: 120px; height: 120px; }
-        }
-
         @media (max-width: 768px) {
             .sidebar {
                 width: 100%;
-                left: -100%;
             }
-            .canvas {
-                padding: 100px 20px 60px;
+            .product-item {
+                width: 140px;
+                height: 140px;
             }
-            .logo {
-                top: 20px;
-                left: 20px;
+            .controls {
+                padding: 10px 16px;
+                gap: 12px;
             }
-            .logo img {
-                height: 40px;
+            .control-info {
+                display: none;
             }
-            .size-xl { width: 180px; height: 180px; }
-            .size-lg { width: 150px; height: 150px; }
-            .size-md { width: 120px; height: 120px; }
-            .size-sm { width: 100px; height: 100px; }
         }
     </style>
 </head>
 <body>
+    <!-- Logo -->
     <div class="logo">
-        <img src="https://raw.githubusercontent.com/decentralize-dfw/co/main/c0.png" alt="Logo">
+        <img src="https://raw.githubusercontent.com/decentralize-dfw/co/main/c0.png" alt="DFW">
     </div>
 
-    <div class="canvas">
-        <div class="products-container" id="productsContainer"></div>
+    <!-- Custom Cursor -->
+    <div class="cursor" id="cursor">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <span id="cursorText">view</span>
     </div>
 
+    <!-- Controls -->
+    <div class="controls">
+        <div class="control-info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 9l4 4-4 4M9 5l4 4 4-4M15 15l4 4M15 19l4-4"/>
+            </svg>
+            Drag to explore
+        </div>
+        <button class="control-btn" id="zoomOut">−</button>
+        <button class="control-btn" id="zoomIn">+</button>
+        <button class="control-btn grid-toggle" id="gridToggle">Grid</button>
+    </div>
+
+    <!-- Canvas Wrapper -->
+    <div class="canvas-wrapper">
+        <div class="products-canvas" id="productsCanvas"></div>
+    </div>
+
+    <!-- Overlay -->
     <div class="overlay" id="overlay"></div>
 
+    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <button class="sidebar-close" id="sidebarClose"></button>
         <div class="sidebar-header">
@@ -297,7 +411,7 @@
             <p class="sidebar-artist" id="sidebarArtist">DFW Studio</p>
             <p class="sidebar-desc" id="sidebarDesc">Description</p>
         </div>
-        <div class="sidebar-gallery" id="sidebarGallery"></div>
+        <div class="sidebar-variants" id="sidebarVariants"></div>
     </div>
 
     <script>
@@ -308,488 +422,455 @@
                 id: 'mermaidchair',
                 name: 'Mermaid Chair',
                 artist: 'DFW Studio',
-                desc: 'A sculptural seating piece inspired by the fluid movements of ocean waves. The organic curves create an elegant silhouette that transforms any space.',
+                desc: 'A sculptural seating piece inspired by fluid ocean movements. The organic curves create an elegant silhouette.',
                 variants: [
                     { file: 'mermaidchair-og.png', label: 'Original' },
                     { file: 'mermaidchair-b.png', label: 'Black' },
                     { file: 'mermaidchair-w.png', label: 'Chrome' },
                     { file: 'mermaidchair-red.png', label: 'Red' }
-                ],
-                size: 'xl',
-                pos: { top: '0%', left: '5%' }
+                ]
             },
             {
                 id: 'fetuchair',
                 name: 'Fetu Chair',
                 artist: 'DFW Studio',
-                desc: 'An ergonomic masterpiece that embraces the human form. Minimalist design meets maximum comfort in this iconic seating solution.',
+                desc: 'Ergonomic masterpiece embracing the human form. Minimalist design meets maximum comfort.',
                 variants: [
                     { file: 'fetuchair-og.png', label: 'Original' },
                     { file: 'fetuchair-b.png', label: 'Black' },
                     { file: 'fetuchair-w.png', label: 'White' },
                     { file: 'fetuchair-red.png', label: 'Red' }
-                ],
-                size: 'lg',
-                pos: { top: '3%', left: '35%' }
+                ]
             },
             {
                 id: 'dse',
                 name: 'DSE',
                 artist: 'DFW Studio',
-                desc: 'Digital aesthetics meet physical form. A chair that looks like it was rendered in 3D software and materialized into reality.',
+                desc: 'Digital aesthetics meet physical form. Rendered in 3D, materialized into reality.',
                 variants: [
                     { file: 'dse-og.png', label: 'Anthracite' },
                     { file: 'dse-b.png', label: 'Black' },
                     { file: 'dse-delix.png', label: 'White' },
                     { file: 'dse-red.png', label: 'Red' }
-                ],
-                size: 'md',
-                pos: { top: '5%', left: '60%' }
+                ]
             },
             {
                 id: 'jacktehladxx',
                 name: 'Jack The Lad XX',
                 artist: 'DFW Studio',
-                desc: 'Sharp geometric forms and industrial aesthetics collide. A bold statement piece for those who dare to be different.',
+                desc: 'Sharp geometric forms and industrial aesthetics collide in this bold statement piece.',
                 variants: [
                     { file: 'jacktehladxx-og.png', label: 'Original' },
                     { file: 'jacktehladxx-b.png', label: 'Black' },
                     { file: 'jacktehladxx-w.png', label: 'White' },
                     { file: 'jacktehladxx-red.png', label: 'Red' }
-                ],
-                size: 'lg',
-                pos: { top: '2%', left: '80%' }
+                ]
             },
             {
                 id: 'aretaix',
                 name: 'Aretaix',
                 artist: 'DFW Studio',
-                desc: 'Where art meets function. A sculptural furniture piece that doubles as a conversation starter in any contemporary space.',
+                desc: 'Where art meets function. Sculptural furniture doubling as a conversation starter.',
                 variants: [
                     { file: 'aretaix-og.png', label: 'Anthracite' },
                     { file: 'aretaix-b.png', label: 'Black' },
                     { file: 'aretaix-w.png', label: 'White' },
                     { file: 'aretaix-red.png', label: 'Red' }
-                ],
-                size: 'md',
-                pos: { top: '15%', left: '0%' }
+                ]
             },
             {
                 id: 'armageddon',
                 name: 'Armageddon',
                 artist: 'DFW Studio',
-                desc: 'Chaotic energy contained in physical form. A dramatic seating piece that commands attention and challenges conventions.',
+                desc: 'Chaotic energy contained in physical form. Dramatic seating that commands attention.',
                 variants: [
                     { file: 'armageddon-og.png', label: 'Original' },
                     { file: 'armageddon-b.png', label: 'Black' },
                     { file: 'armageddon-w.png', label: 'White' },
                     { file: 'armageddon-red.png', label: 'Dark' }
-                ],
-                size: 'xl',
-                pos: { top: '12%', left: '22%' }
+                ]
             },
             {
                 id: 'bilbaolego',
                 name: 'Bilbao Lego',
                 artist: 'DFW Studio',
-                desc: 'Inspired by Frank Gehry\'s Bilbao architecture. A modular, dynamic seating system that plays with deconstructivist forms.',
+                desc: 'Inspired by Frank Gehry\'s Bilbao architecture. Modular, dynamic, deconstructivist.',
                 variants: [
                     { file: 'bilbaolego-og.png', label: 'Chrome' },
                     { file: 'bilbaolego-b.png', label: 'Black' },
                     { file: 'bilbaolego-w.png', label: 'White' },
                     { file: 'bilbaolego-neon.png', label: 'Neon' }
-                ],
-                size: 'lg',
-                pos: { top: '18%', left: '52%' }
+                ]
             },
             {
                 id: 'higgsboson',
                 name: 'Higgs Boson',
                 artist: 'DFW Studio',
-                desc: 'Named after the God particle. A chair that explores the fundamental nature of matter through sculptural design.',
+                desc: 'Named after the God particle. Exploring the fundamental nature of matter through design.',
                 variants: [
                     { file: 'higgsboson-og.png', label: 'Chrome' },
                     { file: 'higgsboson-darkblue.png', label: 'Night' },
                     { file: 'higgsboson-w.png', label: 'Concrete' },
                     { file: 'higgsboson-red.png', label: 'Red' }
-                ],
-                size: 'lg',
-                pos: { top: '14%', left: '78%' }
+                ]
             },
             {
                 id: 'e66',
                 name: 'E66',
                 artist: 'DFW Studio',
-                desc: 'Industrial aesthetics refined. A minimalist seating element that speaks through its clean lines and bold presence.',
+                desc: 'Industrial aesthetics refined. Minimalist seating speaking through clean lines.',
                 variants: [
                     { file: 'e66-og.png', label: 'Original' },
                     { file: 'e66-b.png', label: 'Black' },
                     { file: 'e66-w.png', label: 'Anthracite' },
                     { file: 'e66-red.png', label: 'Red' }
-                ],
-                size: 'md',
-                pos: { top: '28%', left: '8%' }
+                ]
             },
             {
                 id: 'angrynapkin',
                 name: 'Accelerator',
                 artist: 'DFW Studio',
-                desc: 'Conceptual art meets furniture design. A provocative piece that challenges the boundaries between sculpture and seating.',
+                desc: 'Conceptual art meets furniture. Provocative piece challenging boundaries.',
                 variants: [
                     { file: 'angrynapkin-og.png', label: 'Original' },
                     { file: 'angrynapkin-mono.png', label: 'Mono' },
                     { file: 'angrynapkin-danvc.png', label: 'Da Vinci' },
                     { file: 'angrynapkin-red.png', label: 'Red' }
-                ],
-                size: 'lg',
-                pos: { top: '25%', left: '35%' }
+                ]
             },
             {
                 id: 'dougnut',
                 name: 'Glass Doughnut',
                 artist: 'DFW Studio',
-                desc: 'Circular forms meet playful design. A communication unit that brings people together in a ring of comfort.',
+                desc: 'Circular forms meet playful design. Communication unit bringing people together.',
                 variants: [
                     { file: 'dougnut-og.png', label: 'Original' },
                     { file: 'dougnut-blck.png', label: 'Black' },
                     { file: 'dougnut-w.png', label: 'White' },
                     { file: 'dougnut-red.png', label: 'Red' }
-                ],
-                size: 'xl',
-                pos: { top: '30%', left: '60%' }
+                ]
             },
             {
                 id: 'sjsoc',
                 name: 'SJSOC',
                 artist: 'DFW Studio',
-                desc: 'Social furniture for the modern age. An innovative seating solution that explores community and individuality.',
+                desc: 'Social furniture for the modern age. Exploring community and individuality.',
                 variants: [
                     { file: 'sjsoc-og.png', label: 'Original' },
                     { file: 'sjsoc-b.png', label: 'Mono' },
                     { file: 'sjsoc-w.png', label: 'White' },
                     { file: 'sjsoc-red.png', label: 'Neon' }
-                ],
-                size: 'md',
-                pos: { top: '32%', left: '85%' }
+                ]
             },
             {
                 id: 'carwreck',
                 name: 'Car Wreck Sofa',
                 artist: 'DFW Studio',
-                desc: 'Destruction transformed into creation. A deconstructivist sofa that tells a story of rebirth and transformation.',
+                desc: 'Destruction transformed into creation. A story of rebirth and transformation.',
                 variants: [
                     { file: 'carwreck-og.png', label: 'Original' },
                     { file: 'carwreck-b.png', label: 'Black' },
                     { file: 'carwreck-w.png', label: 'White' },
                     { file: 'carwreck-red.png', label: 'Red' }
-                ],
-                size: 'xl',
-                pos: { top: '42%', left: '5%' }
+                ]
             },
             {
                 id: 'japon',
                 name: '冬 Japon',
                 artist: 'DFW Studio',
-                desc: 'Japanese aesthetics translated into furniture. A Zen-inspired sofa that brings tranquility and minimalist beauty.',
+                desc: 'Japanese aesthetics translated into furniture. Zen-inspired minimalist beauty.',
                 variants: [
                     { file: 'japon-og.png', label: 'Original' },
                     { file: 'japon-b.png', label: 'Black' },
                     { file: 'japon-w.png', label: 'White' },
                     { file: 'japon-red.png', label: 'Red' }
-                ],
-                size: 'lg',
-                pos: { top: '45%', left: '38%' }
+                ]
             },
             {
                 id: '2070sdjtable',
                 name: '2070s DJ Table',
                 artist: 'DFW Music',
-                desc: 'A DJ table from the future. Where music technology meets sculptural design for the next generation of performers.',
+                desc: 'DJ table from the future. Music technology meets sculptural design.',
                 variants: [
                     { file: '2070sdjtable-og.png', label: 'Original' },
                     { file: '2070sdjtable-b.png', label: 'Black' }
-                ],
-                size: 'xl',
-                pos: { top: '40%', left: '68%' }
+                ]
             },
             {
                 id: 'dj22',
                 name: 'DJ 2-2',
                 artist: 'DFW Music',
-                desc: 'Dual DJ station for collaborative performances. Two artists, one vision, infinite possibilities.',
+                desc: 'Dual DJ station for collaborative performances. Two artists, infinite possibilities.',
                 variants: [
                     { file: 'dj2-2-og.png', label: 'Original' },
                     { file: 'dj2-2-b.png', label: 'Black' },
                     { file: 'dj2-2-w.png', label: 'White' },
                     { file: 'dj2-2-red.png', label: 'Red' }
-                ],
-                size: 'lg',
-                pos: { top: '55%', left: '20%' }
+                ]
             },
             {
                 id: 'screamer',
                 name: 'Screamer',
                 artist: 'DFW Music',
-                desc: 'Expressionist energy captured in form. A music furniture piece that channels raw emotional intensity.',
+                desc: 'Expressionist energy captured in form. Raw emotional intensity channeled.',
                 variants: [
                     { file: 'screamer-og.png', label: 'Original' },
                     { file: 'screamer-b.png', label: 'Black' },
                     { file: 'screamer-w.png', label: 'White' },
                     { file: 'screamer-red.png', label: 'Red' }
-                ],
-                size: 'md',
-                pos: { top: '58%', left: '50%' }
+                ]
             },
             {
                 id: 'genetic',
                 name: 'Genetic Carpet',
                 artist: 'DFW Studio',
-                desc: 'DNA-inspired textile design. A carpet that weaves the building blocks of life into visual poetry.',
+                desc: 'DNA-inspired textile design. Building blocks of life woven into visual poetry.',
                 variants: [
                     { file: 'genetic-og.png', label: 'Original' },
                     { file: 'genetic-b.png', label: 'Black' },
                     { file: 'genetic-w.png', label: 'White' },
                     { file: 'genetic-r.png', label: 'Red' }
-                ],
-                size: 'lg',
-                pos: { top: '52%', left: '78%' }
+                ]
             },
             {
                 id: 'spookycarpet',
                 name: 'Spooky Carpet',
                 artist: 'DFW Studio',
-                desc: 'Atmospheric textile art. A carpet that transforms floor space into an immersive visual experience.',
+                desc: 'Atmospheric textile art. Floor space transformed into immersive experience.',
                 variants: [
                     { file: 'spookycarpet-verdialpi.png', label: 'Verde Alpi' },
                     { file: 'spookycarpet-leather.png', label: 'Blackigator' },
                     { file: 'spookycarpet-wtdbts.png', label: 'Throne' },
                     { file: 'spookycarpet-davnc.png', label: 'Da Vinci' }
-                ],
-                size: 'lg',
-                pos: { top: '65%', left: '0%' }
-            },
-            {
-                id: 'extra1',
-                name: 'Mermaid Chair',
-                artist: 'DFW Studio',
-                desc: 'Second placement of the iconic Mermaid Chair for visual balance.',
-                variants: [
-                    { file: 'mermaidchair-og.png', label: 'Original' },
-                    { file: 'mermaidchair-b.png', label: 'Black' },
-                    { file: 'mermaidchair-w.png', label: 'Chrome' },
-                    { file: 'mermaidchair-red.png', label: 'Red' }
-                ],
-                size: 'md',
-                pos: { top: '68%', left: '30%' }
-            },
-            {
-                id: 'extra2',
-                name: 'Bilbao Lego',
-                artist: 'DFW Studio',
-                desc: 'Second placement of Bilbao Lego.',
-                variants: [
-                    { file: 'bilbaolego-og.png', label: 'Chrome' },
-                    { file: 'bilbaolego-b.png', label: 'Black' },
-                    { file: 'bilbaolego-w.png', label: 'White' },
-                    { file: 'bilbaolego-neon.png', label: 'Neon' }
-                ],
-                size: 'xl',
-                pos: { top: '70%', left: '55%' }
-            },
-            {
-                id: 'extra3',
-                name: 'DSE',
-                artist: 'DFW Studio',
-                desc: 'Second placement of DSE.',
-                variants: [
-                    { file: 'dse-og.png', label: 'Anthracite' },
-                    { file: 'dse-b.png', label: 'Black' },
-                    { file: 'dse-delix.png', label: 'White' },
-                    { file: 'dse-red.png', label: 'Red' }
-                ],
-                size: 'lg',
-                pos: { top: '72%', left: '85%' }
-            },
-            {
-                id: 'extra4',
-                name: 'Higgs Boson',
-                artist: 'DFW Studio',
-                desc: 'Second placement of Higgs Boson.',
-                variants: [
-                    { file: 'higgsboson-og.png', label: 'Chrome' },
-                    { file: 'higgsboson-darkblue.png', label: 'Night' },
-                    { file: 'higgsboson-w.png', label: 'Concrete' },
-                    { file: 'higgsboson-red.png', label: 'Red' }
-                ],
-                size: 'md',
-                pos: { top: '82%', left: '10%' }
-            },
-            {
-                id: 'extra5',
-                name: 'Armageddon',
-                artist: 'DFW Studio',
-                desc: 'Second placement of Armageddon.',
-                variants: [
-                    { file: 'armageddon-og.png', label: 'Original' },
-                    { file: 'armageddon-b.png', label: 'Black' },
-                    { file: 'armageddon-w.png', label: 'White' },
-                    { file: 'armageddon-red.png', label: 'Dark' }
-                ],
-                size: 'lg',
-                pos: { top: '80%', left: '38%' }
-            },
-            {
-                id: 'extra6',
-                name: 'E66',
-                artist: 'DFW Studio',
-                desc: 'Second placement of E66.',
-                variants: [
-                    { file: 'e66-og.png', label: 'Original' },
-                    { file: 'e66-b.png', label: 'Black' },
-                    { file: 'e66-w.png', label: 'Anthracite' },
-                    { file: 'e66-red.png', label: 'Red' }
-                ],
-                size: 'xl',
-                pos: { top: '78%', left: '65%' }
-            },
-            {
-                id: 'extra7',
-                name: 'Car Wreck Sofa',
-                artist: 'DFW Studio',
-                desc: 'Second placement of Car Wreck.',
-                variants: [
-                    { file: 'carwreck-og.png', label: 'Original' },
-                    { file: 'carwreck-b.png', label: 'Black' },
-                    { file: 'carwreck-w.png', label: 'White' },
-                    { file: 'carwreck-red.png', label: 'Red' }
-                ],
-                size: 'md',
-                pos: { top: '90%', left: '5%' }
-            },
-            {
-                id: 'extra8',
-                name: 'Glass Doughnut',
-                artist: 'DFW Studio',
-                desc: 'Second placement of Glass Doughnut.',
-                variants: [
-                    { file: 'dougnut-og.png', label: 'Original' },
-                    { file: 'dougnut-blck.png', label: 'Black' },
-                    { file: 'dougnut-w.png', label: 'White' },
-                    { file: 'dougnut-red.png', label: 'Red' }
-                ],
-                size: 'lg',
-                pos: { top: '88%', left: '30%' }
-            },
-            {
-                id: 'extra9',
-                name: 'Fetu Chair',
-                artist: 'DFW Studio',
-                desc: 'Second placement of Fetu Chair.',
-                variants: [
-                    { file: 'fetuchair-og.png', label: 'Original' },
-                    { file: 'fetuchair-b.png', label: 'Black' },
-                    { file: 'fetuchair-w.png', label: 'White' },
-                    { file: 'fetuchair-red.png', label: 'Red' }
-                ],
-                size: 'xl',
-                pos: { top: '92%', left: '55%' }
-            },
-            {
-                id: 'extra10',
-                name: 'Aretaix',
-                artist: 'DFW Studio',
-                desc: 'Second placement of Aretaix.',
-                variants: [
-                    { file: 'aretaix-og.png', label: 'Anthracite' },
-                    { file: 'aretaix-b.png', label: 'Black' },
-                    { file: 'aretaix-w.png', label: 'White' },
-                    { file: 'aretaix-red.png', label: 'Red' }
-                ],
-                size: 'lg',
-                pos: { top: '95%', left: '82%' }
+                ]
             }
         ];
 
-        // DOM
-        const container = document.getElementById('productsContainer');
+        // DOM Elements
+        const canvas = document.getElementById('productsCanvas');
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
         const sidebarClose = document.getElementById('sidebarClose');
         const sidebarTitle = document.getElementById('sidebarTitle');
         const sidebarArtist = document.getElementById('sidebarArtist');
         const sidebarDesc = document.getElementById('sidebarDesc');
-        const sidebarGallery = document.getElementById('sidebarGallery');
+        const sidebarVariants = document.getElementById('sidebarVariants');
+        const zoomInBtn = document.getElementById('zoomIn');
+        const zoomOutBtn = document.getElementById('zoomOut');
+        const gridToggle = document.getElementById('gridToggle');
+        const cursor = document.getElementById('cursor');
+        const cursorText = document.getElementById('cursorText');
+
+        let currentScale = 1;
+        let isGridView = false;
+        let draggableInstance = null;
+
+        // Generate scattered positions
+        function generatePositions() {
+            const positions = [];
+            const cols = 5;
+            const rows = Math.ceil(products.length / cols);
+            const itemSize = 180;
+            const gapX = 220;
+            const gapY = 220;
+            const offsetX = (3000 - cols * gapX) / 2;
+            const offsetY = (2000 - rows * gapY) / 2;
+
+            products.forEach((_, i) => {
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+                // Add slight randomness for organic feel
+                const randX = (Math.random() - 0.5) * 40;
+                const randY = (Math.random() - 0.5) * 40;
+                positions.push({
+                    x: offsetX + col * gapX + randX,
+                    y: offsetY + row * gapY + randY
+                });
+            });
+            return positions;
+        }
+
+        const positions = generatePositions();
 
         // Render products
-        function render() {
-            container.innerHTML = '';
-            products.forEach(p => {
-                const div = document.createElement('div');
-                div.className = `product-item size-${p.size}`;
-                div.style.top = p.pos.top;
-                div.style.left = p.pos.left;
+        function renderProducts() {
+            canvas.innerHTML = '';
+            products.forEach((product, i) => {
+                const item = document.createElement('div');
+                item.className = 'product-item';
+                item.style.left = positions[i].x + 'px';
+                item.style.top = positions[i].y + 'px';
+                item.dataset.index = i;
 
                 const img = document.createElement('img');
-                img.src = BASE_URL + p.variants[0].file;
-                img.alt = p.name;
-                img.loading = 'lazy';
+                img.src = BASE_URL + product.variants[0].file;
+                img.alt = product.name;
+                img.draggable = false;
 
-                div.appendChild(img);
-                div.addEventListener('click', () => openSidebar(p));
-                container.appendChild(div);
+                const label = document.createElement('div');
+                label.className = 'product-label';
+                label.textContent = product.name;
+
+                item.appendChild(img);
+                item.appendChild(label);
+
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openSidebar(product);
+                });
+
+                item.addEventListener('mouseenter', () => {
+                    cursorText.textContent = product.name;
+                    cursor.classList.add('active');
+                });
+
+                item.addEventListener('mouseleave', () => {
+                    cursor.classList.remove('active');
+                });
+
+                canvas.appendChild(item);
             });
         }
 
-        // Open sidebar
-        function openSidebar(p) {
-            sidebarTitle.textContent = p.name;
-            sidebarArtist.textContent = p.artist;
-            sidebarDesc.textContent = p.desc;
+        // Initialize Draggable
+        function initDraggable() {
+            if (draggableInstance) {
+                draggableInstance[0].kill();
+            }
 
-            sidebarGallery.innerHTML = '';
-            p.variants.forEach(v => {
+            if (!isGridView) {
+                draggableInstance = Draggable.create(canvas, {
+                    type: 'x,y',
+                    bounds: {
+                        minX: -1500 * currentScale,
+                        maxX: 1500 * currentScale,
+                        minY: -1000 * currentScale,
+                        maxY: 1000 * currentScale
+                    },
+                    inertia: true,
+                    edgeResistance: 0.8,
+                    throwResistance: 2000
+                });
+            }
+        }
+
+        // Zoom
+        function zoom(direction) {
+            if (isGridView) return;
+
+            const step = 0.15;
+            if (direction === 'in' && currentScale < 2) {
+                currentScale += step;
+            } else if (direction === 'out' && currentScale > 0.5) {
+                currentScale -= step;
+            }
+
+            gsap.to(canvas, {
+                scale: currentScale,
+                duration: 0.4,
+                ease: 'power2.out',
+                onComplete: initDraggable
+            });
+        }
+
+        // Toggle Grid View
+        function toggleGridView() {
+            isGridView = !isGridView;
+
+            if (isGridView) {
+                canvas.classList.add('grid-view');
+                gsap.set(canvas, { x: 0, y: 0, scale: 1 });
+                gridToggle.textContent = 'Scatter';
+                if (draggableInstance) {
+                    draggableInstance[0].kill();
+                }
+            } else {
+                canvas.classList.remove('grid-view');
+                currentScale = 1;
+                gsap.set(canvas, { scale: 1 });
+                gridToggle.textContent = 'Grid';
+                initDraggable();
+            }
+        }
+
+        // Open Sidebar
+        function openSidebar(product) {
+            sidebarTitle.textContent = product.name;
+            sidebarArtist.textContent = product.artist;
+            sidebarDesc.textContent = product.desc;
+
+            sidebarVariants.innerHTML = '';
+            product.variants.forEach(v => {
                 const item = document.createElement('div');
                 item.className = 'variant-item';
 
-                const imgContainer = document.createElement('div');
-                imgContainer.className = 'variant-img-container';
+                const imgWrap = document.createElement('div');
+                imgWrap.className = 'variant-img';
 
                 const img = document.createElement('img');
                 img.src = BASE_URL + v.file;
                 img.alt = v.label;
-
-                imgContainer.appendChild(img);
+                imgWrap.appendChild(img);
 
                 const label = document.createElement('div');
                 label.className = 'variant-label';
                 label.textContent = v.label;
 
-                item.appendChild(imgContainer);
+                item.appendChild(imgWrap);
                 item.appendChild(label);
-                sidebarGallery.appendChild(item);
+                sidebarVariants.appendChild(item);
             });
 
             sidebar.classList.add('active');
             overlay.classList.add('active');
-            document.body.style.overflow = 'hidden';
         }
 
-        // Close sidebar
+        // Close Sidebar
         function closeSidebar() {
             sidebar.classList.remove('active');
             overlay.classList.remove('active');
-            document.body.style.overflow = '';
         }
 
-        // Events
-        sidebarClose.addEventListener('click', closeSidebar);
-        overlay.addEventListener('click', closeSidebar);
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') closeSidebar();
+        // Custom Cursor Movement
+        document.addEventListener('mousemove', (e) => {
+            gsap.to(cursor, {
+                x: e.clientX + 15,
+                y: e.clientY + 15,
+                duration: 0.2,
+                ease: 'power2.out'
+            });
         });
 
-        // Init
-        render();
+        // Event Listeners
+        zoomInBtn.addEventListener('click', () => zoom('in'));
+        zoomOutBtn.addEventListener('click', () => zoom('out'));
+        gridToggle.addEventListener('click', toggleGridView);
+        sidebarClose.addEventListener('click', closeSidebar);
+        overlay.addEventListener('click', closeSidebar);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeSidebar();
+            if (e.key === '+' || e.key === '=') zoom('in');
+            if (e.key === '-') zoom('out');
+            if (e.key === 'g') toggleGridView();
+        });
+
+        // Mouse wheel zoom
+        document.addEventListener('wheel', (e) => {
+            if (isGridView) return;
+            e.preventDefault();
+            if (e.deltaY < 0) {
+                zoom('in');
+            } else {
+                zoom('out');
+            }
+        }, { passive: false });
+
+        // Initialize
+        renderProducts();
+        initDraggable();
+
+        // Center canvas initially
+        gsap.set(canvas, { x: 0, y: 0 });
     </script>
 </body>
 </html>
