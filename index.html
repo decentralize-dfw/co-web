@@ -93,7 +93,7 @@
             z-index: 199;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s ease;
+            transition: opacity 2s ease; /* 2s to sync with modal opening */
         }
 
         #modalOverlay.active {
@@ -104,10 +104,11 @@
         /* Animated Image Clone for FLIP animation */
         #animatedImageClone {
             position: fixed;
-            z-index: 198;
+            z-index: 201; /* ABOVE modal to stay visible during animation */
             pointer-events: none;
             display: none;
             object-fit: contain;
+            transition: none; /* No CSS transition, using GSAP */
         }
 
         /* Modal Container - Blurred inside */
@@ -128,7 +129,7 @@
             overflow: hidden;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s ease;
+            transition: opacity 2s ease; /* 2s to sync with image animation */
             display: flex;
             flex-direction: row;
             gap: 60px;
@@ -186,13 +187,11 @@
             object-fit: contain;
             border-radius: 16px;
             opacity: 0;
-            transform: scale(0.5);
-            transition: opacity 2s ease, transform 2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: opacity 0.3s ease; /* Quick fade in when clone completes */
         }
 
         .detail-image.loaded {
             opacity: 1;
-            transform: scale(1);
         }
 
         /* Content Info Section - Left side, scrollable */
@@ -846,9 +845,9 @@
         function openDetail(item) {
             detailOpen = true;
 
-            // === FLIP ANIMATION SETUP ===
+            // === SYNCHRONIZED ANIMATION: Modal blur fade (2s) + Image grow (2s) ===
 
-            // 1. Calculate FIRST position (current position on canvas)
+            // 1. Calculate current canvas position
             const screenX = (item.x - camera.x) * camera.scale + window.innerWidth / 2;
             const screenY = (item.y - camera.y) * camera.scale + window.innerHeight / 2;
 
@@ -865,7 +864,7 @@
             const currentWidth = displayW * item.scale * camera.scale;
             const currentHeight = displayH * item.scale * camera.scale;
 
-            // 2. Setup cloned image at FIRST position
+            // 2. Setup clone at current position
             const clone = document.getElementById('animatedImageClone');
             clone.src = item.img.src;
             clone.style.display = 'block';
@@ -877,11 +876,11 @@
             clone.style.transform = `rotate(${item.rotation}rad)`;
             clone.style.borderRadius = '0px';
 
-            // 3. Setup modal content (hidden initially)
+            // 3. Setup modal content (detailImage hidden, will appear when clone finishes)
             const detailImg = document.getElementById('detailImage');
             detailImg.classList.remove('loaded');
             detailImg.src = item.img.src;
-            detailImg.style.opacity = '0'; // Hide real image during animation
+            detailImg.style.opacity = '0';
 
             document.getElementById('detailTitle').textContent = item.name;
             document.getElementById('detailTags').textContent = item.tags.join(' • ');
@@ -897,17 +896,17 @@
                 linksDiv.appendChild(a);
             });
 
-            // 4. Show modal (but image is hidden)
+            // 4. START: Show modal immediately (triggers 2s opacity fade in)
             document.getElementById('modalOverlay').classList.add('active');
             document.getElementById('detailPanel').classList.add('active');
             document.body.style.overflow = 'hidden';
 
-            // 5. Wait for layout, then get LAST position
-            setTimeout(() => {
+            // 5. Calculate final position and START clone animation (2s, synchronized with modal fade)
+            requestAnimationFrame(() => {
                 const modalImageContainer = document.querySelector('.modal-image-container');
                 const containerRect = modalImageContainer.getBoundingClientRect();
 
-                // Calculate final size (fit in square container)
+                // Calculate final size
                 let finalWidth, finalHeight;
                 if (imgAspect > 1) {
                     finalWidth = containerRect.width;
@@ -917,11 +916,10 @@
                     finalWidth = containerRect.height * imgAspect;
                 }
 
-                // Center position in container
                 const finalLeft = containerRect.left + (containerRect.width - finalWidth) / 2;
                 const finalTop = containerRect.top + (containerRect.height - finalHeight) / 2;
 
-                // 6. PLAY animation - animate clone to final position
+                // Animate clone (2s duration matches modal opacity transition)
                 gsap.to(clone, {
                     left: finalLeft,
                     top: finalTop,
@@ -932,13 +930,12 @@
                     duration: 2,
                     ease: 'power2.inOut',
                     onComplete: () => {
-                        // Hide clone, show real image
+                        // Seamlessly switch from clone to real image
                         clone.style.display = 'none';
-                        detailImg.style.opacity = '1';
                         detailImg.classList.add('loaded');
                     }
                 });
-            }, 50);
+            });
         }
 
         function closeDetail() {
@@ -946,9 +943,16 @@
 
             detailOpen = false;
 
-            // Fade out modal and overlay
-            document.getElementById('modalOverlay').classList.remove('active');
-            document.getElementById('detailPanel').classList.remove('active');
+            // Override transition to 1s for closing (opening is 2s)
+            const modal = document.getElementById('detailPanel');
+            const overlay = document.getElementById('modalOverlay');
+
+            modal.style.transition = 'opacity 1s ease';
+            overlay.style.transition = 'opacity 1s ease';
+
+            // Fade out modal and overlay (1s)
+            overlay.classList.remove('active');
+            modal.classList.remove('active');
 
             // Hide clone if visible
             const clone = document.getElementById('animatedImageClone');
@@ -957,12 +961,27 @@
             // Re-enable body scroll
             document.body.style.overflow = '';
 
-            // Reset image state for next opening
+            // After 1s fade out completes, reset canvas
             setTimeout(() => {
+                // Reset detailImage state
                 const detailImg = document.getElementById('detailImage');
                 detailImg.classList.remove('loaded');
                 detailImg.style.opacity = '0';
-            }, 300);
+
+                // Reset modal transitions back to 2s for next open
+                modal.style.transition = 'opacity 2s ease';
+                overlay.style.transition = 'opacity 2s ease';
+
+                // CANVAS RESET: Pop animation for all images
+                loadedImages.forEach(item => {
+                    if (item.visible) {
+                        gsap.fromTo(item,
+                            { scale: 0 },
+                            { scale: item.targetScale, duration: 0.8, ease: 'back.out(1.5)' }
+                        );
+                    }
+                });
+            }, 1000);
         }
 
         // Zoom controls
