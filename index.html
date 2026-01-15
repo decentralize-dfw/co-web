@@ -859,14 +859,15 @@ let lastActiveItem = null;
             const progressFill = document.getElementById('progressFill');
             const loading = document.getElementById('loading');
 
-            const baseSize = 250; 
-            const padding = 80; // Objeler arası boşluk (Hafif azalttım, çok kopuk olmasın)
+            // CRITICAL: Use actual render size for collision
+            const itemSize = 200; // This is maxSize used in rendering
+            const minGap = 50; // Minimum gap between items
+            const collisionRadius = itemSize + minGap;
 
             // Sınırları sıfırla
             contentBounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
 
-            // EKRAN ORANI (EN ÖNEMLİ KISIM)
-            // Ekran genişse (1.7), dizilim de geniş olacak. Dikse (0.5), dizilim de dik olacak.
+            // EKRAN ORANI
             const screenRatio = window.innerWidth / window.innerHeight;
 
             allItems.forEach((item, index) => {
@@ -880,31 +881,27 @@ let lastActiveItem = null;
                     let x = 0, y = 0;
                     let placed = false;
                     let attempts = 0;
-                    
-                    // Yayılma alanı (Başlangıçta küçük, yer bulamadıkça büyür)
-                    // Area çarpanı, item sayısına göre dinamik artar
-                    let spreadFactor = Math.sqrt(index + 1) * 100; 
+
+                    // PACKED PLACEMENT: Start small, grow slowly
+                    // Much smaller spread for tight packing
+                    let spreadFactor = Math.sqrt(index + 1) * 50; // REDUCED from 100 to 50
 
                     if (loadedImages.length > 0) {
-                        while (!placed && attempts < 2000) {
-                            // ÇOK ÖNEMLİ: Rastgele nokta seçimi, ama DİKDÖRTGEN sınırları içinde
-                            // width = spreadFactor * screenRatio
-                            // height = spreadFactor
-                            
-                            // spreadFactor yer bulamadıkça genişler
-                            const currentSpread = spreadFactor + (attempts * 2); 
-                            
+                        while (!placed && attempts < 3000) {
+                            // Grow spread slowly for packed layout
+                            const currentSpread = spreadFactor + (attempts * 1); // REDUCED from 2 to 1
+
                             x = (Math.random() - 0.5) * currentSpread * screenRatio;
                             y = (Math.random() - 0.5) * currentSpread;
 
-                            // Çarpışma Testi
+                            // FIXED: Use correct collision radius
                             let collision = false;
                             for (let other of loadedImages) {
                                 const dx = x - other.x;
                                 const dy = y - other.y;
                                 const dist = Math.sqrt(dx*dx + dy*dy);
-                                
-                                if (dist < (baseSize + padding)) {
+
+                                if (dist < collisionRadius) {
                                     collision = true;
                                     break;
                                 }
@@ -915,8 +912,8 @@ let lastActiveItem = null;
                         }
                     }
 
-                    // Sınırları güncelle
-                    const halfSize = baseSize / 2;
+                    // Sınırları güncelle - Use actual item size
+                    const halfSize = itemSize / 2;
                     if (x - halfSize < contentBounds.minX) contentBounds.minX = x - halfSize;
                     if (x + halfSize > contentBounds.maxX) contentBounds.maxX = x + halfSize;
                     if (y - halfSize < contentBounds.minY) contentBounds.minY = y - halfSize;
@@ -929,7 +926,7 @@ let lastActiveItem = null;
                         scale: 0,
                         targetScale: 1,
                         maxSize: 200,
-                        rotation: (Math.random() - 0.5) * 0.2, // Hafif organik dönüş
+                        rotation: (Math.random() - 0.5) * 0.2,
                         name: item.name,
                         tags: item.tags,
                         description: item.description,
@@ -941,10 +938,10 @@ let lastActiveItem = null;
 
                     if (loadedCount === allItems.length) {
                         // Sınırları biraz güvenli hale getir
-                        contentBounds.minX -= 150;
-                        contentBounds.maxX += 150;
-                        contentBounds.minY -= 150;
-                        contentBounds.maxY += 150;
+                        contentBounds.minX -= 100;
+                        contentBounds.maxX += 100;
+                        contentBounds.minY -= 100;
+                        contentBounds.maxY += 100;
 
                         // Initialize filters
                         initializeFilters();
@@ -955,7 +952,7 @@ let lastActiveItem = null;
                         }, 500);
                     }
                 };
-                
+
                 img.onerror = () => { loadedCount++; if(loadedCount===allItems.length) startAnimation(); };
                 img.src = item.thumbnailUrl;
             });
@@ -1357,8 +1354,9 @@ let lastActiveItem = null;
             if (visibleItems.length === 0) return;
 
             // USE EXACT SAME PARAMETERS as initial placement
-            const baseSize = 250;
-            const padding = 80;
+            const itemSize = 200;
+            const minGap = 50;
+            const collisionRadius = itemSize + minGap;
             const screenRatio = window.innerWidth / window.innerHeight;
 
             // Reset bounds
@@ -1372,26 +1370,26 @@ let lastActiveItem = null;
                 let placed = false;
                 let attempts = 0;
 
-                // SAME MATH: spreadFactor based on index
-                let spreadFactor = Math.sqrt(index + 1) * 100;
+                // SAME MATH: PACKED placement
+                let spreadFactor = Math.sqrt(index + 1) * 50; // SAME as initial
 
                 if (index > 0) {
-                    while (!placed && attempts < 2000) {
-                        // SAME MATH: currentSpread grows with attempts
-                        const currentSpread = spreadFactor + (attempts * 2);
+                    while (!placed && attempts < 3000) {
+                        // SAME MATH: Grow slowly for packed layout
+                        const currentSpread = spreadFactor + (attempts * 1); // SAME as initial
 
                         // SAME MATH: screen ratio aware positioning
                         x = (Math.random() - 0.5) * currentSpread * screenRatio;
                         y = (Math.random() - 0.5) * currentSpread;
 
-                        // SAME MATH: collision detection
+                        // SAME MATH: collision detection with CORRECT radius
                         let collision = false;
                         for (let other of placedPositions) {
                             const dx = x - other.x;
                             const dy = y - other.y;
                             const dist = Math.sqrt(dx*dx + dy*dy);
 
-                            if (dist < (baseSize + padding)) {
+                            if (dist < collisionRadius) {
                                 collision = true;
                                 break;
                             }
@@ -1405,8 +1403,8 @@ let lastActiveItem = null;
                 // Store position for collision check
                 placedPositions.push({ x, y });
 
-                // Update bounds
-                const halfSize = baseSize / 2;
+                // Update bounds - Use actual item size
+                const halfSize = itemSize / 2;
                 contentBounds.minX = Math.min(contentBounds.minX, x - halfSize);
                 contentBounds.maxX = Math.max(contentBounds.maxX, x + halfSize);
                 contentBounds.minY = Math.min(contentBounds.minY, y - halfSize);
@@ -1422,10 +1420,10 @@ let lastActiveItem = null;
             });
 
             // Add padding to bounds
-            contentBounds.minX -= 150;
-            contentBounds.maxX += 150;
-            contentBounds.minY -= 150;
-            contentBounds.maxY += 150;
+            contentBounds.minX -= 100;
+            contentBounds.maxX += 100;
+            contentBounds.minY -= 100;
+            contentBounds.maxY += 100;
         }
 
         // Keyboard event - ESC to close modal
