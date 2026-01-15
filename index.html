@@ -83,88 +83,195 @@
             transition: opacity 0.2s;
         }
 
+        /* Modal Overlay - Blurred Background */
+        #modalOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(245, 245, 240, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 199;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        #modalOverlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Modal Container */
         #detailPanel {
             position: fixed;
-            right: -500px;
-            top: 0;
-            width: 500px;
-            height: 100%;
-            background: white;
-            box-shadow: -2px 0 20px rgba(0,0,0,0.1);
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #000;
+            border-radius: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             z-index: 200;
-            padding: 60px 40px;
-            overflow-y: auto;
-            transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 0;
+            overflow: hidden;
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+            transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            flex-direction: column;
         }
 
         #detailPanel.active {
-            right: 0;
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: all;
         }
 
+        /* Close Button */
         .close-btn {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
-            border: none;
-            background: #f0f0f0;
+            top: 24px;
+            left: 24px;
+            width: 48px;
+            height: 48px;
+            border: 2px solid #000;
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            transition: all 0.2s;
+            font-size: 28px;
+            font-weight: 300;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            line-height: 1;
         }
 
         .close-btn:hover {
-            background: #e0e0e0;
-            transform: scale(1.1);
+            background: #000;
+            color: #fff;
+            transform: rotate(90deg) scale(1.1);
+        }
+
+        /* Modal Content Container */
+        .modal-content {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 80px 60px 60px 60px;
+        }
+
+        /* Image Container - Center with Animation */
+        .modal-image-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 40px;
         }
 
         .detail-image {
             width: 100%;
-            border-radius: 12px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            height: auto;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 2s ease, transform 2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .detail-image.loaded {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Content Info Section */
+        .modal-info {
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
         }
 
         .detail-title {
-            font-size: 32px;
-            font-weight: 300;
-            margin-bottom: 10px;
-            color: #333;
+            font-size: 36px;
+            font-weight: 400;
+            margin-bottom: 16px;
+            color: #000;
+            letter-spacing: -0.5px;
         }
 
         .detail-tags {
-            font-size: 18px;
+            font-size: 16px;
             color: #666;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
+            font-weight: 300;
         }
 
         .detail-info {
             font-size: 16px;
-            line-height: 1.6;
-            color: #555;
-            margin-bottom: 20px;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 32px;
+            white-space: pre-line;
+        }
+
+        .detail-links {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
         .detail-links a {
             display: inline-block;
-            padding: 10px 20px;
-            background: #333;
+            padding: 12px 28px;
+            background: #000;
             color: white;
             text-decoration: none;
-            border-radius: 8px;
-            margin-right: 10px;
-            margin-top: 10px;
-            transition: all 0.2s;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .detail-links a:hover {
-            background: #555;
+            background: #333;
             transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Additional Images Gallery */
+        .additional-images {
+            width: 100%;
+            max-width: 700px;
+            margin-top: 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .additional-images img {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .additional-images img:hover {
+            transform: scale(1.05);
         }
 
         .zoom-controls {
@@ -196,6 +303,68 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 16px rgba(0,0,0,0.15);
         }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            #detailPanel {
+                top: 5%;
+                left: 5%;
+                width: 90%;
+                height: 90%;
+                border-radius: 24px;
+            }
+
+            .modal-content {
+                padding: 60px 30px 30px 30px;
+            }
+
+            .close-btn {
+                top: 16px;
+                left: 16px;
+                width: 40px;
+                height: 40px;
+                font-size: 24px;
+            }
+
+            .detail-title {
+                font-size: 28px;
+            }
+
+            .detail-tags {
+                font-size: 14px;
+            }
+
+            .detail-info {
+                font-size: 14px;
+            }
+
+            .additional-images {
+                grid-template-columns: 1fr;
+            }
+
+            .zoom-controls {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #detailPanel {
+                top: 2%;
+                left: 2%;
+                width: 96%;
+                height: 96%;
+                border-radius: 20px;
+            }
+
+            .modal-content {
+                padding: 50px 20px 20px 20px;
+            }
+
+            .detail-title {
+                font-size: 24px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -210,13 +379,24 @@
 
     <div id="hoverLabel"></div>
 
+    <!-- Modal Overlay -->
+    <div id="modalOverlay" onclick="closeDetail()"></div>
+
+    <!-- Modal Panel -->
     <div id="detailPanel">
         <button class="close-btn" onclick="closeDetail()">×</button>
-        <img class="detail-image" id="detailImage" src="" alt="">
-        <h2 class="detail-title" id="detailTitle"></h2>
-        <p class="detail-tags" id="detailTags"></p>
-        <p class="detail-info" id="detailInfo"></p>
-        <div class="detail-links" id="detailLinks"></div>
+        <div class="modal-content">
+            <div class="modal-image-container">
+                <img class="detail-image" id="detailImage" src="" alt="">
+            </div>
+            <div class="modal-info">
+                <h2 class="detail-title" id="detailTitle"></h2>
+                <p class="detail-tags" id="detailTags"></p>
+                <p class="detail-info" id="detailInfo"></p>
+                <div class="detail-links" id="detailLinks"></div>
+            </div>
+            <div class="additional-images" id="additionalImages"></div>
+        </div>
     </div>
 
     <div class="zoom-controls">
@@ -640,10 +820,16 @@
 
         
 
-        // Detail panel
+        // Detail panel - New Modal System
         function openDetail(item) {
             detailOpen = true;
-            document.getElementById('detailImage').src = item.img.src;
+
+            // Reset image animation state
+            const detailImg = document.getElementById('detailImage');
+            detailImg.classList.remove('loaded');
+
+            // Set content
+            detailImg.src = item.img.src;
             document.getElementById('detailTitle').textContent = item.name;
             document.getElementById('detailTags').textContent = item.tags.join(' • ');
             document.getElementById('detailInfo').textContent = item.description;
@@ -658,24 +844,38 @@
                 linksDiv.appendChild(a);
             });
 
+            // Show modal overlay and panel
+            document.getElementById('modalOverlay').classList.add('active');
             document.getElementById('detailPanel').classList.add('active');
 
-            gsap.to(targetCamera, {
-                x: targetCamera.x - 150,
-                duration: 0.4,
-                ease: "power2.out"
-            });
+            // Scroll to top
+            document.querySelector('.modal-content').scrollTop = 0;
+
+            // Trigger image scale animation after modal opens
+            setTimeout(() => {
+                detailImg.classList.add('loaded');
+            }, 100);
+
+            // Disable body scroll
+            document.body.style.overflow = 'hidden';
         }
 
         function closeDetail() {
+            if (!detailOpen) return;
+
             detailOpen = false;
+
+            // Hide modal and overlay
+            document.getElementById('modalOverlay').classList.remove('active');
             document.getElementById('detailPanel').classList.remove('active');
 
-            gsap.to(targetCamera, {
-                x: targetCamera.x + 150,
-                duration: 0.4,
-                ease: "power2.out"
-            });
+            // Re-enable body scroll
+            document.body.style.overflow = '';
+
+            // Reset image state for next opening
+            setTimeout(() => {
+                document.getElementById('detailImage').classList.remove('loaded');
+            }, 500);
         }
 
         // Zoom controls
@@ -689,14 +889,26 @@
         function zoomOut() {
             // Scale azalırsa uzaklaşırız
             let newScale = targetCamera.scale * 0.7;
-            
+
             // Min zoom sınırı (Çok uzaklaşıp kaybolmasın)
             // İçeriğin sığdığı oranın yarısından daha uzağa gitmesin
             const contentW = contentBounds.maxX - contentBounds.minX;
             const minScale = (window.innerWidth / contentW) * 0.5;
-            
+
             targetCamera.scale = Math.max(newScale, minScale);
         }
+
+        // Keyboard event - ESC to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && detailOpen) {
+                closeDetail();
+            }
+        });
+
+        // Prevent clicks inside modal from closing it
+        document.getElementById('detailPanel').addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
 
         // Render loop
         // Render loop
