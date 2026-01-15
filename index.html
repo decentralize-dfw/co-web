@@ -1334,6 +1334,8 @@ let lastActiveItem = null;
                 activeFilters.type1.size > 0 ||
                 activeFilters.color.size > 0;
 
+            // ONLY change filtered flag - NEVER change positions!
+            // Items stay at their original packed positions
             loadedImages.forEach(item => {
                 if (!hasActiveFilters) {
                     item.filtered = false;
@@ -1345,81 +1347,6 @@ let lastActiveItem = null;
                     item.filtered = !(typeMatch && type1Match && colorMatch);
                 }
             });
-
-            // Reposition visible items with SAME ALGORITHM as initial placement
-            repositionFilteredItems();
-        }
-
-        function repositionFilteredItems() {
-            const visibleItems = loadedImages.filter(item => !item.filtered);
-
-            if (visibleItems.length === 0) return;
-
-            // Use SAME parameters as initial load
-            const baseSize = 250;
-            const padding = 80;
-            const screenRatio = window.innerWidth / window.innerHeight;
-
-            // Reset content bounds
-            contentBounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
-
-            // Store new positions
-            const newPositions = [];
-
-            visibleItems.forEach((item, index) => {
-                let x = 0, y = 0;
-                let placed = false;
-                let attempts = 0;
-                let spreadFactor = Math.sqrt(index + 1) * 100;
-
-                if (index > 0) {
-                    while (!placed && attempts < 2000) {
-                        const currentSpread = spreadFactor + (attempts * 2);
-                        x = (Math.random() - 0.5) * currentSpread * screenRatio;
-                        y = (Math.random() - 0.5) * currentSpread;
-
-                        // Collision test with already placed items
-                        let collision = false;
-                        for (let j = 0; j < newPositions.length; j++) {
-                            const other = newPositions[j];
-                            const dx = x - other.x;
-                            const dy = y - other.y;
-                            const dist = Math.sqrt(dx * dx + dy * dy);
-
-                            if (dist < (baseSize + padding)) {
-                                collision = true;
-                                break;
-                            }
-                        }
-
-                        if (!collision) placed = true;
-                        attempts++;
-                    }
-                }
-
-                newPositions.push({ x, y });
-
-                // Update bounds
-                const halfSize = baseSize / 2;
-                contentBounds.minX = Math.min(contentBounds.minX, x - halfSize);
-                contentBounds.maxX = Math.max(contentBounds.maxX, x + halfSize);
-                contentBounds.minY = Math.min(contentBounds.minY, y - halfSize);
-                contentBounds.maxY = Math.max(contentBounds.maxY, y + halfSize);
-
-                // Animate to new position
-                gsap.to(item, {
-                    x: x,
-                    y: y,
-                    duration: 0.8,
-                    ease: 'power2.out'
-                });
-            });
-
-            // Add padding to bounds
-            contentBounds.minX -= 150;
-            contentBounds.maxX += 150;
-            contentBounds.minY -= 150;
-            contentBounds.maxY += 150;
         }
 
         // Keyboard event - ESC to close modal
