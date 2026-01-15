@@ -1334,8 +1334,7 @@ let lastActiveItem = null;
                 activeFilters.type1.size > 0 ||
                 activeFilters.color.size > 0;
 
-            // ONLY change filtered flag - NEVER change positions!
-            // Items stay at their original packed positions
+            // Mark which items are filtered
             loadedImages.forEach(item => {
                 if (!hasActiveFilters) {
                     item.filtered = false;
@@ -1347,6 +1346,86 @@ let lastActiveItem = null;
                     item.filtered = !(typeMatch && type1Match && colorMatch);
                 }
             });
+
+            // REPOSITION visible items using THE SAME ALGORITHM
+            repositionVisibleItems();
+        }
+
+        function repositionVisibleItems() {
+            const visibleItems = loadedImages.filter(item => !item.filtered);
+
+            if (visibleItems.length === 0) return;
+
+            // USE EXACT SAME PARAMETERS as initial placement
+            const baseSize = 250;
+            const padding = 80;
+            const screenRatio = window.innerWidth / window.innerHeight;
+
+            // Reset bounds
+            contentBounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+
+            // Temporary array for collision detection
+            const placedPositions = [];
+
+            visibleItems.forEach((item, index) => {
+                let x = 0, y = 0;
+                let placed = false;
+                let attempts = 0;
+
+                // SAME MATH: spreadFactor based on index
+                let spreadFactor = Math.sqrt(index + 1) * 100;
+
+                if (index > 0) {
+                    while (!placed && attempts < 2000) {
+                        // SAME MATH: currentSpread grows with attempts
+                        const currentSpread = spreadFactor + (attempts * 2);
+
+                        // SAME MATH: screen ratio aware positioning
+                        x = (Math.random() - 0.5) * currentSpread * screenRatio;
+                        y = (Math.random() - 0.5) * currentSpread;
+
+                        // SAME MATH: collision detection
+                        let collision = false;
+                        for (let other of placedPositions) {
+                            const dx = x - other.x;
+                            const dy = y - other.y;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+
+                            if (dist < (baseSize + padding)) {
+                                collision = true;
+                                break;
+                            }
+                        }
+
+                        if (!collision) placed = true;
+                        attempts++;
+                    }
+                }
+
+                // Store position for collision check
+                placedPositions.push({ x, y });
+
+                // Update bounds
+                const halfSize = baseSize / 2;
+                contentBounds.minX = Math.min(contentBounds.minX, x - halfSize);
+                contentBounds.maxX = Math.max(contentBounds.maxX, x + halfSize);
+                contentBounds.minY = Math.min(contentBounds.minY, y - halfSize);
+                contentBounds.maxY = Math.max(contentBounds.maxY, y + halfSize);
+
+                // Animate to new position
+                gsap.to(item, {
+                    x: x,
+                    y: y,
+                    duration: 0.8,
+                    ease: 'power2.out'
+                });
+            });
+
+            // Add padding to bounds
+            contentBounds.minX -= 150;
+            contentBounds.maxX += 150;
+            contentBounds.minY -= 150;
+            contentBounds.maxY += 150;
         }
 
         // Keyboard event - ESC to close modal
