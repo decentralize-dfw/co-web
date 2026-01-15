@@ -402,16 +402,26 @@
         let detailOpen = false;
         const ZOOM_LEVELS = [0.3, 0.6, 1.0, 1.5];
         let currentZoomIndex = 0;
+        let contentBounds = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
 
         // Image loader
        // Image loader - ORGANİK VE ÇAKIŞMASIZ VERSİYON
+        // Image loader - ORGANİK + DAĞINIK + ÇAKIŞMASIZ
+        // Image loader - ORGANİK + EKRAN ORANLI + GENİŞ
+        // Image loader - TAM EKRAN DİKDÖRTGEN + RANDOM + KÖŞE DOLDURMA
         function loadImages() {
             const progressFill = document.getElementById('progressFill');
             const loading = document.getElementById('loading');
 
-            // Çarpışma kontrolü için sabitler
-            const baseSize = 250; // Resimlerin kaplayacağı alan
-            const padding = 20;   // Aralarındaki boşluk
+            const baseSize = 250; 
+            const padding = 80; // Objeler arası boşluk (Hafif azalttım, çok kopuk olmasın)
+
+            // Sınırları sıfırla
+            contentBounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+
+            // EKRAN ORANI (EN ÖNEMLİ KISIM)
+            // Ekran genişse (1.7), dizilim de geniş olacak. Dikse (0.5), dizilim de dik olacak.
+            const screenRatio = window.innerWidth / window.innerHeight;
 
             allItems.forEach((item, index) => {
                 const img = new Image();
@@ -421,120 +431,127 @@
                     loadedCount++;
                     progressFill.style.width = (loadedCount / allItems.length * 100) + '%';
 
-                    // --- ORGANİK YERLEŞİM ALGORİTMASI ---
                     let x = 0, y = 0;
                     let placed = false;
-                    let angle = 0;
-                    let radius = 0;
                     let attempts = 0;
+                    
+                    // Yayılma alanı (Başlangıçta küçük, yer bulamadıkça büyür)
+                    // Area çarpanı, item sayısına göre dinamik artar
+                    let spreadFactor = Math.sqrt(index + 1) * 100; 
 
-                    // İlk resim merkeze, diğerleri etrafa
                     if (loadedImages.length > 0) {
-                        while (!placed && attempts < 5000) {
-                            // Spiral döngü
-                            angle += 0.5;
-                            radius = 10 * angle; // Spirali yavaşça genişlet
+                        while (!placed && attempts < 2000) {
+                            // ÇOK ÖNEMLİ: Rastgele nokta seçimi, ama DİKDÖRTGEN sınırları içinde
+                            // width = spreadFactor * screenRatio
+                            // height = spreadFactor
                             
-                            x = Math.cos(angle) * radius;
-                            y = Math.sin(angle) * radius;
+                            // spreadFactor yer bulamadıkça genişler
+                            const currentSpread = spreadFactor + (attempts * 2); 
+                            
+                            x = (Math.random() - 0.5) * currentSpread * screenRatio;
+                            y = (Math.random() - 0.5) * currentSpread;
 
-                            // Çarpışma testi
+                            // Çarpışma Testi
                             let collision = false;
                             for (let other of loadedImages) {
                                 const dx = x - other.x;
                                 const dy = y - other.y;
                                 const dist = Math.sqrt(dx*dx + dy*dy);
                                 
-                                // Eğer birbirlerine çok yakınlarsa (size + padding)
                                 if (dist < (baseSize + padding)) {
                                     collision = true;
                                     break;
                                 }
                             }
 
-                            if (!collision) {
-                                placed = true;
-                            }
+                            if (!collision) placed = true;
                             attempts++;
                         }
                     }
-                    // -------------------------------------
 
-                    
-                        loadedImages.push({
-                img: img,
-                x: x,
-                y: y,
-                scale: 0,        // BURASI KESİNLİKLE 0 OLMALI
-                targetScale: 1,  // Hedef boyutu 1
-                maxSize: 200,    // veya baseSize
-                rotation: (Math.random() - 0.5) * 0.1,
-                name: item.name,
-                tags: item.tags,
-                description: item.description,
-                links: item.links,
-                visible: false,  // Görünürlük başta kapalı
-                originalImg: img
+                    // Sınırları güncelle
+                    const halfSize = baseSize / 2;
+                    if (x - halfSize < contentBounds.minX) contentBounds.minX = x - halfSize;
+                    if (x + halfSize > contentBounds.maxX) contentBounds.maxX = x + halfSize;
+                    if (y - halfSize < contentBounds.minY) contentBounds.minY = y - halfSize;
+                    if (y + halfSize > contentBounds.maxY) contentBounds.maxY = y + halfSize;
+
+                    loadedImages.push({
+                        img: img,
+                        x: x,
+                        y: y,
+                        scale: 0,
+                        targetScale: 1,
+                        maxSize: 200, 
+                        rotation: (Math.random() - 0.5) * 0.2, // Hafif organik dönüş
+                        name: item.name,
+                        tags: item.tags,
+                        description: item.description,
+                        links: item.links,
+                        visible: false,
+                        originalImg: img
                     });
 
                     if (loadedCount === allItems.length) {
+                        // Sınırları biraz güvenli hale getir
+                        contentBounds.minX -= 150;
+                        contentBounds.maxX += 150;
+                        contentBounds.minY -= 150;
+                        contentBounds.maxY += 150;
+
                         setTimeout(() => {
                             loading.classList.add('hidden');
                             startAnimation();
                         }, 500);
                     }
                 };
-
-                img.onerror = () => {
-                    console.error('Failed to load:', item.thumbnailUrl);
-                    loadedCount++;
-                    if (loadedCount === allItems.length) {
-                        loading.classList.add('hidden');
-                        startAnimation();
-                    }
-                };
-
+                
+                img.onerror = () => { loadedCount++; if(loadedCount===allItems.length) startAnimation(); };
                 img.src = item.thumbnailUrl;
             });
         }
 
-        function startAnimation() {
-            // Tüm resimlerin kapladığı alanı hesapla
-            let minX = Infinity, maxX = -Infinity;
-            let minY = Infinity, maxY = -Infinity;
+       function startAnimation() {
+            // 1. İçerik Merkezini Bul
+            const centerX = (contentBounds.minX + contentBounds.maxX) / 2;
+            const centerY = (contentBounds.minY + contentBounds.maxY) / 2;
 
-            loadedImages.forEach(item => {
-                minX = Math.min(minX, item.x);
-                maxX = Math.max(maxX, item.x);
-                minY = Math.min(minY, item.y);
-                maxY = Math.max(maxY, item.y);
-            });
+            // 2. İçerik Boyutlarını Bul
+            const contentW = contentBounds.maxX - contentBounds.minX;
+            const contentH = contentBounds.maxY - contentBounds.minY;
 
-            // Tam orta noktayı bul
-            const centerX = (minX + maxX) / 2;
-            const centerY = (minY + maxY) / 2;
+            // 3. Ekran Boyutları
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
 
-            // Kamerayı direkt oraya ışınla
+            // 4. Mükemmel Fit Oranını Hesapla
+            // Ekranın %90'ını dolduracak şekilde ayarla (0.9 çarpanı boşluk payıdır)
+            const scaleX = screenW / contentW;
+            const scaleY = screenH / contentH;
+            
+            // Taşma olmaması için küçük olan oranı seçiyoruz
+            let fitScale = Math.min(scaleX, scaleY) * 0.9;
+
+            // Aşırı uç değerleri engelle (Güvenlik)
+            fitScale = Math.max(0.05, Math.min(fitScale, 2.0));
+
+            // 5. Kamerayı Kur
             camera.x = centerX;
             camera.y = centerY;
-            
-            // Hedef kamerayı da oraya ayarla
+            camera.scale = fitScale; // BAŞLANGIÇTA TAM BURADA OLACAK
+
             targetCamera.x = centerX;
             targetCamera.y = centerY;
+            // Başlangıçta hedef de aynı olsun ki animasyon yapıp kaçmasın
+            targetCamera.scale = fitScale; 
 
-            // Zoom animasyonu (Uzak başla, yakına gel)
-            camera.scale = 0.4; 
+            // 6. Opsiyonel: Hafif bir "Ben buradayım" efekti için çok minik zoom in yapabilir
+            // Ama "Zoom out extend başlıyor" şikayetini çözmek için bunu sabit bırakıyorum.
+            // İstersen aşağıdaki satırı açabilirsin:
+            // targetCamera.scale = fitScale * 1.1; 
             
-            gsap.to(targetCamera, {
-                scale: 0.8, // İdeal görüntüleme ölçeği
-                duration: 2.5,
-                ease: "power2.inOut"
-            });
-
-            currentZoomIndex = 1;
             animate();
         }
-
         // Mouse events - PAN INVERTED FIX
         canvas.addEventListener('mousedown', (e) => {
             isDragging = true;
@@ -662,43 +679,76 @@
         }
 
         // Zoom controls
-        function zoomIn() {
-            if (currentZoomIndex < ZOOM_LEVELS.length - 1) {
-                currentZoomIndex++;
-                targetCamera.scale = ZOOM_LEVELS[currentZoomIndex];
-            }
+       function zoomIn() {
+            // Scale artarsa yaklaşırız
+            let newScale = targetCamera.scale * 1.3; 
+            // Max zoom sınırı (Çok yaklaşmasın)
+            targetCamera.scale = Math.min(newScale, 2.5); 
         }
 
         function zoomOut() {
-            if (currentZoomIndex > 0) {
-                currentZoomIndex--;
-                targetCamera.scale = ZOOM_LEVELS[currentZoomIndex];
-            }
+            // Scale azalırsa uzaklaşırız
+            let newScale = targetCamera.scale * 0.7;
+            
+            // Min zoom sınırı (Çok uzaklaşıp kaybolmasın)
+            // İçeriğin sığdığı oranın yarısından daha uzağa gitmesin
+            const contentW = contentBounds.maxX - contentBounds.minX;
+            const minScale = (window.innerWidth / contentW) * 0.5;
+            
+            targetCamera.scale = Math.max(newScale, minScale);
         }
 
         // Render loop
         // Render loop
         // Render loop - ULTRA SMOOTH & POP-UP VERSİYON
+        // Render loop - STRICT BOUNDS (BOŞLUK YASAĞI)
         function animate() {
             requestAnimationFrame(animate);
 
-            // --- 1. SMOOTHNESS AYARI (ÖN SEVİŞME GİBİ) ---
-            // Buradaki sayıları küçülttükçe (örn: 0.1 -> 0.03) hareket "ağırlaşır" ve yumuşar.
-            // Kamera hedefi çok daha nazik takip eder.
-            camera.x += (targetCamera.x - camera.x) * 0.03; 
-            camera.y += (targetCamera.y - camera.y) * 0.03;
-            camera.scale += (targetCamera.scale - camera.scale) * 0.03;
+            // --- 1. HAREKET (Smooth) ---
+            // Hedef kamerayı sınırla (Kullanıcı oraya gitmek istese bile gidemesin)
+            
+            // Ekranın o anki zoom seviyesinde dünyada kapladığı alan
+            const viewW = window.innerWidth / targetCamera.scale;
+            const viewH = window.innerHeight / targetCamera.scale;
 
-            // Clamp logic (Sınırlandırma - aynen koruyoruz)
-            if (camera.scale <= 0.35) {
-               // ... buradaki mantık organik yapı için esnetilebilir, şimdilik boş geçebiliriz
-               // veya önceki koddaki gibi bırakabilirsin, animasyonu etkilemez.
+            // İçerik sınırları
+            const contentW = contentBounds.maxX - contentBounds.minX;
+            const contentH = contentBounds.maxY - contentBounds.minY;
+
+            let minCamX, maxCamX, minCamY, maxCamY;
+
+            // X EKSENİ SINIRLAMASI
+            if (viewW >= contentW) {
+                // Eğer ekran içerikten genişse (çok zoom out), sadece merkezde durabilir
+                minCamX = maxCamX = (contentBounds.minX + contentBounds.maxX) / 2;
+            } else {
+                // Eğer zoom in yapıldıysa, kenarlara kadar gidebilir ama dışarı çıkamaz
+                // Sol kenar: İçeriğin solu + ekranın yarısı
+                minCamX = contentBounds.minX + viewW / 2;
+                maxCamX = contentBounds.maxX - viewW / 2;
             }
+
+            // Y EKSENİ SINIRLAMASI
+            if (viewH >= contentH) {
+                minCamY = maxCamY = (contentBounds.minY + contentBounds.maxY) / 2;
+            } else {
+                minCamY = contentBounds.minY + viewH / 2;
+                maxCamY = contentBounds.maxY - viewH / 2;
+            }
+
+            // Target kamerayı bu sınırlara hapset
+            targetCamera.x = Math.max(minCamX, Math.min(maxCamX, targetCamera.x));
+            targetCamera.y = Math.max(minCamY, Math.min(maxCamY, targetCamera.y));
+
+            // Fiziksel kamera hareketi (Smoothness)
+            camera.x += (targetCamera.x - camera.x) * 0.04;
+            camera.y += (targetCamera.y - camera.y) * 0.04;
+            camera.scale += (targetCamera.scale - camera.scale) * 0.04;
 
             ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-            // --- 2. POP-UP VE GÖRÜNÜRLÜK MANTIĞI ---
-            // Margin'i biraz daraltıyorum ki tam ekranın ucuna gelince "pıt" diye çıksın
+            // --- 2. POP-UP VE GÖRÜNÜRLÜK ---
             const margin = 100; 
             const viewBounds = {
                 left: camera.x - window.innerWidth / (2 * camera.scale) - margin,
@@ -711,37 +761,21 @@
                 const inView = item.x > viewBounds.left && item.x < viewBounds.right &&
                                item.y > viewBounds.top && item.y < viewBounds.bottom;
 
-                // Ekrana GİRİŞ (Pop-Up Efekti)
                 if (inView && !item.visible) {
                     item.visible = true;
-                    
-                    // GSAP ile 0'dan hedefe 'Elastic' büyüme
                     gsap.fromTo(item, 
-                        { scale: 0 }, // Başlangıç
-                        { 
-                            scale: item.targetScale, // Bitiş
-                            duration: 0.9,           // Süre (biraz uzun, tadını çıkarsın)
-                            ease: "back.out(1.7)",   // Efekt: Hafif dışarı taşıp geri gelme (Pop hissi)
-                            overwrite: true 
-                        }
+                        { scale: 0 }, 
+                        { scale: item.targetScale, duration: 0.8, ease: "back.out(1.5)", overwrite: true }
                     );
                 }
                 
-                // Ekrandan ÇIKIŞ (Resetleme)
-                // Kadrajdan çıkınca scale'i sıfırlıyoruz ki geri dönünce tekrar "pop" yapsın.
                 if (!inView && item.visible) {
                      item.visible = false;
                      item.scale = 0; 
                 }
 
-                // Hover (Üzerine gelince büyüme) için yumuşak geçiş
-                // Eğer item görünürse ve animasyon bitmişse, hover durumunu kontrol et
                 if (item.visible) {
-                    // Manuel lerp yerine hover için hedef scale kontrolü
-                    // Not: Hover GSAP ile loadImages içinde ayarlanıyor, buradaki lerp çakışmasın diye
-                    // sadece çok küçük fark varsa yumuşatıyoruz.
                     if (Math.abs(item.scale - item.targetScale) > 0.01) {
-                         // Eğer GSAP çalışmıyorsa bu devreye girer
                          if(!gsap.isTweening(item)) {
                             item.scale += (item.targetScale - item.scale) * 0.1;
                          }
@@ -749,18 +783,16 @@
                 }
             });
 
-            // --- 3. ÇİZİM (DRAW) ---
+            // --- 3. ÇİZİM ---
             ctx.save();
             ctx.translate(window.innerWidth / 2, window.innerHeight / 2);
 
             loadedImages.forEach(item => {
-                // Görünmezse çizme
                 if (!item.visible || item.scale < 0.01) return;
 
                 const x = (item.x - camera.x) * camera.scale;
                 const y = (item.y - camera.y) * camera.scale;
 
-                // Aspect Ratio hesabı
                 const imgAspect = item.img.width / item.img.height;
                 let displayW, displayH;
                 if (imgAspect > 1) {
@@ -778,7 +810,6 @@
                 ctx.translate(x, y);
                 ctx.rotate(item.rotation);
 
-                // Gölge (Scale ile büyüyüp küçülen)
                 ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
                 ctx.shadowBlur = 30 * item.scale;
                 ctx.shadowOffsetY = 10 * item.scale;
