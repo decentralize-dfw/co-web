@@ -202,13 +202,6 @@
     opacity: 0 !important;
 }
 
-@media (max-width: 768px) {
-    .modal-image-container {
-        width: 100%;
-        height: auto;
-        max-height: 50vh;
-    }
-}
 
 
        .detail-image {
@@ -472,15 +465,15 @@
                 height: 90%;
                 border-radius: 24px;
                 flex-direction: column-reverse;
-                padding: 30px 20px 50px 20px;
+                padding: 20px 20px 30px 20px;
                 gap: 20px;
             }
 
             .modal-image-container {
                 width: 100%;
-                max-width: none;
+                max-width: 100%;
+                aspect-ratio: 1;
                 flex-shrink: 0;
-                order: -1;
             }
 
             .modal-info {
@@ -489,7 +482,7 @@
                 padding-right: 0;
                 align-items: flex-start;
                 text-align: left;
-                order: 1;
+                overflow-y: auto;
             }
 
             .close-btn {
@@ -545,11 +538,14 @@
                 width: 96%;
                 height: 96%;
                 border-radius: 20px;
-                padding: 20px 16px 45px 16px;
+                padding: 16px 16px 24px 16px;
+                gap: 16px;
             }
 
             .modal-image-container {
                 width: 100%;
+                max-width: 100%;
+                aspect-ratio: 1;
             }
 
             .detail-title {
@@ -1327,14 +1323,14 @@ let lastActiveItem = null;
                 activeFilters.color.size > 0;
 
             if (!hasActiveFilters) {
-                // No filters active, show all
+                // No filters active, show all - DO NOT CHANGE POSITIONS
                 loadedImages.forEach(item => {
                     item.filtered = false;
                 });
-                repositionItems();
                 return;
             }
 
+            // Only change filtered flag, NOT positions
             loadedImages.forEach(item => {
                 const tags = item.tags || [];
 
@@ -1344,81 +1340,6 @@ let lastActiveItem = null;
 
                 item.filtered = !(typeMatch && type1Match && colorMatch);
             });
-
-            repositionItems();
-        }
-
-        function repositionItems() {
-            // Get visible (non-filtered) items
-            const visibleItems = loadedImages.filter(item => !item.filtered);
-
-            if (visibleItems.length === 0) return;
-
-            // Reset content bounds
-            contentBounds = {
-                minX: Infinity,
-                maxX: -Infinity,
-                minY: Infinity,
-                maxY: -Infinity
-            };
-
-            // Reposition visible items organically
-            const gridSize = Math.ceil(Math.sqrt(visibleItems.length));
-            const spacing = 300;
-            const centerOffset = -(gridSize * spacing) / 2;
-
-            visibleItems.forEach((item, index) => {
-                const row = Math.floor(index / gridSize);
-                const col = index % gridSize;
-
-                // Add some organic randomness
-                const randomX = (Math.random() - 0.5) * 100;
-                const randomY = (Math.random() - 0.5) * 100;
-
-                const targetX = centerOffset + col * spacing + randomX;
-                const targetY = centerOffset + row * spacing + randomY;
-
-                // Smooth transition to new position
-                gsap.to(item, {
-                    x: targetX,
-                    y: targetY,
-                    duration: 0.8,
-                    ease: 'power2.out'
-                });
-
-                // Update bounds
-                const halfSize = item.maxSize / 2;
-                contentBounds.minX = Math.min(contentBounds.minX, targetX - halfSize);
-                contentBounds.maxX = Math.max(contentBounds.maxX, targetX + halfSize);
-                contentBounds.minY = Math.min(contentBounds.minY, targetY - halfSize);
-                contentBounds.maxY = Math.max(contentBounds.maxY, targetY + halfSize);
-            });
-
-            // Add padding to bounds
-            contentBounds.minX -= 150;
-            contentBounds.maxX += 150;
-            contentBounds.minY -= 150;
-            contentBounds.maxY += 150;
-
-            // Smoothly zoom to fit new content
-            setTimeout(() => {
-                const centerX = (contentBounds.minX + contentBounds.maxX) / 2;
-                const centerY = (contentBounds.minY + contentBounds.maxY) / 2;
-                const contentW = contentBounds.maxX - contentBounds.minX;
-                const contentH = contentBounds.maxY - contentBounds.minY;
-                const scaleX = window.innerWidth / contentW;
-                const scaleY = window.innerHeight / contentH;
-                const fitScale = Math.min(scaleX, scaleY) * 0.9;
-                const newZoom = fitScale * Math.pow(1.3, 2);
-
-                gsap.to(targetCamera, {
-                    x: centerX,
-                    y: centerY,
-                    scale: newZoom,
-                    duration: 0.8,
-                    ease: 'power2.inOut'
-                });
-            }, 100);
         }
 
         // Keyboard event - ESC to close modal
