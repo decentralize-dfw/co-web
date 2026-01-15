@@ -464,25 +464,31 @@
                 width: 90%;
                 height: 90%;
                 border-radius: 24px;
-                flex-direction: column-reverse;
-                padding: 20px 20px 30px 20px;
-                gap: 20px;
+                flex-direction: column;
+                padding: 20px;
+                gap: 16px;
+                align-items: stretch;
             }
 
             .modal-image-container {
                 width: 100%;
                 max-width: 100%;
+                height: auto;
                 aspect-ratio: 1;
                 flex-shrink: 0;
+                flex-grow: 0;
+                order: 1;
             }
 
             .modal-info {
                 width: 100%;
-                flex: 1;
+                flex: 1 1 auto;
+                min-height: 0;
                 padding-right: 0;
                 align-items: flex-start;
                 text-align: left;
                 overflow-y: auto;
+                order: 2;
             }
 
             .close-btn {
@@ -538,14 +544,20 @@
                 width: 96%;
                 height: 96%;
                 border-radius: 20px;
-                padding: 16px 16px 24px 16px;
-                gap: 16px;
+                padding: 16px;
+                gap: 12px;
             }
 
             .modal-image-container {
                 width: 100%;
                 max-width: 100%;
+                height: auto;
                 aspect-ratio: 1;
+                order: 1;
+            }
+
+            .modal-info {
+                order: 2;
             }
 
             .detail-title {
@@ -1322,24 +1334,92 @@ let lastActiveItem = null;
                 activeFilters.type1.size > 0 ||
                 activeFilters.color.size > 0;
 
-            if (!hasActiveFilters) {
-                // No filters active, show all - DO NOT CHANGE POSITIONS
-                loadedImages.forEach(item => {
-                    item.filtered = false;
-                });
-                return;
-            }
-
-            // Only change filtered flag, NOT positions
             loadedImages.forEach(item => {
-                const tags = item.tags || [];
-
-                const typeMatch = activeFilters.type.size === 0 || activeFilters.type.has(tags[0]);
-                const type1Match = activeFilters.type1.size === 0 || activeFilters.type1.has(tags[1]);
-                const colorMatch = activeFilters.color.size === 0 || activeFilters.color.has(tags[2]);
-
-                item.filtered = !(typeMatch && type1Match && colorMatch);
+                if (!hasActiveFilters) {
+                    item.filtered = false;
+                } else {
+                    const tags = item.tags || [];
+                    const typeMatch = activeFilters.type.size === 0 || activeFilters.type.has(tags[0]);
+                    const type1Match = activeFilters.type1.size === 0 || activeFilters.type1.has(tags[1]);
+                    const colorMatch = activeFilters.color.size === 0 || activeFilters.color.has(tags[2]);
+                    item.filtered = !(typeMatch && type1Match && colorMatch);
+                }
             });
+
+            // Reposition visible items with SAME ALGORITHM as initial placement
+            repositionFilteredItems();
+        }
+
+        function repositionFilteredItems() {
+            const visibleItems = loadedImages.filter(item => !item.filtered);
+
+            if (visibleItems.length === 0) return;
+
+            // Use SAME parameters as initial load
+            const baseSize = 250;
+            const padding = 80;
+            const screenRatio = window.innerWidth / window.innerHeight;
+
+            // Reset content bounds
+            contentBounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+
+            // Store new positions
+            const newPositions = [];
+
+            visibleItems.forEach((item, index) => {
+                let x = 0, y = 0;
+                let placed = false;
+                let attempts = 0;
+                let spreadFactor = Math.sqrt(index + 1) * 100;
+
+                if (index > 0) {
+                    while (!placed && attempts < 2000) {
+                        const currentSpread = spreadFactor + (attempts * 2);
+                        x = (Math.random() - 0.5) * currentSpread * screenRatio;
+                        y = (Math.random() - 0.5) * currentSpread;
+
+                        // Collision test with already placed items
+                        let collision = false;
+                        for (let j = 0; j < newPositions.length; j++) {
+                            const other = newPositions[j];
+                            const dx = x - other.x;
+                            const dy = y - other.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+
+                            if (dist < (baseSize + padding)) {
+                                collision = true;
+                                break;
+                            }
+                        }
+
+                        if (!collision) placed = true;
+                        attempts++;
+                    }
+                }
+
+                newPositions.push({ x, y });
+
+                // Update bounds
+                const halfSize = baseSize / 2;
+                contentBounds.minX = Math.min(contentBounds.minX, x - halfSize);
+                contentBounds.maxX = Math.max(contentBounds.maxX, x + halfSize);
+                contentBounds.minY = Math.min(contentBounds.minY, y - halfSize);
+                contentBounds.maxY = Math.max(contentBounds.maxY, y + halfSize);
+
+                // Animate to new position
+                gsap.to(item, {
+                    x: x,
+                    y: y,
+                    duration: 0.8,
+                    ease: 'power2.out'
+                });
+            });
+
+            // Add padding to bounds
+            contentBounds.minX -= 150;
+            contentBounds.maxX += 150;
+            contentBounds.minY -= 150;
+            contentBounds.maxY += 150;
         }
 
         // Keyboard event - ESC to close modal
