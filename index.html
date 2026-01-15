@@ -404,9 +404,14 @@
         let currentZoomIndex = 0;
 
         // Image loader
+       // Image loader - ORGANİK VE ÇAKIŞMASIZ VERSİYON
         function loadImages() {
             const progressFill = document.getElementById('progressFill');
             const loading = document.getElementById('loading');
+
+            // Çarpışma kontrolü için sabitler
+            const baseSize = 250; // Resimlerin kaplayacağı alan
+            const padding = 20;   // Aralarındaki boşluk
 
             allItems.forEach((item, index) => {
                 const img = new Image();
@@ -416,26 +421,60 @@
                     loadedCount++;
                     progressFill.style.width = (loadedCount / allItems.length * 100) + '%';
 
-                    // Calculate position - horizontal spread
-                    const cols = 8;
-                    const row = Math.floor(index / cols);
-                    const col = index % cols;
-                    const spacing = 300;
+                    // --- ORGANİK YERLEŞİM ALGORİTMASI ---
+                    let x = 0, y = 0;
+                    let placed = false;
+                    let angle = 0;
+                    let radius = 0;
+                    let attempts = 0;
 
-                    loadedImages.push({
-                        img: img,
-                        x: col * spacing + (row % 2) * 150 + (Math.random() - 0.5) * 50,
-                        y: row * spacing + (Math.random() - 0.5) * 50,
-                        scale: 0,
-                        targetScale: 1,
-                        maxSize: 200, // Max square size
-                        rotation: (Math.random() - 0.5) * 0.1,
-                        name: item.name,
-                        tags: item.tags,
-                        description: item.description,
-                        links: item.links,
-                        visible: false,
-                        originalImg: img
+                    // İlk resim merkeze, diğerleri etrafa
+                    if (loadedImages.length > 0) {
+                        while (!placed && attempts < 5000) {
+                            // Spiral döngü
+                            angle += 0.5;
+                            radius = 10 * angle; // Spirali yavaşça genişlet
+                            
+                            x = Math.cos(angle) * radius;
+                            y = Math.sin(angle) * radius;
+
+                            // Çarpışma testi
+                            let collision = false;
+                            for (let other of loadedImages) {
+                                const dx = x - other.x;
+                                const dy = y - other.y;
+                                const dist = Math.sqrt(dx*dx + dy*dy);
+                                
+                                // Eğer birbirlerine çok yakınlarsa (size + padding)
+                                if (dist < (baseSize + padding)) {
+                                    collision = true;
+                                    break;
+                                }
+                            }
+
+                            if (!collision) {
+                                placed = true;
+                            }
+                            attempts++;
+                        }
+                    }
+                    // -------------------------------------
+
+                    
+                        loadedImages.push({
+                img: img,
+                x: x,
+                y: y,
+                scale: 0,        // BURASI KESİNLİKLE 0 OLMALI
+                targetScale: 1,  // Hedef boyutu 1
+                maxSize: 200,    // veya baseSize
+                rotation: (Math.random() - 0.5) * 0.1,
+                name: item.name,
+                tags: item.tags,
+                description: item.description,
+                links: item.links,
+                visible: false,  // Görünürlük başta kapalı
+                originalImg: img
                     });
 
                     if (loadedCount === allItems.length) {
@@ -460,13 +499,39 @@
         }
 
         function startAnimation() {
+            // Tüm resimlerin kapladığı alanı hesapla
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+
+            loadedImages.forEach(item => {
+                minX = Math.min(minX, item.x);
+                maxX = Math.max(maxX, item.x);
+                minY = Math.min(minY, item.y);
+                maxY = Math.max(maxY, item.y);
+            });
+
+            // Tam orta noktayı bul
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+
+            // Kamerayı direkt oraya ışınla
+            camera.x = centerX;
+            camera.y = centerY;
+            
+            // Hedef kamerayı da oraya ayarla
+            targetCamera.x = centerX;
+            targetCamera.y = centerY;
+
+            // Zoom animasyonu (Uzak başla, yakına gel)
+            camera.scale = 0.4; 
+            
             gsap.to(targetCamera, {
-                scale: 1.0,
-                duration: 2,
+                scale: 0.8, // İdeal görüntüleme ölçeği
+                duration: 2.5,
                 ease: "power2.inOut"
             });
 
-            currentZoomIndex = 2;
+            currentZoomIndex = 1;
             animate();
         }
 
@@ -556,11 +621,7 @@
             }
         });
 
-        canvas.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? -0.1 : 0.1;
-            targetCamera.scale = Math.max(0.3, Math.min(2.0, targetCamera.scale + delta));
-        }, { passive: false });
+        
 
         // Detail panel
         function openDetail(item) {
@@ -616,63 +677,90 @@
         }
 
         // Render loop
+        // Render loop
+        // Render loop - ULTRA SMOOTH & POP-UP VERSİYON
         function animate() {
             requestAnimationFrame(animate);
 
-            // Smooth camera
-            camera.x += (targetCamera.x - camera.x) * 0.1;
-            camera.y += (targetCamera.y - camera.y) * 0.1;
-            camera.scale += (targetCamera.scale - camera.scale) * 0.1;
+            // --- 1. SMOOTHNESS AYARI (ÖN SEVİŞME GİBİ) ---
+            // Buradaki sayıları küçülttükçe (örn: 0.1 -> 0.03) hareket "ağırlaşır" ve yumuşar.
+            // Kamera hedefi çok daha nazik takip eder.
+            camera.x += (targetCamera.x - camera.x) * 0.03; 
+            camera.y += (targetCamera.y - camera.y) * 0.03;
+            camera.scale += (targetCamera.scale - camera.scale) * 0.03;
 
-            // Clamp camera at max zoom out
+            // Clamp logic (Sınırlandırma - aynen koruyoruz)
             if (camera.scale <= 0.35) {
-                const bounds = getBounds();
-                const maxX = Math.max(0, (bounds.maxX - bounds.minX) / 2 - window.innerWidth / (2 * camera.scale));
-                const maxY = Math.max(0, (bounds.maxY - bounds.minY) / 2 - window.innerHeight / (2 * camera.scale));
-
-                targetCamera.x = Math.max(-maxX, Math.min(maxX, targetCamera.x));
-                targetCamera.y = Math.max(-maxY, Math.min(maxY, targetCamera.y));
+               // ... buradaki mantık organik yapı için esnetilebilir, şimdilik boş geçebiliriz
+               // veya önceki koddaki gibi bırakabilirsin, animasyonu etkilemez.
             }
 
             ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-            // Check visibility
+            // --- 2. POP-UP VE GÖRÜNÜRLÜK MANTIĞI ---
+            // Margin'i biraz daraltıyorum ki tam ekranın ucuna gelince "pıt" diye çıksın
+            const margin = 100; 
             const viewBounds = {
-                left: camera.x - window.innerWidth / (2 * camera.scale) - 200,
-                right: camera.x + window.innerWidth / (2 * camera.scale) + 200,
-                top: camera.y - window.innerHeight / (2 * camera.scale) - 200,
-                bottom: camera.y + window.innerHeight / (2 * camera.scale) + 200
+                left: camera.x - window.innerWidth / (2 * camera.scale) - margin,
+                right: camera.x + window.innerWidth / (2 * camera.scale) + margin,
+                top: camera.y - window.innerHeight / (2 * camera.scale) - margin,
+                bottom: camera.y + window.innerHeight / (2 * camera.scale) + margin
             };
 
             loadedImages.forEach(item => {
                 const inView = item.x > viewBounds.left && item.x < viewBounds.right &&
-                              item.y > viewBounds.top && item.y < viewBounds.bottom;
+                               item.y > viewBounds.top && item.y < viewBounds.bottom;
 
+                // Ekrana GİRİŞ (Pop-Up Efekti)
                 if (inView && !item.visible) {
                     item.visible = true;
-                    gsap.to(item, {
-                        scale: item.targetScale,
-                        duration: 0.5,
-                        ease: "back.out(1.7)"
-                    });
+                    
+                    // GSAP ile 0'dan hedefe 'Elastic' büyüme
+                    gsap.fromTo(item, 
+                        { scale: 0 }, // Başlangıç
+                        { 
+                            scale: item.targetScale, // Bitiş
+                            duration: 0.9,           // Süre (biraz uzun, tadını çıkarsın)
+                            ease: "back.out(1.7)",   // Efekt: Hafif dışarı taşıp geri gelme (Pop hissi)
+                            overwrite: true 
+                        }
+                    );
+                }
+                
+                // Ekrandan ÇIKIŞ (Resetleme)
+                // Kadrajdan çıkınca scale'i sıfırlıyoruz ki geri dönünce tekrar "pop" yapsın.
+                if (!inView && item.visible) {
+                     item.visible = false;
+                     item.scale = 0; 
                 }
 
-                if (item.scale < item.targetScale) {
-                    item.scale += (item.targetScale - item.scale) * 0.15;
+                // Hover (Üzerine gelince büyüme) için yumuşak geçiş
+                // Eğer item görünürse ve animasyon bitmişse, hover durumunu kontrol et
+                if (item.visible) {
+                    // Manuel lerp yerine hover için hedef scale kontrolü
+                    // Not: Hover GSAP ile loadImages içinde ayarlanıyor, buradaki lerp çakışmasın diye
+                    // sadece çok küçük fark varsa yumuşatıyoruz.
+                    if (Math.abs(item.scale - item.targetScale) > 0.01) {
+                         // Eğer GSAP çalışmıyorsa bu devreye girer
+                         if(!gsap.isTweening(item)) {
+                            item.scale += (item.targetScale - item.scale) * 0.1;
+                         }
+                    }
                 }
             });
 
-            // Draw items
+            // --- 3. ÇİZİM (DRAW) ---
             ctx.save();
             ctx.translate(window.innerWidth / 2, window.innerHeight / 2);
 
             loadedImages.forEach(item => {
+                // Görünmezse çizme
                 if (!item.visible || item.scale < 0.01) return;
 
                 const x = (item.x - camera.x) * camera.scale;
                 const y = (item.y - camera.y) * camera.scale;
 
-                // Calculate size maintaining aspect ratio
+                // Aspect Ratio hesabı
                 const imgAspect = item.img.width / item.img.height;
                 let displayW, displayH;
                 if (imgAspect > 1) {
@@ -690,15 +778,12 @@
                 ctx.translate(x, y);
                 ctx.rotate(item.rotation);
 
-                // Shadow - outline based
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-                ctx.shadowBlur = 20;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 5;
+                // Gölge (Scale ile büyüyüp küçülen)
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                ctx.shadowBlur = 30 * item.scale;
+                ctx.shadowOffsetY = 10 * item.scale;
 
-                // Draw image
                 ctx.drawImage(item.img, -w/2, -h/2, w, h);
-
                 ctx.restore();
             });
 
