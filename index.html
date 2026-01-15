@@ -179,6 +179,38 @@
             position: relative;
         }
 
+/* Bu Hero resim her şeyin üstünde uçar */
+#heroImage {
+    will-change: transform, width, height, top, left;
+    backface-visibility: hidden;
+}
+
+/* Modal içindeki kutu */
+.modal-image-container {
+    flex: 0 0 auto;
+    width: 50%;
+    aspect-ratio: 1; /* Kare oran */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* Ghost resim sadece yer kaplar, görünmez */
+#ghostImage {
+    transition: none;
+    opacity: 0 !important;
+}
+
+@media (max-width: 768px) {
+    .modal-image-container {
+        width: 100%;
+        height: auto;
+        max-height: 50vh;
+    }
+}
+
+
        .detail-image {
             width: 0;   /* JS ile ayarlanacak */
             height: 0;  /* JS ile ayarlanacak */
@@ -407,17 +439,13 @@
 
     <div id="hoverLabel"></div>
 
-    <!-- Animated Image Clone for FLIP animation -->
-    <img id="animatedImageClone" src="" alt="">
+    <img id="heroImage" src="" alt="" style="display:none; position:fixed; z-index:9999; pointer-events:none; transform-origin: top left; object-fit: contain;">
 
-    <!-- Modal Overlay (transparent, just for click) -->
     <div id="modalOverlay" onclick="closeDetail()"></div>
 
-    <!-- Modal Panel -->
     <div id="detailPanel">
         <button class="close-btn" onclick="closeDetail()">×</button>
 
-        <!-- Text Content - Left side -->
         <div class="modal-info">
             <h2 class="detail-title" id="detailTitle"></h2>
             <p class="detail-tags" id="detailTags"></p>
@@ -426,9 +454,8 @@
             <div class="additional-images" id="additionalImages"></div>
         </div>
 
-        <!-- Square Image Area - Right side -->
         <div class="modal-image-container">
-            <img class="detail-image" id="detailImage" src="" alt="">
+            <img id="ghostImage" src="" style="width: 100%; height: 100%; object-fit: contain; opacity: 0; pointer-events: none;">
         </div>
     </div>
 
@@ -616,7 +643,7 @@
         const ZOOM_LEVELS = [0.3, 0.6, 1.0, 1.5];
         let currentZoomIndex = 0;
         let contentBounds = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-
+let lastActiveItem = null;
         // Image loader
        // Image loader - ORGANİK VE ÇAKIŞMASIZ VERSİYON
         // Image loader - ORGANİK + DAĞINIK + ÇAKIŞMASIZ
@@ -846,20 +873,20 @@
         
 
        function openDetail(item) {
+            if (detailOpen) return;
             detailOpen = true;
+            lastActiveItem = item;
 
             const modal = document.getElementById('detailPanel');
             const overlay = document.getElementById('modalOverlay');
-            const detailImg = document.getElementById('detailImage');
+            const heroImg = document.getElementById('heroImage');
+            const ghostImg = document.getElementById('ghostImage');
             
+            // 1. Modalı Aç
             overlay.classList.add('active');
             modal.classList.add('active');
             
-            // Layout hesaplaması için zorla
-            modal.offsetHeight; 
-            document.body.style.overflow = 'hidden';
-
-            // İçerikleri doldur
+            // 2. İçerikleri Doldur
             document.getElementById('detailTitle').textContent = item.name;
             document.getElementById('detailTags').textContent = item.tags.join(' • ');
             document.getElementById('detailInfo').textContent = item.description;
@@ -874,41 +901,19 @@
                 linksDiv.appendChild(a);
             });
 
-            // 1. GERÇEK RESİM AYARLARI
-            detailImg.src = item.img.src;
-            detailImg.classList.remove('loaded');
-            detailImg.style.transition = 'none'; 
-            detailImg.style.opacity = '0'; 
-
-            // 2. BOYUT HESAPLAMA (Piksel Piksel Aynı Olmalı)
-            const container = document.querySelector('.modal-image-container');
-            const cRect = container.getBoundingClientRect();
+            // 3. KRİTİK: Ghost (Hayalet) resme src ver ki kutu doğru boyuta gelsin!
+            ghostImg.src = item.img.src;
             
-            const imgRatio = item.img.naturalWidth / item.img.naturalHeight;
-            const containerRatio = cRect.width / cRect.height;
-            
-            let targetWidth, targetHeight;
+            // Tarayıcıyı hesaplama yapmaya zorla (Reflow)
+            modal.offsetHeight; 
+            document.body.style.overflow = 'hidden';
 
-            if (containerRatio > imgRatio) {
-                targetHeight = cRect.height;
-                targetWidth = targetHeight * imgRatio;
-            } else {
-                targetWidth = cRect.width;
-                targetHeight = targetWidth / imgRatio;
-            }
-
-            // Sub-pixel rendering sorununu çözmek için yuvarla
-            targetWidth = Math.ceil(targetWidth);
-            targetHeight = Math.ceil(targetHeight);
-
-            // 3. GERÇEK RESME BOYUTLARI ZORLA
-            detailImg.style.width = targetWidth + 'px';
-            detailImg.style.height = targetHeight + 'px';
-
-            // 4. KLONU HAZIRLA
+            // 4. BAŞLANGIÇ: Canvas'taki yerini hesapla
             const screenX = (item.x - camera.x) * camera.scale + window.innerWidth / 2;
             const screenY = (item.y - camera.y) * camera.scale + window.innerHeight / 2;
             
+            // Canvas'taki boyut
+            const imgRatio = item.img.naturalWidth / item.img.naturalHeight;
             let startW, startH;
             if (imgRatio > 1) {
                 startW = item.maxSize * item.scale * camera.scale;
@@ -918,106 +923,108 @@
                 startW = startH * imgRatio;
             }
 
-            const clone = document.getElementById('animatedImageClone');
-            clone.src = item.img.src;
-            clone.style.display = 'block';
-            clone.style.opacity = '1';
-            clone.style.borderRadius = '0px'; 
-            clone.style.transform = `rotate(${item.rotation}rad)`;
+            // 5. HEDEF: Ghost resmin (kutunun) yerini hesapla
+            // Ghost resim opacity:0 olsa bile orada yer kaplar. Bize doğru koordinatı verir.
+            const ghostRect = ghostImg.getBoundingClientRect();
             
-            clone.style.left = (screenX - startW / 2) + 'px';
-            clone.style.top = (screenY - startH / 2) + 'px';
-            clone.style.width = startW + 'px';
-            clone.style.height = startH + 'px';
-            clone.style.zIndex = '202'; 
+            // Eğer resim henüz yüklenmediyse ve ghostRect 0 gelirse container'a bak (Fallback)
+            let targetX, targetY, targetW, targetH;
+            
+            if (ghostRect.width > 0 && ghostRect.height > 0) {
+                // Ghost resim yüklendi ve yer kaplıyor, en doğrusu budur.
+                targetX = ghostRect.left;
+                targetY = ghostRect.top;
+                targetW = ghostRect.width;
+                targetH = ghostRect.height;
+            } else {
+                // Yedek plan: Container'ı ölçüp contain hesabı yap
+                const container = document.querySelector('.modal-image-container');
+                const cRect = container.getBoundingClientRect();
+                const cRatio = cRect.width / cRect.height;
+                
+                if (cRatio > imgRatio) {
+                    targetH = cRect.height;
+                    targetW = targetH * imgRatio;
+                } else {
+                    targetW = cRect.width;
+                    targetH = targetW / imgRatio;
+                }
+                targetX = cRect.left + (cRect.width - targetW) / 2;
+                targetY = cRect.top + (cRect.height - targetH) / 2;
+            }
 
-            // 5. HEDEF KOORDİNATLAR
-            const targetX = cRect.left + (cRect.width - targetWidth) / 2;
-            const targetY = cRect.top + (cRect.height - targetHeight) / 2;
+            // 6. HERO RESMİ BAŞLAT
+            heroImg.src = item.img.src;
+            heroImg.style.display = 'block';
+            heroImg.style.borderRadius = '0px';
+            
+            // Hero'yu Canvas pozisyonuna koy
+            gsap.set(heroImg, {
+                left: screenX - startW / 2,
+                top: screenY - startH / 2,
+                width: startW,
+                height: startH,
+                rotation: item.rotation * (180/Math.PI)
+            });
 
-            // 6. ANİMASYON BAŞLASIN
-            gsap.to(clone, {
+            // 7. ANİMASYON: Hero'yu Ghost'un olduğu yere götür
+            gsap.to(heroImg, {
                 left: targetX,
                 top: targetY,
-                width: targetWidth,
-                height: targetHeight,
+                width: targetW,
+                height: targetH,
                 rotation: 0,
-                borderRadius: '16px', 
-                duration: 1, 
-                ease: 'power4.inOut',
-                onComplete: () => {
-                    // --- BURASI DEĞİŞTİ: DECODE GARANTİSİ ---
-                    
-                    // Önce gerçek resmi (altta) görünür yapmaya başla
-                    detailImg.style.opacity = '1';
-                    
-                    // decode() Promise döndürür. Resim GPU'da hazır olunca çalışır.
-                    detailImg.decode().then(() => {
-                        detailImg.classList.add('loaded');
-                        
-                        // Resim kesin hazır, ama göz yanılmasını engellemek için
-                        // Klonu "ÇAT" diye silmek yerine 50ms daha beklet.
-                        // Bu, tarayıcının composite işlemini bitirmesini sağlar.
-                        setTimeout(() => {
-                            clone.style.display = 'none';
-                            detailImg.style.transition = ''; 
-                        }, 50);
-                    }).catch(() => {
-                        // Decode hata verirse (eski tarayıcı vb.) fallback
-                        detailImg.classList.add('loaded');
-                        setTimeout(() => {
-                            clone.style.display = 'none';
-                            detailImg.style.transition = ''; 
-                        }, 50);
-                    });
-                }
+                borderRadius: '16px',
+                duration: 0.8,
+                ease: 'power3.inOut'
             });
         }
 
         function closeDetail() {
             if (!detailOpen) return;
-
             detailOpen = false;
 
-            // Override transition to 1s for closing (opening is 2s)
             const modal = document.getElementById('detailPanel');
             const overlay = document.getElementById('modalOverlay');
+            const heroImg = document.getElementById('heroImage');
 
-            modal.style.transition = 'opacity 1s ease';
-            overlay.style.transition = 'opacity 1s ease';
-
-            // Fade out modal and overlay (1s)
             overlay.classList.remove('active');
             modal.classList.remove('active');
-
-            // Hide clone if visible
-            const clone = document.getElementById('animatedImageClone');
-            clone.style.display = 'none';
-
-            // Re-enable body scroll
             document.body.style.overflow = '';
 
-            // After 1s fade out completes, reset canvas
-            setTimeout(() => {
-                // Reset detailImage state
-                const detailImg = document.getElementById('detailImage');
-                detailImg.classList.remove('loaded');
-                detailImg.style.opacity = '0';
+            if (lastActiveItem) {
+                const item = lastActiveItem;
+                
+                // Canvas'taki güncel yerine geri dön
+                const screenX = (item.x - camera.x) * camera.scale + window.innerWidth / 2;
+                const screenY = (item.y - camera.y) * camera.scale + window.innerHeight / 2;
+                
+                const imgRatio = item.img.naturalWidth / item.img.naturalHeight;
+                let finalW, finalH;
+                if (imgRatio > 1) {
+                    finalW = item.maxSize * item.scale * camera.scale;
+                    finalH = finalW / imgRatio;
+                } else {
+                    finalH = item.maxSize * item.scale * camera.scale;
+                    finalW = finalH * imgRatio;
+                }
 
-                // Reset modal transitions back to 2s for next open
-                modal.style.transition = 'opacity 2s ease';
-                overlay.style.transition = 'opacity 2s ease';
-
-                // CANVAS RESET: Pop animation for all images
-                loadedImages.forEach(item => {
-                    if (item.visible) {
-                        gsap.fromTo(item,
-                            { scale: 0 },
-                            { scale: item.targetScale, duration: 0.8, ease: 'back.out(1.5)' }
-                        );
+                gsap.to(heroImg, {
+                    left: screenX - finalW / 2,
+                    top: screenY - finalH / 2,
+                    width: finalW,
+                    height: finalH,
+                    rotation: item.rotation * (180/Math.PI),
+                    borderRadius: '0px',
+                    duration: 0.6,
+                    ease: 'power3.inOut',
+                    onComplete: () => {
+                        heroImg.style.display = 'none';
                     }
                 });
-            }, 1000);
+            } else {
+                heroImg.style.display = 'none';
+            }
         }
 
         // Zoom controls
