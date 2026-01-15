@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFW Design Collection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f0;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        body.grabbing {
+            cursor: grabbing;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #f5f5f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+
+        #loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            width: 300px;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #333;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        #hoverLabel {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 100;
+            white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+
+        /* Modal Overlay - No effects, just click target */
+        #modalOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 199;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2s ease; /* 2s to sync with modal opening */
+        }
+
+        #modalOverlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Animated Image Clone for FLIP animation */
+        #animatedImageClone {
+            position: fixed;
+            z-index: 201; /* ABOVE modal to stay visible during animation */
+            pointer-events: none;
+            display: none;
+            object-fit: contain;
+            transition: none; /* No CSS transition, using GSAP */
+        }
+
+        /* Modal Container - Blurred inside */
+        #detailPanel {
+            position: fixed;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 2px solid #000;
+            border-radius: 32px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            z-index: 200;
+            padding: 60px;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 2s ease; /* 2s to sync with image animation */
+            display: flex;
+            flex-direction: row;
+            gap: 60px;
+            align-items: center;
+        }
+
+        #detailPanel.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Close Button */
+        .close-btn {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            width: 48px;
+            height: 48px;
+            border: 2px solid #000;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 300;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            background: #000;
+            color: #fff;
+            transform: rotate(90deg) scale(1.1);
+        }
+
+        /* Square Media Display Area - Right side on desktop */
+        .modal-image-container {
+            flex: 0 0 auto;
+            width: 50%;
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+/* Bu Hero resim her şeyin üstünde uçar */
+#heroImage {
+    will-change: transform, width, height, top, left;
+    backface-visibility: hidden;
+}
+
+/* Modal içindeki kutu */
+.modal-image-container {
+    flex: 0 0 auto;
+    width: 50%;
+    aspect-ratio: 1; /* Kare oran */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+/* Ghost resim sadece yer kaplar, görünmez */
+#ghostImage {
+    transition: none;
+    opacity: 0 !important;
+}
+
+@media (max-width: 768px) {
+    .modal-image-container {
+        width: 100%;
+        height: auto;
+        max-height: 50vh;
+    }
+}
+
+
+       .detail-image {
+            width: 0;   /* JS ile ayarlanacak */
+            height: 0;  /* JS ile ayarlanacak */
+            object-fit: fill; /* Contain değil Fill. JS zaten oranı koruyor. */
+            border-radius: 16px;
+            opacity: 0;
+            display: block;
+            /* ÖNEMLİ: Klonun üzerinde gölge yoksa bunda da olmamalı, varsa ikisinde de olmalı */
+            box-shadow: none; 
+        }
+
+        .detail-image.loaded {
+            opacity: 1;
+        }
+
+        .detail-image.loaded {
+            opacity: 1;
+        }
+
+        /* Content Info Section - Left side, scrollable */
+        .modal-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            text-align: left;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 20px;
+        }
+
+        .detail-title {
+            font-size: 32px;
+            font-weight: 400;
+            margin-bottom: 12px;
+            color: #000;
+            letter-spacing: -0.5px;
+        }
+
+        .detail-tags {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+
+        .detail-info {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #333;
+            margin-bottom: 28px;
+            white-space: pre-line;
+        }
+
+        .detail-links {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .detail-links a {
+            display: inline-block;
+            padding: 10px 24px;
+            background: #000;
+            color: white;
+            text-decoration: none;
+            border-radius: 24px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .detail-links a:hover {
+            background: #333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Additional Images Gallery */
+        .additional-images {
+            width: 100%;
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .additional-images img {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .additional-images img:hover {
+            transform: scale(1.05);
+        }
+
+        .zoom-controls {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            display: flex;
+            gap: 10px;
+            z-index: 50;
+        }
+
+        .zoom-btn {
+            width: 44px;
+            height: 44px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .zoom-btn:hover {
+            background: #f8f8f8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            #detailPanel {
+                top: 5%;
+                left: 5%;
+                width: 90%;
+                height: 90%;
+                border-radius: 24px;
+                flex-direction: column;
+                padding: 50px 30px 30px 30px;
+                gap: 30px;
+            }
+
+            .modal-image-container {
+                width: 80%;
+                max-width: 400px;
+                flex-shrink: 0;
+            }
+
+            .modal-info {
+                width: 100%;
+                flex: 1;
+                padding-right: 0;
+                align-items: flex-start;
+                text-align: left;
+            }
+
+            .close-btn {
+                top: 16px;
+                left: 16px;
+                width: 40px;
+                height: 40px;
+                font-size: 24px;
+            }
+
+            .detail-title {
+                font-size: 26px;
+            }
+
+            .detail-tags {
+                font-size: 13px;
+            }
+
+            .detail-info {
+                font-size: 14px;
+            }
+
+            .additional-images {
+                grid-template-columns: 1fr;
+            }
+
+            .zoom-controls {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #detailPanel {
+                top: 2%;
+                left: 2%;
+                width: 96%;
+                height: 96%;
+                border-radius: 20px;
+                padding: 45px 20px 20px 20px;
+            }
+
+            .modal-image-container {
+                width: 90%;
+            }
+
+            .detail-title {
+                font-size: 22px;
+            }
+
+            .detail-tags {
+                font-size: 12px;
+            }
+
+            .detail-info {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div id="loading">
+        <div class="loader">Loading DFW Design collection...</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
+
+    <div id="hoverLabel"></div>
+
+    <img id="heroImage" src="" alt="" style="display:none; position:fixed; z-index:9999; pointer-events:none; transform-origin: top left; object-fit: contain;">
+
+    <div id="modalOverlay" onclick="closeDetail()"></div>
+
+    <div id="detailPanel">
+        <button class="close-btn" onclick="closeDetail()">×</button>
+
+        <div class="modal-info">
+            <h2 class="detail-title" id="detailTitle"></h2>
+            <p class="detail-tags" id="detailTags"></p>
+            <p class="detail-info" id="detailInfo"></p>
+            <div class="detail-links" id="detailLinks"></div>
+            <div class="additional-images" id="additionalImages"></div>
+        </div>
+
+        <div class="modal-image-container">
+            <img id="ghostImage" src="" style="width: 100%; height: 100%; object-fit: contain; opacity: 0; pointer-events: none;">
+        </div>
+    </div>
+
+    <div class="zoom-controls">
+        <button class="zoom-btn" onclick="zoomOut()">−</button>
+        <button class="zoom-btn" onclick="zoomIn()">+</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+    <script>
+        // DFW Design Collection
+        const dfwCollection = {
+    furniture: [
+        { id: 'furn-1-og', type: 'glb', name: 'mermaidchair_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/mermaid-chair-og-v2.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/mermaidchair-og.png', description: 'TAGS: furniture chair OG\n\nmermaidchair (OG).', tags: ['furniture', 'chair', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/1', name: 'OpenSea' }] },
+        { id: 'furn-1-blck', type: 'glb', name: 'mermaidchair_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/mermaid-chair-black-v4.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/mermaidchair-b.png', description: 'TAGS: furniture chair BLCK\n\nmermaidchair (BLCK).', tags: ['furniture', 'chair', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/2', name: 'OpenSea' }] },
+        { id: 'furn-1-chrome', type: 'glb', name: 'mermaidchair_CHROME.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/mermaid-chair-chrome-v1.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/mermaidchair-w.png', description: 'TAGS: furniture chair CHROME\n\nmermaidchair (CHROME).', tags: ['furniture', 'chair', 'CHROME'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/3', name: 'OpenSea' }] },
+        { id: 'furn-1-red', type: 'glb', name: 'mermaidchair_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/mermaid-chair-red-v3.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/mermaidchair-red.png', description: 'TAGS: furniture chair RED\n\nmermaidchair (RED).', tags: ['furniture', 'chair', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/4', name: 'OpenSea' }] },
+        { id: 'furn-2-og', type: 'glb', name: 'fetuchair_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/fetuchair-OG.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/fetuchair-og.png', description: 'TAGS: furniture chair OG\n\nfetuchair (OG).', tags: ['furniture', 'chair', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/5', name: 'OpenSea' }] },
+        { id: 'furn-2-blck', type: 'glb', name: 'fetuchair_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/fetuchair-blck.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/fetuchair-bü,.png', description: 'TAGS: furniture chair BLCK\n\nfetuchair (BLCK).', tags: ['furniture', 'chair', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/6', name: 'OpenSea' }] },
+        { id: 'furn-2-wht', type: 'glb', name: 'fetuchair_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/fetuchair-white.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/fetuchair-w.png', description: 'TAGS: furniture chair WHT\n\nfetuchair (WHT).', tags: ['furniture', 'chair', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/7', name: 'OpenSea' }] },
+        { id: 'furn-2-red', type: 'glb', name: 'fetuchair_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/fetuchair-red.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/fetuchair-red.png', description: 'TAGS: furniture chair RED\n\nfetuchair (RED).', tags: ['furniture', 'chair', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/8', name: 'OpenSea' }] },
+        { id: 'furn-3-antrst', type: 'glb', name: 'dse_ANTRST.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/DSE-antst-v5.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dse-og.png', description: 'TAGS: furniture chair ANTRST\n\ndse (ANTRST).', tags: ['furniture', 'chair', 'ANTRST'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/9', name: 'OpenSea' }] },
+        { id: 'furn-3-blck', type: 'glb', name: 'dse_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/DSE-black-v6.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dse-b.png', description: 'TAGS: furniture chair BLCK\n\ndse (BLCK).', tags: ['furniture', 'chair', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/10', name: 'OpenSea' }] },
+        { id: 'furn-3-wht', type: 'glb', name: 'dse_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/DSE-white-v8.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dse-delix.png', description: 'TAGS: furniture chair WHT\n\ndse (WHT).', tags: ['furniture', 'chair', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/11', name: 'OpenSea' }] },
+        { id: 'furn-3-red', type: 'glb', name: 'dse_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/DSE-red-v7.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dse-red.png', description: 'TAGS: furniture chair RED\n\ndse (RED).', tags: ['furniture', 'chair', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/12', name: 'OpenSea' }] },
+        { id: 'furn-4-og', type: 'glb', name: 'jackthelad_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/jack-the-lad-xx-OG-v9.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/jacktehladxx-og.png', description: 'TAGS: furniture chair OG\n\njackthelad (OG).', tags: ['furniture', 'chair', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/13', name: 'OpenSea' }] },
+        { id: 'furn-4-blck', type: 'glb', name: 'jackthelad_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/jack-the-lad-xx-blck-v12.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/jacktehladxx-b.png', description: 'TAGS: furniture chair BLCK\n\njackthelad (BLCK).', tags: ['furniture', 'chair', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/14', name: 'OpenSea' }] },
+        { id: 'furn-4-wht', type: 'glb', name: 'jackthelad_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/jack-the-lad-xx-wht-v11.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/jacktehladxx-w.png', description: 'TAGS: furniture chair WHT\n\njackthelad (WHT).', tags: ['furniture', 'chair', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/15', name: 'OpenSea' }] },
+        { id: 'furn-4-red', type: 'glb', name: 'jackthelad_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/jack-the-lad-xx-red-v10.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/jacktehladxx-red.png', description: 'TAGS: furniture chair RED\n\njackthelad (RED).', tags: ['furniture', 'chair', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/16', name: 'OpenSea' }] },
+        { id: 'furn-5-antrst', type: 'glb', name: 'aretaix_ANTRST.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/aretaix-OG-v14.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/aretaix-og.png', description: 'TAGS: furniture chair ANTRST\n\naretaix (ANTRST).', tags: ['furniture', 'chair', 'ANTRST'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/17', name: 'OpenSea' }] },
+        { id: 'furn-5-blck', type: 'glb', name: 'aretaix_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/aretaix-black-v13.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/aretaix-b.png', description: 'TAGS: furniture chair BLCK\n\naretaix (BLCK).', tags: ['furniture', 'chair', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/18', name: 'OpenSea' }] },
+        { id: 'furn-5-wht', type: 'glb', name: 'aretaix_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/aretaix-WHT-v16.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/aretaix-w.png', description: 'TAGS: furniture chair WHT\n\naretaix (WHT).', tags: ['furniture', 'chair', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/19', name: 'OpenSea' }] },
+        { id: 'furn-5-red', type: 'glb', name: 'aretaix_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/aretaix-red-v15.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/aretaix-red.png', description: 'TAGS: furniture chair RED\n\naretaix (RED).', tags: ['furniture', 'chair', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/20', name: 'OpenSea' }] },
+        { id: 'furn-6-og', type: 'glb', name: 'armageddon_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/armageddonseat-v17.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/armageddon-og.png', description: 'TAGS: furniture chair OG\n\narmageddon (OG).', tags: ['furniture', 'chair', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/21', name: 'OpenSea' }] },
+        { id: 'furn-6-blck', type: 'glb', name: 'armageddon_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/armageddon-black-v19.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/armageddon-b.png', description: 'TAGS: furniture chair BLCK\n\narmageddon (BLCK).', tags: ['furniture', 'chair', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/22', name: 'OpenSea' }] },
+        { id: 'furn-6-wht', type: 'glb', name: 'armageddon_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/armageddon-antrst-v18.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/armageddon-w.png', description: 'TAGS: furniture chair WHT\n\narmageddon (WHT).', tags: ['furniture', 'chair', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/23', name: 'OpenSea' }] },
+        { id: 'furn-6-dark', type: 'glb', name: 'armageddon_DARK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/armageddon-red-v20.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/armageddon-red.png', description: 'TAGS: furniture chair DARK\n\narmageddon (DARK).', tags: ['furniture', 'chair', 'DARK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/24', name: 'OpenSea' }] },
+        { id: 'furn-7-chrome', type: 'glb', name: 'bilbao_lego_chair_CHROME.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/bilbao-lego-chair-v21.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/bilbaolego-og.png', description: 'TAGS: furniture chair CHROME\n\nbilbao lego chair (CHROME).', tags: ['furniture', 'chair', 'CHROME'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/25', name: 'OpenSea' }] },
+        { id: 'furn-7-blck', type: 'glb', name: 'bilbao_lego_chair_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/bilbao-lego-chair-black-v22.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/bilbaolego-b.png', description: 'TAGS: furniture chair BLCK\n\nbilbao lego chair (BLCK).', tags: ['furniture', 'chair', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/26', name: 'OpenSea' }] },
+        { id: 'furn-7-wht', type: 'glb', name: 'bilbao_lego_chair_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/bilbao-lego-chair-white-v24.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/bilbaolego-w.png', description: 'TAGS: furniture chair WHT\n\nbilbao lego chair (WHT).', tags: ['furniture', 'chair', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/27', name: 'OpenSea' }] },
+        { id: 'furn-7-red', type: 'glb', name: 'bilbao_lego_chair_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/bilbao-lego-chair-dark-v23.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/bilbaolego-neon.png', description: 'TAGS: furniture chair RED\n\nbilbao lego chair (RED).', tags: ['furniture', 'chair', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/28', name: 'OpenSea' }] },
+        { id: 'furn-8-chrome', type: 'glb', name: 'higgs_boson_CHROME.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/higgs-boson-chrome-r-v25.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/higgsboson-og.png', description: 'TAGS: furniture chair CHROME\n\nhiggs boson (CHROME).', tags: ['furniture', 'chair', 'CHROME'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/29', name: 'OpenSea' }] },
+        { id: 'furn-8-night', type: 'glb', name: 'higgs_boson_NIGHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/higgs-boson-night-r-v27.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/higgsboson-darkblue.png', description: 'TAGS: furniture chair NIGHT\n\nhiggs boson (NIGHT).', tags: ['furniture', 'chair', 'NIGHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/30', name: 'OpenSea' }] },
+        { id: 'furn-8-concrete', type: 'glb', name: 'higgs_boson_CONCRETE.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/higgs-boson-concrete-r-v26.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/higgsboson-w.png', description: 'TAGS: furniture chair CONCRETE\n\nhiggs boson (CONCRETE).', tags: ['furniture', 'chair', 'CONCRETE'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/31', name: 'OpenSea' }] },
+        { id: 'furn-8-red', type: 'glb', name: 'higgs_boson_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/higgs-boson-red-r-v28.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/higgsboson-red.png', description: 'TAGS: furniture chair RED\n\nhiggs boson (RED).', tags: ['furniture', 'chair', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/32', name: 'OpenSea' }] },
+        { id: 'furn-9-og', type: 'glb', name: 'e66_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/E66-chair-v31.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/e66-og.png', description: 'TAGS: furniture chair OG\n\ne66 (OG).', tags: ['furniture', 'chair', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/33', name: 'OpenSea' }] },
+        { id: 'furn-9-blck', type: 'glb', name: 'e66_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/e66-blck-v30.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/e66-b.png', description: 'TAGS: furniture chair BLCK\n\ne66 (BLCK).', tags: ['furniture', 'chair', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/34', name: 'OpenSea' }] },
+        { id: 'furn-9-antrst', type: 'glb', name: 'e66_ANTRST.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/e66-antrst-v29.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/e66-w.png', description: 'TAGS: furniture chair ANTRST\n\ne66 (ANTRST).', tags: ['furniture', 'chair', 'ANTRST'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/35', name: 'OpenSea' }] },
+        { id: 'furn-9-red', type: 'glb', name: 'e66_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/e66-red-v32.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/e66-red.png', description: 'TAGS: furniture chair RED\n\ne66 (RED).', tags: ['furniture', 'chair', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/36', name: 'OpenSea' }] },
+        { id: 'furn-10-og', type: 'glb', name: 'Accelerator_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/angry-chair-OG-v35.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/angrynapkin-og.png', description: 'TAGS: furniture chair OG\n\nAccelerator (OG).', tags: ['furniture', 'chair', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/37', name: 'OpenSea' }] },
+        { id: 'furn-10-mono', type: 'glb', name: 'Accelerator_MONO.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/angry-chair-mono-v34.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/angrynapkin-mono.png', description: 'TAGS: furniture chair MONO\n\nAccelerator (MONO).', tags: ['furniture', 'chair', 'MONO'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/38', name: 'OpenSea' }] },
+        { id: 'furn-10-davnc', type: 'glb', name: 'Accelerator_DAVNC.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/angry-chair-dvnc-v33.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/angrynapkin-danvc.png', description: 'TAGS: furniture chair DAVNC\n\nAccelerator (DAVNC).', tags: ['furniture', 'chair', 'DAVNC'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/39', name: 'OpenSea' }] },
+        { id: 'furn-10-red', type: 'glb', name: 'Accelerator_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/angry-chair-red-v36.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/angrynapkin-red.png', description: 'TAGS: furniture chair RED\n\nAccelerator (RED).', tags: ['furniture', 'chair', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/40', name: 'OpenSea' }] },
+        { id: 'furn-11-og', type: 'glb', name: 'glass_gougnut_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/GlassDougnutCommunicationUnit-gry-v59.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dougnut-og.png', description: 'TAGS: furniture sofa OG\n\nglass gougnut (OG).', tags: ['furniture', 'sofa', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/41', name: 'OpenSea' }] },
+        { id: 'furn-11-blck', type: 'glb', name: 'glass_gougnut_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/GlassDougnutCommunicationUnit-blck-v58.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dougnut-blck.png', description: 'TAGS: furniture sofa BLCK\n\nglass gougnut (BLCK).', tags: ['furniture', 'sofa', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/42', name: 'OpenSea' }] },
+        { id: 'furn-11-wht', type: 'glb', name: 'glass_gougnut_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/GlassDougnutCommunicationUnit-wht-v61.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dougnut-w.png', description: 'TAGS: furniture sofa WHT\n\nglass gougnut (WHT).', tags: ['furniture', 'sofa', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/43', name: 'OpenSea' }] },
+        { id: 'furn-11-red', type: 'glb', name: 'glass_gougnut_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/GlassDougnutCommunicationUnit-red-v60.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dougnut-red.png', description: 'TAGS: furniture sofa RED\n\nglass gougnut (RED).', tags: ['furniture', 'sofa', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/44', name: 'OpenSea' }] },
+        { id: 'furn-12-og', type: 'glb', name: 'sjsoc_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/sjsoc-gry-v66.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/sjsoc-og.png', description: 'TAGS: furniture sofa OG\n\nsjsoc (OG).', tags: ['furniture', 'sofa', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/45', name: 'OpenSea' }] },
+        { id: 'furn-12-mono', type: 'glb', name: 'sjsoc_MONO.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/sjsoc-monoc-v67.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/sjsoc-b.png', description: 'TAGS: furniture sofa MONO\n\nsjsoc (MONO).', tags: ['furniture', 'sofa', 'MONO'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/46', name: 'OpenSea' }] },
+        { id: 'furn-12-wht', type: 'glb', name: 'sjsoc_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/sjsoc-wht-v69.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/sjsoc-w.png', description: 'TAGS: furniture sofa WHT\n\nsjsoc (WHT).', tags: ['furniture', 'sofa', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/47', name: 'OpenSea' }] },
+        { id: 'furn-12-neon', type: 'glb', name: 'sjsoc_NEON.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/sjsoc-neon-v68.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/sjsoc-red.png', description: 'TAGS: furniture sofa NEON\n\nsjsoc (NEON).', tags: ['furniture', 'sofa', 'NEON'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/48', name: 'OpenSea' }] },
+        { id: 'furn-13-og', type: 'glb', name: 'carwrecksofa_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/carwrecksofa-gray-v55.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/carwreck-og.png', description: 'TAGS: furniture sofa OG\n\ncarwrecksofa (OG).', tags: ['furniture', 'sofa', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/49', name: 'OpenSea' }] },
+        { id: 'furn-13-blck', type: 'glb', name: 'carwrecksofa_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/carwrecksofa-black-v54.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/carwreck-b.png', description: 'TAGS: furniture sofa BLCK\n\ncarwrecksofa (BLCK).', tags: ['furniture', 'sofa', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/50', name: 'OpenSea' }] },
+        { id: 'furn-13-wht', type: 'glb', name: 'carwrecksofa_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/carwrecksofa-white-v57.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/carwreck-w.png', description: 'TAGS: furniture sofa WHT\n\ncarwrecksofa (WHT).', tags: ['furniture', 'sofa', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/51', name: 'OpenSea' }] },
+        { id: 'furn-13-red', type: 'glb', name: 'carwrecksofa_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/carwrecksofa-red-v56.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/carwreck-red.png', description: 'TAGS: furniture sofa RED\n\ncarwrecksofa (RED).', tags: ['furniture', 'sofa', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/52', name: 'OpenSea' }] },
+        { id: 'furn-14-og', type: 'glb', name: 'Japon_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/-sofa-v64.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/japon-og.png', description: 'TAGS: furniture sofa OG\n\n冬 (Japon) (OG).', tags: ['furniture', 'sofa', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/53', name: 'OpenSea' }] },
+        { id: 'furn-14-blck', type: 'glb', name: 'Japon_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/-blck-v62.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/japon-b.png', description: 'TAGS: furniture sofa BLCK\n\n冬 (Japon) (BLCK).', tags: ['furniture', 'sofa', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/54', name: 'OpenSea' }] },
+        { id: 'furn-14-wht', type: 'glb', name: 'Japon_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/-white-v65.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/japon-w.png', description: 'TAGS: furniture sofa WHT\n\n冬 (Japon) (WHT).', tags: ['furniture', 'sofa', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/55', name: 'OpenSea' }] },
+        { id: 'furn-14-red', type: 'glb', name: 'Japon_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/-red-v63.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/japon-red.png', description: 'TAGS: furniture sofa RED\n\n冬 (Japon) (RED).', tags: ['furniture', 'sofa', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/56', name: 'OpenSea' }] },
+        { id: 'furn-15-og', type: 'glb', name: '2070S_DJ_TABLE_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/2070s-dj-table-HANDBAKE-v71.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/2070sdjtable-og.png', description: 'TAGS: furniture table OG\n\n2070S DJ TABLE (OG).', tags: ['furniture', 'table', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/57', name: 'OpenSea' }] },
+        { id: 'furn-15-blck', type: 'glb', name: '2070S_DJ_TABLE_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/2070s-dj-table-BLCK-v70.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/2070sdjtable-b.png', description: 'TAGS: furniture table BLCK\n\n2070S DJ TABLE (BLCK).', tags: ['furniture', 'table', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/58', name: 'OpenSea' }] },
+        { id: 'furn-20-og', type: 'glb', name: 'decentrlizejoking2_2_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/DJ2_2_og-GRY-v47.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dj2-2-og.png', description: 'TAGS: furniture music OG\n\ndecentrlizejoking2_2 (OG).', tags: ['furniture', 'music', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/79', name: 'OpenSea' }] },
+        { id: 'furn-20-blck', type: 'glb', name: 'decentrlizejoking2_2_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/DJ2_2_BLACK-v46.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dj2-2-b.png', description: 'TAGS: furniture music BLCK\n\ndecentrlizejoking2_2 (BLCK).', tags: ['furniture', 'music', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/80', name: 'OpenSea' }] },
+        { id: 'furn-20-wht', type: 'glb', name: 'decentrlizejoking2_2_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/DJ2_2_wakara-wht2-v49.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dj2-2-w.png', description: 'TAGS: furniture music WHT\n\ndecentrlizejoking2_2 (WHT).', tags: ['furniture', 'music', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/81', name: 'OpenSea' }] },
+        { id: 'furn-20-red', type: 'glb', name: 'decentrlizejoking2_2_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/DJ2_2_red-V2-v48.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/dj2-2-red.png', description: 'TAGS: furniture music RED\n\ndecentrlizejoking2_2 (RED).', tags: ['furniture', 'music', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/82', name: 'OpenSea' }] },
+        { id: 'furn-21-og', type: 'glb', name: 'screamer_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/SCREAMER-OG-GRY-v53.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/screamer-og.png', description: 'TAGS: furniture music OG\n\nscreamer (OG).', tags: ['furniture', 'music', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/83', name: 'OpenSea' }] },
+        { id: 'furn-21-blck', type: 'glb', name: 'screamer_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/SCREAMER-BLCK-v52.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/screamer-b.png', description: 'TAGS: furniture music BLCK\n\nscreamer (BLCK).', tags: ['furniture', 'music', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/84', name: 'OpenSea' }] },
+        { id: 'furn-21-wht', type: 'glb', name: 'screamer_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/SCREAMER-WHT-v51.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/screamer-w.png', description: 'TAGS: furniture music WHT\n\nscreamer (WHT).', tags: ['furniture', 'sofa', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/85', name: 'OpenSea' }] },
+        { id: 'furn-21-red', type: 'glb', name: 'screamer_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/SCREAMER-RED-v50.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/screamer-red.png', description: 'TAGS: furniture music RED\n\nscreamer (RED).', tags: ['furniture', 'music', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/86', name: 'OpenSea' }] },
+        { id: 'furn-22-og', type: 'glb', name: 'genetic_carpet_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/merged-GRY-og-v84.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/genetic-og.png', description: 'TAGS: furniture carpet OG\n\ngenetic carpet (OG).', tags: ['furniture', 'carpet', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/87', name: 'OpenSea' }] },
+        { id: 'furn-22-blck', type: 'glb', name: 'genetic_carpet_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/merged-blck-v83.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/genetic-b.png', description: 'TAGS: furniture carpet BLCK\n\ngenetic carpet (BLCK).', tags: ['furniture', 'carpet', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/88', name: 'OpenSea' }] },
+        { id: 'furn-22-wht', type: 'glb', name: 'genetic_carpet_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/merged-WHT-v86.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/genetic-w.png', description: 'TAGS: furniture carpet WHT\n\ngenetic carpet (WHT).', tags: ['furniture', 'carpet', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/89', name: 'OpenSea' }] },
+        { id: 'furn-22-red', type: 'glb', name: 'genetic_carpet_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/merged-red-v85.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/genetic-r.png', description: 'TAGS: furniture carpet RED\n\ngenetic carpet (RED).', tags: ['furniture', 'carpet', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/90', name: 'OpenSea' }] },
+        { id: 'furn-23-og', type: 'glb', name: 'spooky_carpet_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/spooky-verdealip-carpet-v90.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/spookycarpet-verdialpi.png', description: 'TAGS: furniture carpet OG\n\nspooky carpet (OG).', tags: ['furniture', 'carpet', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/91', name: 'OpenSea' }] },
+        { id: 'furn-23-blackigator', type: 'glb', name: 'spooky_carpet_BLACKIGATOR.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/spooky-blackigator-carpet-v87.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/spookycarpet-leather.png', description: 'TAGS: furniture carpet BLACKIGATOR\n\nspooky carpet (BLACKIGATOR).', tags: ['furniture', 'carpet', 'BLACKIGATOR'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/92', name: 'OpenSea' }] },
+        { id: 'furn-23-throne', type: 'glb', name: 'spooky_carpet_THRONE.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/spooky-throne-carpet-3-v89.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/spookycarpet-wtdbts.png', description: 'TAGS: furniture carpet THRONE\n\nspooky carpet (THRONE).', tags: ['furniture', 'carpet', 'THRONE'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/93', name: 'OpenSea' }] },
+        { id: 'furn-23-davnc', type: 'glb', name: 'spooky_carpet_DAVNC.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/spooky-davinci-carpet-v88.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/spookycarpet-davnc.png', description: 'TAGS: furniture carpet DAVNC\n\nspooky carpet (DAVNC).', tags: ['furniture', 'carpet', 'DAVNC'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/94', name: 'OpenSea' }] }
+    ],
+    sculpture: [
+        { id: 'sculp-24-og', type: 'glb', name: 'osiris_rake_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/osirisrake-og-v126.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/rake1.png', description: 'TAGS: sculpture sculpture OG\n\nosiris rake (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/95', name: 'OpenSea' }] },
+        { id: 'sculp-24-blck', type: 'glb', name: 'osiris_rake_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/osirisrake-dark-v124.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/rake2.png', description: 'TAGS: sculpture sculpture BLCK\n\nosiris rake (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/96', name: 'OpenSea' }] },
+        { id: 'sculp-24-gry', type: 'glb', name: 'osiris_rake_GRY.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/osirisrake-light-v125.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/rake3.png', description: 'TAGS: sculpture sculpture GRY\n\nosiris rake (GRY).', tags: ['sculpture', 'sculpture', 'GRY'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/97', name: 'OpenSea' }] },
+        { id: 'sculp-24-red', type: 'glb', name: 'osiris_rake_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/osirisrake-candle-v123.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/rake4.png', description: 'TAGS: sculpture sculpture RED\n\nosiris rake (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/98', name: 'OpenSea' }] },
+        { id: 'sculp-25-og', type: 'glb', name: 'midas_space_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/midasspade-red-v114.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/spade1.png', description: 'TAGS: sculpture sculpture OG\n\nmidas space (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/99', name: 'OpenSea' }] },
+        { id: 'sculp-25-dark', type: 'glb', name: 'midas_space_DARK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/midasspade-black-v111.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/spade2.png', description: 'TAGS: sculpture sculpture DARK\n\nmidas space (DARK).', tags: ['sculpture', 'sculpture', 'DARK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/100', name: 'OpenSea' }] },
+        { id: 'sculp-25-light', type: 'glb', name: 'midas_space_LIGHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/midasspade-gray-v113.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/spade3.png', description: 'TAGS: sculpture sculpture LIGHT\n\nmidas space (LIGHT).', tags: ['sculpture', 'sculpture', 'LIGHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/101', name: 'OpenSea' }] },
+        { id: 'sculp-25-candle', type: 'glb', name: 'midas_space_CANDLE.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/midasspade-gold-v112.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/spade4.png', description: 'TAGS: sculpture sculpture CANDLE\n\nmidas space (CANDLE).', tags: ['sculpture', 'sculpture', 'CANDLE'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/102', name: 'OpenSea' }] },
+        { id: 'sculp-26-og', type: 'glb', name: 'angry_napkin_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/angry-napkin-og-v97.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/napkin-1.png', description: 'TAGS: sculpture sculpture OG\n\nangry napkin (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/103', name: 'OpenSea' }] },
+        { id: 'sculp-26-blck', type: 'glb', name: 'angry_napkin_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/angry-napkin-mono2-blckmid-v96.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/napkin-2.png', description: 'TAGS: sculpture sculpture BLCK\n\nangry napkin (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/104', name: 'OpenSea' }] },
+        { id: 'sculp-26-wht', type: 'glb', name: 'angry_napkin_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/angry-napkin-mono-v95.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/napkin-3.png', description: 'TAGS: sculpture sculpture WHT\n\nangry napkin (WHT).', tags: ['sculpture', 'sculpture', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/105', name: 'OpenSea' }] },
+        { id: 'sculp-26-red', type: 'glb', name: 'angry_napkin_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/angry-napkin-red-v98.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/napkin-4.png', description: 'TAGS: sculpture sculpture RED\n\nangry napkin (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/106', name: 'OpenSea' }] },
+        { id: 'sculp-27-og', type: 'glb', name: 'W6O1M6_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/w6o1m6-500K-v142.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/chemical-1.png', description: 'TAGS: sculpture sculpture OG\n\nW6O1M6 (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/107', name: 'OpenSea' }] },
+        { id: 'sculp-27-blck', type: 'glb', name: 'W6O1M6_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/w6o1m6-500K_BLCK-v143.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/chemical-2.png', description: 'TAGS: sculpture sculpture BLCK\n\nW6O1M6 (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/108', name: 'OpenSea' }] },
+        { id: 'sculp-27-gry', type: 'glb', name: 'W6O1M6_GRY.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/w6o1m6-500K_DARK-v144.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/chemical-3.png', description: 'TAGS: sculpture sculpture GRY\n\nW6O1M6 (GRY).', tags: ['sculpture', 'sculpture', 'GRY'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/109', name: 'OpenSea' }] },
+        { id: 'sculp-27-red', type: 'glb', name: 'W6O1M6_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/w6o1m6-500K_RED-v145.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/chemical-4.png', description: 'TAGS: sculpture sculpture RED\n\nW6O1M6 (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/110', name: 'OpenSea' }] },
+        { id: 'sculp-28-sohiii', type: 'glb', name: 'statue_of_hangover_SOHiii.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/soh-3-v137.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/hango-1.png', description: 'TAGS: sculpture sculpture SOHiii\n\nstatue of hangover (SOHiii).', tags: ['sculpture', 'sculpture', 'SOHiii'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/111', name: 'OpenSea' }] },
+        { id: 'sculp-28-sohii', type: 'glb', name: 'statue_of_hangover_SOHii.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/soh-2-v136.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/hango-2.png', description: 'TAGS: sculpture sculpture SOHii\n\nstatue of hangover (SOHii).', tags: ['sculpture', 'sculpture', 'SOHii'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/112', name: 'OpenSea' }] },
+        { id: 'sculp-28-sohi', type: 'glb', name: 'statue_of_hangover_SOHi.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/soh-1-v135.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/hango-3.png', description: 'TAGS: sculpture sculpture SOHi\n\nstatue of hangover (SOHi).', tags: ['sculpture', 'sculpture', 'SOHi'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/113', name: 'OpenSea' }] },
+        { id: 'sculp-29-og', type: 'glb', name: 'praified_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/Praified-OG-v128.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/praified-1.png', description: 'TAGS: sculpture sculpture OG\n\npraified (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/114', name: 'OpenSea' }] },
+        { id: 'sculp-29-blck', type: 'glb', name: 'praified_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/Praified-BLVK-v127.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/praified-2.png', description: 'TAGS: sculpture sculpture BLCK\n\npraified (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/115', name: 'OpenSea' }] },
+        { id: 'sculp-29-wht', type: 'glb', name: 'praified_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/Praified-WHT-v130.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/praified-3.png', description: 'TAGS: sculpture sculpture WHT\n\npraified (WHT).', tags: ['sculpture', 'sculpture', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/116', name: 'OpenSea' }] },
+        { id: 'sculp-29-red', type: 'glb', name: 'praified_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/Praified-RED-v129.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/praified-4.png', description: 'TAGS: sculpture sculpture RED\n\npraified (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/117', name: 'OpenSea' }] },
+        { id: 'sculp-30-og', type: 'glb', name: 'sanctified_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/Sanctified-OG-v132.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/santified1.png', description: 'TAGS: sculpture sculpture OG\n\nsanctified (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/118', name: 'OpenSea' }] },
+        { id: 'sculp-30-blck', type: 'glb', name: 'sanctified_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/Sanctified-BLCK-v131.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/santified2.png', description: 'TAGS: sculpture sculpture BLCK\n\nsanctified (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/119', name: 'OpenSea' }] },
+        { id: 'sculp-30-wht', type: 'glb', name: 'sanctified_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/Sanctified-WHT-v134.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/santified3.png', description: 'TAGS: sculpture sculpture WHT\n\nsanctified (WHT).', tags: ['sculpture', 'sculpture', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/120', name: 'OpenSea' }] },
+        { id: 'sculp-30-red', type: 'glb', name: 'sanctified_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/Sanctified-RED-v133.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/santified4.png', description: 'TAGS: sculpture sculpture RED\n\nsanctified (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/121', name: 'OpenSea' }] },
+        { id: 'sculp-31-og', type: 'glb', name: 'me_tree_x_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/ME-TREE-X-og-v109.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/me-tree-x-1.png', description: 'TAGS: sculpture sculpture OG\n\nme-tree-x (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/122', name: 'OpenSea' }] },
+        { id: 'sculp-31-blck', type: 'glb', name: 'me_tree_x_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/ME-TREE-X-blck-v107.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/me-tree-x-2.png', description: 'TAGS: sculpture sculpture BLCK\n\nme-tree-x (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/123', name: 'OpenSea' }] },
+        { id: 'sculp-31-wht', type: 'glb', name: 'me_tree_x_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/ME-TREE-X-gry-v108.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/me-tree-x-3.png', description: 'TAGS: sculpture sculpture WHT\n\nme-tree-x (WHT).', tags: ['sculpture', 'sculpture', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/124', name: 'OpenSea' }] },
+        { id: 'sculp-31-red', type: 'glb', name: 'me_tree_x_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/ME-TREE-X-red2-v110.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/me-tree-x-4.png', description: 'TAGS: sculpture sculpture RED\n\nme-tree-x (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/125', name: 'OpenSea' }] },
+        { id: 'sculp-32-og', type: 'glb', name: 'molecular_data_plant_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/moleculardataplant-OG-v116.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/MOLECULAR-1.png', description: 'TAGS: sculpture sculpture OG\n\nmolecular data plant (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/126', name: 'OpenSea' }] },
+        { id: 'sculp-32-blck', type: 'glb', name: 'molecular_data_plant_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/moleculardataplant-Blck-semiopaque-v115.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/MOLECULAR2.png', description: 'TAGS: sculpture sculpture BLCK\n\nmolecular data plant (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/127', name: 'OpenSea' }] },
+        { id: 'sculp-32-wht', type: 'glb', name: 'molecular_data_plant_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/moleculardataplant-WHITE-v118.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/MOLECULAR3.png', description: 'TAGS: sculpture sculpture WHT\n\nmolecular data plant (WHT).', tags: ['sculpture', 'sculpture', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/128', name: 'OpenSea' }] },
+        { id: 'sculp-32-red', type: 'glb', name: 'molecular_data_plant_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/moleculardataplant-Red-v117.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/MOLECULAR4.png', description: 'TAGS: sculpture sculpture RED\n\nmolecular data plant (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/129', name: 'OpenSea' }] },
+        { id: 'sculp-33-og', type: 'glb', name: 'neo_klein_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/NEOKLEIN-og-v121.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/klein-1.png', description: 'TAGS: sculpture sculpture OG\n\nneo klein (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/130', name: 'OpenSea' }] },
+        { id: 'sculp-33-blck', type: 'glb', name: 'neo_klein_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/NEOKLEIN-blck-v119.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/klein-2.png', description: 'TAGS: sculpture sculpture BLCK\n\nneo klein (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/131', name: 'OpenSea' }] },
+        { id: 'sculp-33-gry', type: 'glb', name: 'neo_klein_GRY.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/NEOKLEIN-gry-v120.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/klein-3.png', description: 'TAGS: sculpture sculpture GRY\n\nneo klein (GRY).', tags: ['sculpture', 'sculpture', 'GRY'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/132', name: 'OpenSea' }] },
+        { id: 'sculp-33-red', type: 'glb', name: 'neo_klein_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/NEOKLEIN-red2-v122.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/klein-4.png', description: 'TAGS: sculpture sculpture RED\n\nneo klein (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/133', name: 'OpenSea' }] },
+        { id: 'sculp-34-og', type: 'glb', name: 'squiggle_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/chromiebridgeauralsection-OG-v140.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/SQUIGGLE1.png', description: 'TAGS: sculpture sculpture OG\n\nsquiggle (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/134', name: 'OpenSea' }] },
+        { id: 'sculp-34-alien', type: 'glb', name: 'squiggle_ALIEN.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/chromiebridgeauralsection-alien3-v138.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/SQUIGGLE2.png', description: 'TAGS: sculpture sculpture ALIEN\n\nsquiggle (ALIEN).', tags: ['sculpture', 'sculpture', 'ALIEN'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/135', name: 'OpenSea' }] },
+        { id: 'sculp-34-gry', type: 'glb', name: 'squiggle_GRY.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/chromiebridgeauralsection-gray2-v139.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/SQUIGGLE3.png', description: 'TAGS: sculpture sculpture GRY\n\nsquiggle (GRY).', tags: ['sculpture', 'sculpture', 'GRY'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/136', name: 'OpenSea' }] },
+        { id: 'sculp-34-red', type: 'glb', name: 'squiggle_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/chromiebridgeauralsection-RED-v141.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/SQUIGGLE4.png', description: 'TAGS: sculpture sculpture RED\n\nsquiggle (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/137', name: 'OpenSea' }] },
+        { id: 'sculp-35-og', type: 'glb', name: 'CROOKEDASWEFUNASYU_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/CROOKEDASWEFUNASYU-OG-v100.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/doge-1.png', description: 'TAGS: sculpture sculpture OG\n\nCROOKEDASWEFUNASYU (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/138', name: 'OpenSea' }] },
+        { id: 'sculp-35-blck', type: 'glb', name: 'CROOKEDASWEFUNASYU_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/CROOKEDASWEFUNASYU-BLCK-v99.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/doge-2.png', description: 'TAGS: sculpture sculpture BLCK\n\nCROOKEDASWEFUNASYU (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/139', name: 'OpenSea' }] },
+        { id: 'sculp-35-wht', type: 'glb', name: 'CROOKEDASWEFUNASYU_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/CROOKEDASWEFUNASYU-WHT-v102.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/doge-3.png', description: 'TAGS: sculpture sculpture WHT\n\nCROOKEDASWEFUNASYU (WHT).', tags: ['sculpture', 'sculpture', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/140', name: 'OpenSea' }] },
+        { id: 'sculp-35-red', type: 'glb', name: 'CROOKEDASWEFUNASYU_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/CROOKEDASWEFUNASYU-RED-v101.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/doge-4.png', description: 'TAGS: sculpture sculpture RED\n\nCROOKEDASWEFUNASYU (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/141', name: 'OpenSea' }] },
+        { id: 'sculp-36-og', type: 'glb', name: 'LEGEND_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/LEGEND-v103.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/legend-1.png', description: 'TAGS: sculpture sculpture OG\n\nLEGEND (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/142', name: 'OpenSea' }] },
+        { id: 'sculp-36-blck', type: 'glb', name: 'LEGEND_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/LEGEND-BLCK-v104.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/legend-2.png', description: 'TAGS: sculpture sculpture BLCK\n\nLEGEND (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/143', name: 'OpenSea' }] },
+        { id: 'sculp-36-wht', type: 'glb', name: 'LEGEND_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/LEGEND-CHRM-v105.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/legend-3.png', description: 'TAGS: sculpture sculpture WHT\n\nLEGEND (WHT).', tags: ['sculpture', 'sculpture', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/144', name: 'OpenSea' }] },
+        { id: 'sculp-36-red', type: 'glb', name: 'LEGEND_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/LEGEND-RED-v106.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/legend-4.png', description: 'TAGS: sculpture sculpture RED\n\nLEGEND (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/145', name: 'OpenSea' }] },
+        { id: 'sculp-37-og', type: 'glb', name: '2002_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/2002-OG-v92.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/2002-1.png', description: 'TAGS: sculpture sculpture OG\n\n2002 (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/146', name: 'OpenSea' }] },
+        { id: 'sculp-37-blck', type: 'glb', name: '2002_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/2002-BLVKK-v91.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/2002-2.png', description: 'TAGS: sculpture sculpture BLCK\n\n2002 (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/147', name: 'OpenSea' }] },
+        { id: 'sculp-37-tea', type: 'glb', name: '2002_TEA.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/2002-TEA-v93.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/2002-3.png', description: 'TAGS: sculpture sculpture TEA\n\n2002 (TEA).', tags: ['sculpture', 'sculpture', 'TEA'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/148', name: 'OpenSea' }] },
+        { id: 'sculp-37-red', type: 'glb', name: '2002_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/2002-WHT-v94.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/2002-11.png', description: 'TAGS: sculpture sculpture RED\n\n2002 (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/149', name: 'OpenSea' }] },
+        { id: 'sculp-38-og', type: 'glb', name: '0ff_with_his_head_OG.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/0FF-og-v3.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/0FF-og.png', description: 'TAGS: sculpture sculpture OG\n\n0ff_with_his_head (OG).', tags: ['sculpture', 'sculpture', 'OG'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/150', name: 'OpenSea' }] },
+        { id: 'sculp-38-blck', type: 'glb', name: '0ff_with_his_head_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/0FF-BLCK-v4.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/0FF-blck.png', description: 'TAGS: sculpture sculpture BLCK\n\n0ff_with_his_head (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/151', name: 'OpenSea' }] },
+        { id: 'sculp-38-wht', type: 'glb', name: '0ff_with_his_head_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/0FF-WHT-v1.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/0FF-wht.png', description: 'TAGS: sculpture sculpture WHT\n\n0ff_with_his_head (WHT).', tags: ['sculpture', 'sculpture', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/152', name: 'OpenSea' }] },
+        { id: 'sculp-38-red', type: 'glb', name: '0ff_with_his_head_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/0FF-Red-v2.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/0FF-red.png', description: 'TAGS: sculpture sculpture RED\n\n0ff_with_his_head (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/153', name: 'OpenSea' }] },
+        { id: 'sculp-39-mix', type: 'glb', name: 'mysticalarcases_MIX.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/mystical-arcases-mix2-v1.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/MYSTCARCASES--MİX2.png', description: 'TAGS: sculpture sculpture MIX\n\nmysticalarcases (MIX).', tags: ['sculpture', 'sculpture', 'MIX'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/157', name: 'OpenSea' }] },
+        { id: 'sculp-39-blck', type: 'glb', name: 'mysticalarcases_BLCK.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/mystical-arcases-blck-v147.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/mystical-1.png', description: 'TAGS: sculpture sculpture BLCK\n\nmysticalarcases (BLCK).', tags: ['sculpture', 'sculpture', 'BLCK'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/155', name: 'OpenSea' }] },
+        { id: 'sculp-39-wht', type: 'glb', name: 'mysticalarcases_WHT.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/mystical-arcases-wht-v148.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/MYSTCARCASES-WHT.png', description: 'TAGS: sculpture sculpture WHT\n\nmysticalarcases (WHT).', tags: ['sculpture', 'sculpture', 'WHT'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/156', name: 'OpenSea' }] },
+        { id: 'sculp-39-red', type: 'glb', name: 'mysticalarcases_RED.glb', url: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign/main/mystical-arcases-red-v146.glb', thumbnailUrl: 'https://raw.githubusercontent.com/decentralize-dfw/dfwdesign-thumb/main/mystical-2.png', description: 'TAGS: sculpture sculpture RED\n\nmysticalarcases (RED).', tags: ['sculpture', 'sculpture', 'RED'], links: [{ url: 'https://opensea.io/item/base/0xa7e1c80c850af5cfb8ae709daa3b968d685fde5f/154', name: 'OpenSea' }] }
+    ]
+};
+
+
+        // Combine all items
+        const allItems = [...dfwCollection.furniture, ...dfwCollection.sculpture];
+
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const dpr = window.devicePixelRatio || 1;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            ctx.scale(dpr, dpr);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // State
+        let loadedImages = [];
+        let loadedCount = 0;
+        let camera = { x: 0, y: 0, scale: 0.3 };
+        let targetCamera = { ...camera };
+        let isDragging = false;
+        let lastMouse = { x: 0, y: 0 };
+        let hoveredItem = null;
+        let detailOpen = false;
+        const ZOOM_LEVELS = [0.3, 0.6, 1.0, 1.5];
+        let currentZoomIndex = 0;
+        let contentBounds = { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+let lastActiveItem = null;
+        // Image loader
+       // Image loader - ORGANİK VE ÇAKIŞMASIZ VERSİYON
+        // Image loader - ORGANİK + DAĞINIK + ÇAKIŞMASIZ
+        // Image loader - ORGANİK + EKRAN ORANLI + GENİŞ
+        // Image loader - TAM EKRAN DİKDÖRTGEN + RANDOM + KÖŞE DOLDURMA
+        function loadImages() {
+            const progressFill = document.getElementById('progressFill');
+            const loading = document.getElementById('loading');
+
+            const baseSize = 250; 
+            const padding = 80; // Objeler arası boşluk (Hafif azalttım, çok kopuk olmasın)
+
+            // Sınırları sıfırla
+            contentBounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+
+            // EKRAN ORANI (EN ÖNEMLİ KISIM)
+            // Ekran genişse (1.7), dizilim de geniş olacak. Dikse (0.5), dizilim de dik olacak.
+            const screenRatio = window.innerWidth / window.innerHeight;
+
+            allItems.forEach((item, index) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+
+                img.onload = () => {
+                    loadedCount++;
+                    progressFill.style.width = (loadedCount / allItems.length * 100) + '%';
+
+                    let x = 0, y = 0;
+                    let placed = false;
+                    let attempts = 0;
+                    
+                    // Yayılma alanı (Başlangıçta küçük, yer bulamadıkça büyür)
+                    // Area çarpanı, item sayısına göre dinamik artar
+                    let spreadFactor = Math.sqrt(index + 1) * 100; 
+
+                    if (loadedImages.length > 0) {
+                        while (!placed && attempts < 2000) {
+                            // ÇOK ÖNEMLİ: Rastgele nokta seçimi, ama DİKDÖRTGEN sınırları içinde
+                            // width = spreadFactor * screenRatio
+                            // height = spreadFactor
+                            
+                            // spreadFactor yer bulamadıkça genişler
+                            const currentSpread = spreadFactor + (attempts * 2); 
+                            
+                            x = (Math.random() - 0.5) * currentSpread * screenRatio;
+                            y = (Math.random() - 0.5) * currentSpread;
+
+                            // Çarpışma Testi
+                            let collision = false;
+                            for (let other of loadedImages) {
+                                const dx = x - other.x;
+                                const dy = y - other.y;
+                                const dist = Math.sqrt(dx*dx + dy*dy);
+                                
+                                if (dist < (baseSize + padding)) {
+                                    collision = true;
+                                    break;
+                                }
+                            }
+
+                            if (!collision) placed = true;
+                            attempts++;
+                        }
+                    }
+
+                    // Sınırları güncelle
+                    const halfSize = baseSize / 2;
+                    if (x - halfSize < contentBounds.minX) contentBounds.minX = x - halfSize;
+                    if (x + halfSize > contentBounds.maxX) contentBounds.maxX = x + halfSize;
+                    if (y - halfSize < contentBounds.minY) contentBounds.minY = y - halfSize;
+                    if (y + halfSize > contentBounds.maxY) contentBounds.maxY = y + halfSize;
+
+                    loadedImages.push({
+                        img: img,
+                        x: x,
+                        y: y,
+                        scale: 0,
+                        targetScale: 1,
+                        maxSize: 200, 
+                        rotation: (Math.random() - 0.5) * 0.2, // Hafif organik dönüş
+                        name: item.name,
+                        tags: item.tags,
+                        description: item.description,
+                        links: item.links,
+                        visible: false,
+                        originalImg: img
+                    });
+
+                    if (loadedCount === allItems.length) {
+                        // Sınırları biraz güvenli hale getir
+                        contentBounds.minX -= 150;
+                        contentBounds.maxX += 150;
+                        contentBounds.minY -= 150;
+                        contentBounds.maxY += 150;
+
+                        setTimeout(() => {
+                            loading.classList.add('hidden');
+                            startAnimation();
+                        }, 500);
+                    }
+                };
+                
+                img.onerror = () => { loadedCount++; if(loadedCount===allItems.length) startAnimation(); };
+                img.src = item.thumbnailUrl;
+            });
+        }
+
+       function startAnimation() {
+            // 1. İçerik Merkezini Bul
+            const centerX = (contentBounds.minX + contentBounds.maxX) / 2;
+            const centerY = (contentBounds.minY + contentBounds.minY) / 2;
+
+            // 2. İçerik Boyutlarını Bul
+            const contentW = contentBounds.maxX - contentBounds.minX;
+            const contentH = contentBounds.maxY - contentBounds.minY;
+
+            // 3. Ekran Boyutları
+            const screenW = window.innerWidth;
+            const screenH = window.innerHeight;
+
+            // 4. Fit Oranını Hesapla (Zoom Extent için)
+            const scaleX = screenW / contentW;
+            const scaleY = screenH / contentH;
+            let fitScale = Math.min(scaleX, scaleY) * 0.9;
+
+            // 5. Başlangıç Zoom: Extent'ten 3 kere zoom yapılmış gibi (1.3^3 ≈ 2.2x)
+            // Kullanıcı orta kısmı görmek istiyor, extent değil
+            const initialZoom = fitScale * Math.pow(1.3, 3);
+
+            // 6. Kamerayı Merkeze Kur - DAHA YAKIN
+            camera.x = centerX;
+            camera.y = centerY;
+            camera.scale = initialZoom;
+
+            targetCamera.x = centerX;
+            targetCamera.y = centerY;
+            targetCamera.scale = initialZoom;
+
+            animate();
+        }
+        // Mouse events - PAN INVERTED FIX
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            lastMouse = { x: e.clientX, y: e.clientY };
+            document.body.classList.add('grabbing');
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            if (isDragging) {
+                const dx = e.clientX - lastMouse.x;
+                const dy = e.clientY - lastMouse.y;
+
+                // INVERTED PAN FIX
+                targetCamera.x -= dx / camera.scale;
+                targetCamera.y -= dy / camera.scale;
+
+                lastMouse = { x: e.clientX, y: e.clientY };
+                document.getElementById('hoverLabel').style.opacity = '0';
+                hoveredItem = null;
+            } else {
+                // Check hover
+                hoveredItem = null;
+                for (let item of loadedImages) {
+                    if (!item.visible) continue;
+
+                    const screenX = (item.x - camera.x) * camera.scale + window.innerWidth / 2;
+                    const screenY = (item.y - camera.y) * camera.scale + window.innerHeight / 2;
+
+                    // Calculate actual display size
+                    const imgAspect = item.img.width / item.img.height;
+                    let displayW, displayH;
+                    if (imgAspect > 1) {
+                        displayW = item.maxSize;
+                        displayH = item.maxSize / imgAspect;
+                    } else {
+                        displayH = item.maxSize;
+                        displayW = item.maxSize * imgAspect;
+                    }
+                    const screenSize = Math.max(displayW, displayH) * item.scale * camera.scale;
+
+                    const dx = mouseX - screenX;
+                    const dy = mouseY - screenY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < screenSize / 2) {
+                        hoveredItem = item;
+
+                        const label = document.getElementById('hoverLabel');
+                        label.textContent = item.name;
+                        label.style.left = (e.clientX + 20) + 'px';
+                        label.style.top = (e.clientY + 20) + 'px';
+                        label.style.opacity = '1';
+
+                        item.targetScale = 1.15;
+                        break;
+                    }
+                }
+
+                if (!hoveredItem) {
+                    document.getElementById('hoverLabel').style.opacity = '0';
+                    loadedImages.forEach(item => item.targetScale = 1);
+                }
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            document.body.classList.remove('grabbing');
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            document.body.classList.remove('grabbing');
+            document.getElementById('hoverLabel').style.opacity = '0';
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (hoveredItem && !isDragging) {
+                openDetail(hoveredItem);
+            }
+        });
+
+        
+
+       function openDetail(item) {
+            if (detailOpen) return;
+            detailOpen = true;
+            lastActiveItem = item;
+
+            const modal = document.getElementById('detailPanel');
+            const overlay = document.getElementById('modalOverlay');
+            const heroImg = document.getElementById('heroImage');
+            const ghostImg = document.getElementById('ghostImage');
+            
+            // 1. Modalı Aç
+            overlay.classList.add('active');
+            modal.classList.add('active');
+            
+            // 2. İçerikleri Doldur
+            document.getElementById('detailTitle').textContent = item.name;
+            document.getElementById('detailTags').textContent = item.tags.join(' • ');
+            document.getElementById('detailInfo').textContent = item.description;
+
+            const linksDiv = document.getElementById('detailLinks');
+            linksDiv.innerHTML = '';
+            item.links.forEach(link => {
+                const a = document.createElement('a');
+                a.href = link.url;
+                a.textContent = link.name;
+                a.target = '_blank';
+                linksDiv.appendChild(a);
+            });
+
+            // 3. KRİTİK: Ghost (Hayalet) resme src ver ki kutu doğru boyuta gelsin!
+            ghostImg.src = item.img.src;
+            
+            // Tarayıcıyı hesaplama yapmaya zorla (Reflow)
+            modal.offsetHeight; 
+            document.body.style.overflow = 'hidden';
+
+            // 4. BAŞLANGIÇ: Canvas'taki yerini hesapla
+            const screenX = (item.x - camera.x) * camera.scale + window.innerWidth / 2;
+            const screenY = (item.y - camera.y) * camera.scale + window.innerHeight / 2;
+            
+            // Canvas'taki boyut
+            const imgRatio = item.img.naturalWidth / item.img.naturalHeight;
+            let startW, startH;
+            if (imgRatio > 1) {
+                startW = item.maxSize * item.scale * camera.scale;
+                startH = startW / imgRatio;
+            } else {
+                startH = item.maxSize * item.scale * camera.scale;
+                startW = startH * imgRatio;
+            }
+
+            // 5. HEDEF: Ghost resmin (kutunun) yerini hesapla
+            // Ghost resim opacity:0 olsa bile orada yer kaplar. Bize doğru koordinatı verir.
+            const ghostRect = ghostImg.getBoundingClientRect();
+            
+            // Eğer resim henüz yüklenmediyse ve ghostRect 0 gelirse container'a bak (Fallback)
+            let targetX, targetY, targetW, targetH;
+            
+            if (ghostRect.width > 0 && ghostRect.height > 0) {
+                // Ghost resim yüklendi ve yer kaplıyor, en doğrusu budur.
+                targetX = ghostRect.left;
+                targetY = ghostRect.top;
+                targetW = ghostRect.width;
+                targetH = ghostRect.height;
+            } else {
+                // Yedek plan: Container'ı ölçüp contain hesabı yap
+                const container = document.querySelector('.modal-image-container');
+                const cRect = container.getBoundingClientRect();
+                const cRatio = cRect.width / cRect.height;
+                
+                if (cRatio > imgRatio) {
+                    targetH = cRect.height;
+                    targetW = targetH * imgRatio;
+                } else {
+                    targetW = cRect.width;
+                    targetH = targetW / imgRatio;
+                }
+                targetX = cRect.left + (cRect.width - targetW) / 2;
+                targetY = cRect.top + (cRect.height - targetH) / 2;
+            }
+
+            // 6. HERO RESMİ BAŞLAT
+            heroImg.src = item.img.src;
+            heroImg.style.display = 'block';
+            heroImg.style.borderRadius = '0px';
+            
+            // Hero'yu Canvas pozisyonuna koy
+            gsap.set(heroImg, {
+                left: screenX - startW / 2,
+                top: screenY - startH / 2,
+                width: startW,
+                height: startH,
+                rotation: item.rotation * (180/Math.PI)
+            });
+
+            // 7. ANİMASYON: Hero'yu Ghost'un olduğu yere götür
+            gsap.to(heroImg, {
+                left: targetX,
+                top: targetY,
+                width: targetW,
+                height: targetH,
+                rotation: 0,
+                borderRadius: '16px',
+                duration: 0.8,
+                ease: 'power3.inOut'
+            });
+        }
+
+        function closeDetail() {
+            if (!detailOpen) return;
+            detailOpen = false;
+
+            const modal = document.getElementById('detailPanel');
+            const overlay = document.getElementById('modalOverlay');
+            const heroImg = document.getElementById('heroImage');
+
+            overlay.classList.remove('active');
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+
+            if (lastActiveItem) {
+                const item = lastActiveItem;
+                
+                // Canvas'taki güncel yerine geri dön
+                const screenX = (item.x - camera.x) * camera.scale + window.innerWidth / 2;
+                const screenY = (item.y - camera.y) * camera.scale + window.innerHeight / 2;
+                
+                const imgRatio = item.img.naturalWidth / item.img.naturalHeight;
+                let finalW, finalH;
+                if (imgRatio > 1) {
+                    finalW = item.maxSize * item.scale * camera.scale;
+                    finalH = finalW / imgRatio;
+                } else {
+                    finalH = item.maxSize * item.scale * camera.scale;
+                    finalW = finalH * imgRatio;
+                }
+
+                gsap.to(heroImg, {
+                    left: screenX - finalW / 2,
+                    top: screenY - finalH / 2,
+                    width: finalW,
+                    height: finalH,
+                    rotation: item.rotation * (180/Math.PI),
+                    borderRadius: '0px',
+                    duration: 0.6,
+                    ease: 'power3.inOut',
+                    onComplete: () => {
+                        heroImg.style.display = 'none';
+                    }
+                });
+            } else {
+                heroImg.style.display = 'none';
+            }
+        }
+
+        // Zoom controls
+       function zoomIn() {
+            // Scale artarsa yaklaşırız
+            let newScale = targetCamera.scale * 1.3; 
+            // Max zoom sınırı (Çok yaklaşmasın)
+            targetCamera.scale = Math.min(newScale, 2.5); 
+        }
+
+        function zoomOut() {
+            // Scale azalırsa uzaklaşırız
+            let newScale = targetCamera.scale * 0.7;
+
+            // Min zoom sınırı (Çok uzaklaşıp kaybolmasın)
+            // İçeriğin sığdığı oranın yarısından daha uzağa gitmesin
+            const contentW = contentBounds.maxX - contentBounds.minX;
+            const minScale = (window.innerWidth / contentW) * 0.5;
+
+            targetCamera.scale = Math.max(newScale, minScale);
+        }
+
+        // Keyboard event - ESC to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && detailOpen) {
+                closeDetail();
+            }
+        });
+
+        // Prevent clicks inside modal from closing it
+        document.getElementById('detailPanel').addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Render loop
+        // Render loop
+        // Render loop - ULTRA SMOOTH & POP-UP VERSİYON
+        // Render loop - STRICT BOUNDS (BOŞLUK YASAĞI)
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // --- 1. HAREKET (Smooth) ---
+            // Hedef kamerayı sınırla (Kullanıcı oraya gitmek istese bile gidemesin)
+            
+            // Ekranın o anki zoom seviyesinde dünyada kapladığı alan
+            const viewW = window.innerWidth / targetCamera.scale;
+            const viewH = window.innerHeight / targetCamera.scale;
+
+            // İçerik sınırları
+            const contentW = contentBounds.maxX - contentBounds.minX;
+            const contentH = contentBounds.maxY - contentBounds.minY;
+
+            let minCamX, maxCamX, minCamY, maxCamY;
+
+            // X EKSENİ SINIRLAMASI
+            if (viewW >= contentW) {
+                // Eğer ekran içerikten genişse (çok zoom out), sadece merkezde durabilir
+                minCamX = maxCamX = (contentBounds.minX + contentBounds.maxX) / 2;
+            } else {
+                // Eğer zoom in yapıldıysa, kenarlara kadar gidebilir ama dışarı çıkamaz
+                // Sol kenar: İçeriğin solu + ekranın yarısı
+                minCamX = contentBounds.minX + viewW / 2;
+                maxCamX = contentBounds.maxX - viewW / 2;
+            }
+
+            // Y EKSENİ SINIRLAMASI
+            if (viewH >= contentH) {
+                minCamY = maxCamY = (contentBounds.minY + contentBounds.maxY) / 2;
+            } else {
+                minCamY = contentBounds.minY + viewH / 2;
+                maxCamY = contentBounds.maxY - viewH / 2;
+            }
+
+            // Target kamerayı bu sınırlara hapset
+            targetCamera.x = Math.max(minCamX, Math.min(maxCamX, targetCamera.x));
+            targetCamera.y = Math.max(minCamY, Math.min(maxCamY, targetCamera.y));
+
+            // Fiziksel kamera hareketi (Smoothness)
+            camera.x += (targetCamera.x - camera.x) * 0.04;
+            camera.y += (targetCamera.y - camera.y) * 0.04;
+            camera.scale += (targetCamera.scale - camera.scale) * 0.04;
+
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+            // --- 2. POP-UP VE GÖRÜNÜRLÜK ---
+            const margin = 100; 
+            const viewBounds = {
+                left: camera.x - window.innerWidth / (2 * camera.scale) - margin,
+                right: camera.x + window.innerWidth / (2 * camera.scale) + margin,
+                top: camera.y - window.innerHeight / (2 * camera.scale) - margin,
+                bottom: camera.y + window.innerHeight / (2 * camera.scale) + margin
+            };
+
+            loadedImages.forEach(item => {
+                const inView = item.x > viewBounds.left && item.x < viewBounds.right &&
+                               item.y > viewBounds.top && item.y < viewBounds.bottom;
+
+                if (inView && !item.visible) {
+                    item.visible = true;
+                    gsap.fromTo(item, 
+                        { scale: 0 }, 
+                        { scale: item.targetScale, duration: 0.8, ease: "back.out(1.5)", overwrite: true }
+                    );
+                }
+                
+                if (!inView && item.visible) {
+                     item.visible = false;
+                     item.scale = 0; 
+                }
+
+                if (item.visible) {
+                    if (Math.abs(item.scale - item.targetScale) > 0.01) {
+                         if(!gsap.isTweening(item)) {
+                            item.scale += (item.targetScale - item.scale) * 0.1;
+                         }
+                    }
+                }
+            });
+
+            // --- 3. ÇİZİM ---
+            ctx.save();
+            ctx.translate(window.innerWidth / 2, window.innerHeight / 2);
+
+            loadedImages.forEach(item => {
+                if (!item.visible || item.scale < 0.01) return;
+
+                const x = (item.x - camera.x) * camera.scale;
+                const y = (item.y - camera.y) * camera.scale;
+
+                const imgAspect = item.img.width / item.img.height;
+                let displayW, displayH;
+                if (imgAspect > 1) {
+                    displayW = item.maxSize;
+                    displayH = item.maxSize / imgAspect;
+                } else {
+                    displayH = item.maxSize;
+                    displayW = item.maxSize * imgAspect;
+                }
+
+                const w = displayW * item.scale * camera.scale;
+                const h = displayH * item.scale * camera.scale;
+
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(item.rotation);
+
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+                ctx.shadowBlur = 30 * item.scale;
+                ctx.shadowOffsetY = 10 * item.scale;
+
+                ctx.drawImage(item.img, -w/2, -h/2, w, h);
+                ctx.restore();
+            });
+
+            ctx.restore();
+        }
+
+        function getBounds() {
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+
+            loadedImages.forEach(item => {
+                minX = Math.min(minX, item.x - item.maxSize/2);
+                maxX = Math.max(maxX, item.x + item.maxSize/2);
+                minY = Math.min(minY, item.y - item.maxSize/2);
+                maxY = Math.max(maxY, item.y + item.maxSize/2);
+            });
+
+            return { minX, maxX, minY, maxY };
+        }
+
+        loadImages();
+    </script>
+</body>
+</html>
