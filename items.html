@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contemporary Artifacts | Catalog</title>
 
-    <!-- UPDATED FAVICON -->
+    <!-- FAVICON -->
     <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/weblogo.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    
+     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Capriola&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
@@ -34,7 +34,7 @@
                 aspect-ratio: 2556 / 748;
                 max-height: 75vh;
             }
-            
+             
             .logo-desktop-shift {
                 position: absolute;
                 left: 19%;
@@ -103,7 +103,7 @@
             border-left: 1px solid #e5e7eb;
             border-right: 1px solid #e5e7eb;
         }
-        
+         
         @media (min-width: 1024px) {
             table { font-size: 9pt; table-layout: auto; }
         }
@@ -135,7 +135,7 @@
             word-wrap: break-word;
             line-height: 1.1;
         }
-        
+         
         th:last-child, td:last-child {
             border-right: none;
         }
@@ -149,7 +149,7 @@
 
         .thumb-cell { width: 12%; text-align: center; padding: 1px; }
         @media (min-width: 1024px) { .thumb-cell { width: 80px; padding: 0; } }
-        
+         
         .thumb-img { 
             width: 100%; 
             height: auto; 
@@ -196,7 +196,7 @@
         }
 
         .image-container-scale { width: 80%; height: 80%; display: flex; align-items: center; justify-content: center; }
-        
+         
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #000; }
@@ -206,7 +206,7 @@
             transition: max-height 0.4s ease-out, opacity 0.3s ease; opacity: 0;
             width: 100%;
         }
-        
+         
         @media (min-width: 1024px) { 
             #header-description-container { max-height: none !important; opacity: 1 !important; display: block !important; margin-top: 1rem; }
         }
@@ -251,7 +251,7 @@
     <!-- Header Section -->
     <div class="header-bg w-full border-b border-gray-100 overflow-hidden">
         <div class="max-w-[2400px] h-full mx-auto relative">
-            
+             
             <div class="logo-desktop-shift logo-mobile-scale pt-6 lg:pt-0">
                 <img src="https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/logo-anim-fuls.gif" alt="Logo Animated">
             </div>
@@ -261,13 +261,13 @@
 
                 <div class="w-full lg:w-[60%] flex flex-col items-center lg:items-start text-center lg:text-left">
                     <h1 class="font-header text-[11px] tracking-[0.5em] uppercase mb-3 lg:mb-4 text-black">Contemporary Artifacts</h1>
-                    
+                     
                     <div class="lg:hidden mb-2">
                         <button onclick="toggleInfo()" class="font-body text-[9px] uppercase tracking-widest border border-black/10 px-4 py-2 hover:bg-black hover:text-white transition-all">
                             Information <span id="info-icon">+</span>
                         </button>
                     </div>
-                    
+                     
                     <div id="header-description-container">
                         <p id="header-description" class="font-body text-[7.5pt] text-gray-600 whitespace-pre-wrap px-4 lg:px-0 text-justify" style="text-align-last: left;"></p>
                     </div>
@@ -345,7 +345,7 @@
             if (currentView === view) return;
             const container = document.getElementById('main-container');
             container.classList.add('fade-out');
-            
+             
             setTimeout(() => {
                 currentView = view;
                 document.getElementById('btn-grid').classList.toggle('active', view === 'grid');
@@ -366,10 +366,23 @@
                 artifacts = rows.map(row => {
                     const c = row.c;
                     const val = (idx) => (c[idx] && c[idx].v !== null && c[idx].v !== "null") ? String(c[idx].v) : "";
+                    
                     return {
-                        dropCode: val(1), artist: val(2), artworkName: val(3), category: val(5), productType: val(6),
-                        color: val(7), material: val(8), imageLink: val(11), thumbnail: val(13), edition: val(14),
-                        dimensions: val(15), price: val(16), website: val(17), description: val(18), 
+                        dropCode: val(1), 
+                        artist: val(2), 
+                        artworkName: val(3), 
+                        category: val(5), 
+                        productType: val(6),
+                        color: val(7), 
+                        material: val(8), 
+                        imageLink: val(11), 
+                        thumbnail: val(13), 
+                        edition: val(14),
+                        dimensions: val(15), 
+                        // UPDATED PRICE LOGIC: Use 'f' (formatted) if available, otherwise 'v'
+                        price: (c[16] && c[16].f) ? c[16].f : val(16), 
+                        website: val(17), 
+                        description: val(18), 
                         shortDesc: val(19), 
                         artistBio: val(23)
                     };
@@ -377,7 +390,6 @@
                 
                 filteredArtifacts = artifacts;
                 
-                // Initialize filters ONCE to prevent layout shifts
                 setupFilters(); 
                 renderContent();
                 document.getElementById('loading-overlay').style.display = 'none';
@@ -391,11 +403,9 @@
             `).join('');
         }
 
-        // Updated applyFilter to NOT rebuild DOM, preventing jumping
         window.applyFilter = function(cat) {
             const container = document.getElementById('main-container');
             
-            // Only toggle visual class, DO NOT remove/add buttons
             const buttons = document.querySelectorAll('.filter-btn');
             buttons.forEach(btn => {
                 if (btn.dataset.cat === cat) btn.classList.add('active');
@@ -406,7 +416,6 @@
             setTimeout(() => {
                 currentCategory = cat;
                 filteredArtifacts = cat === 'All' ? artifacts : artifacts.filter(i => i.category === cat);
-                // setupFilters();  <-- REMOVED THIS LINE. NO RE-RENDERING.
                 renderContent(); 
                 container.classList.remove('fade-out');
             }, 300);
@@ -470,7 +479,6 @@
                     <td class="uppercase">${item.productType}</td>
                     <td>${item.dimensions}</td>
                     <td>${item.color}</td>
-                    <!-- Added text-[6pt] to make description font tiny -->
                     <td class="hidden lg:table-cell text-gray-500 leading-tight text-[6pt]">${item.shortDesc}</td>
                     <td class="font-bold text-left">${item.price}</td>
                 </tr>
@@ -499,8 +507,10 @@
                     ${item.edition ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">Edition</span><span class="font-body text-[8.5pt] italic">${item.edition}</span></div>` : ''}
                     ${item.dimensions ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">Dimension (WxDxH)</span><span class="font-body text-[8.5pt] italic">${item.dimensions}</span></div>` : ''}
                 </div>
-                ${item.description ? `<div class="space-y-4"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-900">Description</h4><p class="font-body text-[8.5pt] text-gray-600 italic font-light text-justify" style="text-align-last: left;">${item.description}</p></div>` : ''}
-                ${item.artistBio ? `<div class="space-y-4 pt-4 border-t border-gray-200/50"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-400">The Studio</h4><p class="font-body text-[8pt] text-gray-400 italic tracking-tight font-light text-justify" style="text-align-last: left;">${item.artistBio}</p>${item.website ? `<a href="${item.website}" target="_blank" class="inline-block font-body text-[8px] text-gray-400 underline uppercase tracking-widest hover:text-black transition-colors">Website</a>` : ''}</div>` : ''}
+                <!-- UPDATED LABEL: PRODUCT DESCRIPTION -->
+                ${item.description ? `<div class="space-y-4"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-900">Product Description</h4><p class="font-body text-[8.5pt] text-gray-600 italic font-light text-justify" style="text-align-last: left;">${item.description}</p></div>` : ''}
+                <!-- UPDATED LABEL: ABOUT [ARTIST] -->
+                ${item.artistBio ? `<div class="space-y-4 pt-4 border-t border-gray-200/50"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-400">About ${item.artist}</h4><p class="font-body text-[8pt] text-gray-400 italic tracking-tight font-light text-justify" style="text-align-last: left;">${item.artistBio}</p>${item.website ? `<a href="${item.website}" target="_blank" class="inline-block font-body text-[8px] text-gray-400 underline uppercase tracking-widest hover:text-black transition-colors">Website</a>` : ''}</div>` : ''}
                 ${item.price ? `<div class="pt-8 border-t border-gray-200/50"><div class="font-body text-[10pt] tracking-tighter text-black italic">${item.price}</div></div>` : ''}
             `;
             document.getElementById('detail-modal-overlay').style.display = 'block';
