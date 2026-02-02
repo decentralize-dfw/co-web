@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>status co | Contemporary Artifacts</title>
+
+   <!-- Favicon (Sekme İkonu) -->
+    <link rel="icon" type="image/png" href="weblogo.png">
+    
+    <!-- Space Mono Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Granim.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/granim/2.0.0/granim.min.js"></script>
+    
+    <!-- Spline Viewer Script -->
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.39/build/spline-viewer.js"></script>
+    
+    <style>
+        /* TEMEL AYARLAR */
+        body {
+            font-family: 'Space Mono', monospace;
+            margin: 0;
+            padding: 0;
+            color: #111;
+            background-color: #29174d; /* Fallback renk */
+            overflow-x: hidden;
+        }
+
+        /* Scrollbar Gizleme */
+        html, body {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        ::-webkit-scrollbar { display: none; }
+
+        /* DÜZELTME 1: Renk Geçişleri
+           'transparent' yerine rgba(41, 23, 77, 0) kullanılarak
+           mor zemin üzerinde grileşme/çizgi oluşumu engellendi.
+        */
+        
+        /* ARKA PLAN KATMANLARI */
+        .bg-layer-full {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            height: 100lvh;
+            pointer-events: none;
+        }
+
+        #granim-canvas { z-index: -3; }
+        
+        #bg-overlay {
+            z-index: -2;
+            /* DÜZELTME: transparent yerine rgba(41, 23, 77, 0) */
+            background: radial-gradient(ellipse at center, rgba(41, 23, 77, 0) 10%, rgba(41, 23, 77, 0.4) 60%, rgba(41, 23, 77, 0.9) 100%);
+        }
+
+        /* SPLINE (3D Model) KATMANI */
+        #canvas-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            height: 100svh;
+            z-index: -1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            overflow: hidden; 
+        }
+
+        spline-viewer {
+            width: 100%;
+            height: 100%;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+        
+        spline-viewer::part(logo) { display: none; }
+
+        /* MOBİL İÇİN SCALE AYARI */
+        @media (max-width: 768px) {
+            spline-viewer {
+                transform: scale(0.75);
+                transform-origin: center center;
+                width: 100%;
+                height: 100%;
+            }
+        }
+
+        /* DÜZELTME 2: Blur Katmanı Render Ayarları
+           will-change ve translate3d ile donanım hızlandırma açıldı.
+           Bu, render sırasındaki yırtılmaları ve çizgileri önler.
+        */
+        #blur-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            height: 100lvh;
+            z-index: 5; 
+            
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            
+            opacity: 0;
+            pointer-events: none;
+            
+            will-change: opacity;
+            transform: translate3d(0,0,0); /* Render hack */
+        }
+
+        /* TEXT FORMATLAMA */
+        .justify-center-last {
+            text-align: justify;
+            -moz-text-align-last: center;
+            text-align-last: center;
+        }
+
+        /* ANİMASYON VE UI */
+        .reveal-element {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1.0s ease-out;
+        }
+        .reveal-element.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #scroll-indicator-container {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+            pointer-events: none;
+        }
+        
+        .insta-icon {
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            opacity: 0.8;
+            display: inline-block;
+        }
+        .insta-icon:hover {
+            transform: scale(1.1);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="w-full">
+
+    <!-- 1. GRANIM ARKA PLAN -->
+    <canvas id="granim-canvas" class="bg-layer-full"></canvas>
+    <div id="bg-overlay" class="bg-layer-full"></div>
+
+    <!-- 2. SPLINE LAYER -->
+    <div id="canvas-layer">
+        <spline-viewer url="https://prod.spline.design/X-xNpCt05N7o8w7p/scene.splinecode"></spline-viewer>
+    </div>
+
+    <!-- 3. BLUR LAYER (Tam Ekran - Çizgisiz) -->
+    <div id="blur-layer"></div>
+
+    <!-- 4. UI: SCROLL GÖSTERGESİ -->
+    <div id="scroll-indicator-container" class="text-[9px] tracking-widest uppercase font-bold text-white/70 drop-shadow-md">Scroll</div>
+
+    <!-- 5. ANA İÇERİK -->
+    <div class="relative z-10 w-full" id="main-content">
+        
+        <!-- Boşluk Bırakıcı -->
+        <div class="w-full h-[100svh]"></div>
+
+        <!-- Yazı İçeriği Alanı -->
+        <section id="textContent" class="w-full min-h-[100svh] flex flex-col items-center justify-center px-4 md:px-0 relative py-10 md:py-20 overflow-hidden">
+            
+            <!-- 
+                DÜZELTME 3: İç Gradient Kaldırıldı.
+                Yazının arkasındaki lokal gradient (radial-gradient) silindi.
+                Blur efekti zaten yeterli kontrastı sağlayacak. 
+                Bu sayede scroll sırasında "kayan çizgi" sorunu tamamen bitti.
+            -->
+            
+            <!-- İçerik Kapsayıcı -->
+            <div class="max-w-3xl w-full flex flex-col items-center justify-center space-y-6 md:space-y-10 reveal-element relative z-20 mix-blend-screen">
+                
+                <!-- 1. LOGO -->
+                <div id="mainTitle" class="flex flex-col items-center justify-center w-full">
+                    <img 
+                        src="https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/logo_digital%20sculpture-text2.png" 
+                        alt="Status Co. Logo" 
+                        class="w-[60%] md:w-[45%] h-auto drop-shadow-2xl object-contain"
+                    />
+                </div>
+
+                <!-- 2. METİN BLOKU -->
+                <div class="w-[90%] md:w-[80%] text-[10px] sm:text-xs md:text-sm leading-[1.6] md:leading-[1.8] text-gray-100 font-medium drop-shadow-lg tracking-tight justify-center-last">
+                    
+                    <p class="font-bold mb-3 md:mb-4 block">status co is a cultural studio working across collectibles and collaborations.</p>
+
+                    <div class="space-y-3 md:space-y-4 text-white/90">
+                        <p>We produce, curate and present contemporary collectibles by artists and designers through curated pop-up drops. Each drop is built around a concept, bringing together objects that speak to one another through form, idea, and context. These collectibles are created with intention; they are meant to be lived with, not stored. Positioned between art, design, and everyday life, they transform functional forms into meaningful artifacts.</p>
+
+                        <p>Collaboration sits at the core of status co’s practice. Working closely with artists and designers, we connect the creative world with brands, institutions, and corporations. We develop collaborative projects that translate creative authorship into new contexts - whether by producing limited-edition collectibles for companies, or by matching creatives with brands to shape cultural, spatial, or strategic initiatives.</p>
+
+                        <p>Every collaboration is conceived as a dialogue: between creator and collector, creativity and commerce, concept and use.</p>
+
+                        <p class="pt-2 md:pt-4 font-semibold text-white">Across both collectibles and collaborations, status co occupies a space where authorship matters, context elevates value, and ownership becomes a form of participation.</p>
+                    </div>
+
+                </div>
+
+                <!-- 3. INSTAGRAM LINK -->
+                <div class="flex justify-center w-full">
+                    <a href="https://instagram.com/_status_co" target="_blank" rel="noopener noreferrer" class="insta-icon text-white" aria-label="Instagram">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                        </svg>
+                    </a>
+                </div>
+
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // =========================================================
+        // 1. GRANIM
+        // =========================================================
+        var granimInstance = new Granim({
+            element: '#granim-canvas',
+            direction: 'diagonal',
+            isPausedWhenNotInView: true,
+            stateTransitionSpeed: 1000,
+            states: {
+                "default-state": {
+                    gradients: [
+                        ['#29174d', '#625eaa'],
+                        ['#625eaa', '#b6a5d0'],
+                        ['#b6a5d0', '#625eaa'],
+                        ['#625eaa', '#29174d']
+                    ],
+                    transitionSpeed: 3000,
+                    loop: true
+                }
+            }
+        });
+
+        // =========================================================
+        // 2. REVEAL ANIMATION
+        // =========================================================
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal-element').forEach(el => observer.observe(el));
+
+        // =========================================================
+        // 3. SCROLL EFEKTLERİ (OPACITY KONTROLÜ)
+        // =========================================================
+        const scrollIndicator = document.getElementById('scroll-indicator-container');
+        const blurLayer = document.getElementById('blur-layer');
+        let hasScrolled = false;
+
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            const maxScrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            
+            // Sıfıra bölme koruması
+            let scrollPercent = maxScrollHeight > 0 ? scrollY / maxScrollHeight : 0;
+            
+            if (scrollPercent > 1) scrollPercent = 1;
+            if (scrollPercent < 0) scrollPercent = 0;
+
+            // Scroll göstergesini gizleme
+            if (!hasScrolled && scrollY > 50) { 
+                scrollIndicator.style.opacity = '0'; 
+                hasScrolled = true; 
+            } else if (scrollY < 50 && hasScrolled) {
+                scrollIndicator.style.opacity = '1';
+                hasScrolled = false;
+            }
+
+            // BLUR OPACITY
+            // %0 scroll = %0 Opacity
+            // %100 scroll = %100 Opacity
+            // Lineer, ivmesiz, homojen geçiş.
+            blurLayer.style.opacity = scrollPercent.toFixed(3);
+        });
+    </script>
+</body>
+</html>
