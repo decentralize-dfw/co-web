@@ -325,7 +325,8 @@
 
     <script type="module">
         const SHEET_ID = '1NjQC4XOzizmreaxMwL3J7OSey-aopUw7RVVrM0g5hG0';
-        const BASE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+        // ADDED &headers=0 to ensure the very first row (C1) is fetched as data, not header
+        const BASE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=0`;
 
         let artifacts = [];
         let filteredArtifacts = [];
@@ -361,7 +362,12 @@
                 const text = await response.text();
                 const json = JSON.parse(text.substr(47).slice(0, -2));
                 const rows = json.table.rows;
-                if (rows[0] && rows[0].c[2]) document.getElementById('header-description').innerText = rows[0].c[2].v;
+                
+                // With &headers=0, rows[0] is strictly the first row of the sheet.
+                // rows[0].c[2] corresponds to C1.
+                if (rows[0] && rows[0].c[2]) {
+                    document.getElementById('header-description').innerText = rows[0].c[2].v;
+                }
                 
                 artifacts = rows.map(row => {
                     const c = row.c;
@@ -379,7 +385,6 @@
                         thumbnail: val(13), 
                         edition: val(14),
                         dimensions: val(15), 
-                        // UPDATED PRICE LOGIC: Use 'f' (formatted) if available, otherwise 'v'
                         price: (c[16] && c[16].f) ? c[16].f : val(16), 
                         website: val(17), 
                         description: val(18), 
@@ -507,9 +512,7 @@
                     ${item.edition ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">Edition</span><span class="font-body text-[8.5pt] italic">${item.edition}</span></div>` : ''}
                     ${item.dimensions ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">Dimension (WxDxH)</span><span class="font-body text-[8.5pt] italic">${item.dimensions}</span></div>` : ''}
                 </div>
-                <!-- UPDATED LABEL: PRODUCT DESCRIPTION -->
                 ${item.description ? `<div class="space-y-4"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-900">Product Description</h4><p class="font-body text-[8.5pt] text-gray-600 italic font-light text-justify" style="text-align-last: left;">${item.description}</p></div>` : ''}
-                <!-- UPDATED LABEL: ABOUT [ARTIST] -->
                 ${item.artistBio ? `<div class="space-y-4 pt-4 border-t border-gray-200/50"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-400">About ${item.artist}</h4><p class="font-body text-[8pt] text-gray-400 italic tracking-tight font-light text-justify" style="text-align-last: left;">${item.artistBio}</p>${item.website ? `<a href="${item.website}" target="_blank" class="inline-block font-body text-[8px] text-gray-400 underline uppercase tracking-widest hover:text-black transition-colors">Website</a>` : ''}</div>` : ''}
                 ${item.price ? `<div class="pt-8 border-t border-gray-200/50"><div class="font-body text-[10pt] tracking-tighter text-black italic">${item.price}</div></div>` : ''}
             `;
