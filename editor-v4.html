@@ -7,6 +7,9 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/meshoptimizer@0.19.0/meshopt_decoder.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Capriola&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
         @font-face {
@@ -19,8 +22,8 @@
             --ui-color: #000000;
             --bg-color: #ffffff;
              --accent-color: #FF006A;
-            --font-headers: 'Telegrama Render', sans-serif;
-            --font-body: 'Telegrama Render', sans-serif;
+            --font-headers: 'Space Mono', monospace;
+            --font-body: 'Space Mono', monospace;
             
             /* KAMERA POZİSYONLARI (ORTHO) */
             /* CAM 1 */
@@ -45,7 +48,15 @@
              --hover-lift-distance: 100px;
             --hover-animation-duration: 0.3s;
             --hover-label-font-size: 140px;
+            --hover-label-font-style: bold;
+            --hover-label-letter-spacing: 0;
+            --hover-label-color: #000000;
+            --hover-label-opacity: 1.0;
             --hover-artist-font-size: 80px;
+            --hover-artist-font-style: normal;
+            --hover-artist-letter-spacing: 2;
+            --hover-artist-color: #333333;
+            --hover-artist-opacity: 0.8;
             --hover-label-font-box: 1000px;
             --hover-label-rotation-x: 0deg;
             --hover-label-rotation-y: 90deg;
@@ -310,7 +321,7 @@
         
         /* New Typography Hierarchy for Excel Data */
         .panel-artist {
-            font-family: var(--font-headers);
+            font-family: 'Capriola', sans-serif;
             font-size: 1rem;
             letter-spacing: 1px;
             text-transform: uppercase;
@@ -350,7 +361,7 @@
         }
 
         .panel-bio-header {
-            font-family: var(--font-headers);
+            font-family: 'Capriola', sans-serif;
             font-size: 0.9rem; /* Smaller */
             text-transform: uppercase;
             margin-top: 2rem;
@@ -484,6 +495,33 @@
         .cam-param-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
         .cam-param-input { width: 50px; text-align: right; border: 1px solid rgba(0,0,0,0.1); }
 
+        /* ========== MOBILE LABELS TOGGLE ========== */
+        #mobile-labels-toggle {
+            display: none;
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-family: var(--font-body);
+            font-size: 9px;
+            text-transform: uppercase;
+            cursor: pointer;
+            user-select: none;
+            align-items: center;
+            gap: 4px;
+        }
+        #mobile-labels-toggle input {
+            margin: 0;
+            width: 12px; height: 12px;
+            cursor: pointer;
+        }
+
         @media (max-width: 768px) {
             #side-panel {
                 right: 5%; left: 5%; bottom: 0; top: auto;
@@ -494,12 +532,23 @@
             }
             #side-panel.open { transform: translateY(0); }
             #ui-container { display: none !important; }
+            #mobile-labels-toggle { display: flex; }
             :root {
                 --panel-media-padding-horizontal: 25%;
                 --panel-media-padding-top: 1rem;
                 --panel-media-spacing: 30px;
                 --panel-content-padding: 1.5rem;
+                --panel-title-font-size: 1.6rem;
             }
+            .panel-artist { font-size: 0.8rem; }
+            .panel-desc-header { font-size: 0.72rem; }
+            .panel-bio-header { font-size: 0.72rem; }
+            .panel-description { font-size: 0.76rem; }
+            .panel-bio-text { font-size: 0.64rem; }
+            .panel-meta-grid { font-size: 0.64rem; }
+            /* Carousel arrows: center between image edge and popup edge */
+            .carousel-nav-btn.nav-left { left: -17%; }
+            .carousel-nav-btn.nav-right { right: -17%; }
         }
     </style>
 </head>
@@ -587,6 +636,11 @@
             <input type="number" class="cam-param-input" id="cam-pos-z" value="0" step="100" onchange="updateCameraPosition()">
         </div>
     </div>
+
+    <!-- MOBILE LABELS TOGGLE -->
+    <label id="mobile-labels-toggle">
+        <input type="checkbox" id="mobile-labels-cb"> Labels
+    </label>
 
     <div id="scene-container"></div>
 
@@ -786,7 +840,15 @@
             hoverLiftDistance: getParamNum('--hover-lift-distance'),
             hoverAnimationDuration: parseFloat(getParam('--hover-animation-duration')) * 1000,
             hoverLabelFontSize: getParamNum('--hover-label-font-size'),
+            hoverLabelFontStyle: getParam('--hover-label-font-style') || 'bold',
+            hoverLabelLetterSpacing: getParamNum('--hover-label-letter-spacing'),
+            hoverLabelColor: getParam('--hover-label-color') || '#000000',
+            hoverLabelOpacity: parseFloat(getParam('--hover-label-opacity')) || 1.0,
             hoverArtistFontSize: getParamNum('--hover-artist-font-size'),
+            hoverArtistFontStyle: getParam('--hover-artist-font-style') || 'normal',
+            hoverArtistLetterSpacing: getParamNum('--hover-artist-letter-spacing'),
+            hoverArtistColor: getParam('--hover-artist-color') || '#333333',
+            hoverArtistOpacity: parseFloat(getParam('--hover-artist-opacity')) || 0.8,
             hoverLabelFontBox: getParamNum('--hover-label-font-box'),
             hoverLabelRotationX: parseFloat(getParam('--hover-label-rotation-x')),
             hoverLabelRotationY: parseFloat(getParam('--hover-label-rotation-y')),
@@ -833,6 +895,9 @@
         // Bounding box system
         let boundingBoxHelpers = [];
         let boundingBoxesVisible = false;
+        // Mobile labels system
+        let mobileLabelsVisible = false;
+        let mobileStaticLabels = [];
         // Extended clickable zones (from ground to hover position)
         const clickableZones = [];
 
@@ -852,6 +917,7 @@
         let redoStack = [];
         const MAX_UNDO_STEPS = 50;
         let originalMaterials = new Map();
+        let isWireMode = false;
 
         async function startEngine() {
             try {
@@ -1028,6 +1094,9 @@
             renderer.domElement.addEventListener('mousedown', onPointerDown);
             renderer.domElement.addEventListener('mouseup', onPointerUp);
             renderer.domElement.addEventListener('click', handleEditorClick);
+            // Mobile touch: tap to open panel via bounding box zones
+            renderer.domElement.addEventListener('touchstart', onTouchStart, {passive: true});
+            renderer.domElement.addEventListener('touchend', onTouchEnd);
             
             // MOBILE PANEL SWIPE TO CLOSE logic
             const sidePanel = document.getElementById('side-panel');
@@ -1052,6 +1121,18 @@
                     closePanel();
                 }
             });
+
+            // Mobile labels toggle checkbox
+            const mobileLabelsCheckbox = document.getElementById('mobile-labels-cb');
+            if (mobileLabelsCheckbox) {
+                mobileLabelsCheckbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        showMobileLabels();
+                    } else {
+                        hideMobileLabels();
+                    }
+                });
+            }
         }
 
         window.handlePresetSelection = function(level) { applyLightingPreset(level); };
@@ -1062,6 +1143,7 @@
             [btnLow, btnMid].forEach(b => b?.classList.remove('active'));
 
             if (level === 'low') {
+                isWireMode = true;
                 btnLow.classList.add('active');
                 bloomPass.enabled = false;
                 renderer.shadowMap.enabled = false;
@@ -1076,6 +1158,7 @@
                 applyLowModeMaterials(true);
             }
             else if (level === 'default') {
+                isWireMode = false;
                 btnMid.classList.add('active');
                 bloomPass.enabled = true;
                 bloomPass.strength = 0.05;
@@ -1194,6 +1277,7 @@
         }
 
         function onMouseMove(e) {
+            if (window.innerWidth <= 768) return; // No hover on mobile
             if (document.getElementById('side-panel').classList.contains('open')) return;
             if (editorModeActive) return;
             mouse.x = (e.clientX/window.innerWidth)*2-1;
@@ -1246,20 +1330,29 @@
             return lines;
         }
 
-        function createHoverTextMesh(text, fontSize, maxW) {
+        function createHoverTextMesh(text, fontSize, maxW, opts = {}) {
+            const fontStyle = opts.fontStyle || 'bold';
+            const letterSpacing = opts.letterSpacing || 0;
+            // Wire mode forces white, otherwise use specified color
+            const fillColor = isWireMode ? '#ffffff' : (opts.color || '#000000');
+            const opacity = opts.opacity !== undefined ? opts.opacity : 1.0;
+
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            ctx.font = `bold ${fontSize}px "Telegrama Render"`;
+            const fontStr = `${fontStyle} ${fontSize}px "Space Mono"`;
+            ctx.font = fontStr;
 
             const lines = wrapText(ctx, text, maxW);
             const lineHeight = fontSize * 1.1;
             canvas.width = maxW + 100;
             canvas.height = (lines.length * lineHeight) + 80;
 
-            ctx.font = `bold ${fontSize}px "Telegrama Render"`;
-            ctx.fillStyle = '#000000';
+            ctx.font = fontStr;
+            ctx.fillStyle = fillColor;
+            ctx.globalAlpha = opacity;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
+            if (letterSpacing) ctx.letterSpacing = `${letterSpacing}px`;
 
             const centerX = canvas.width / 2;
             let startY = (canvas.height - (lines.length * lineHeight)) / 2 + (lineHeight / 2);
@@ -1300,7 +1393,12 @@
             // --- ARTIST LABEL (below, positioned at bbox + lift + offset-y) ---
             const artistText = content.artist || '';
             if (artistText) {
-                hoverLabelArtist = createHoverTextMesh(artistText, PARAMS.hoverArtistFontSize, maxW);
+                hoverLabelArtist = createHoverTextMesh(artistText, PARAMS.hoverArtistFontSize, maxW, {
+                    fontStyle: PARAMS.hoverArtistFontStyle,
+                    letterSpacing: PARAMS.hoverArtistLetterSpacing,
+                    color: PARAMS.hoverArtistColor,
+                    opacity: PARAMS.hoverArtistOpacity
+                });
                 const artistY = obj.position.y + bboxTopLocal + PARAMS.hoverLiftDistance + PARAMS.hoverLabelOffsetY;
                 hoverLabelArtist.position.set(obj.position.x, artistY, obj.position.z);
                 hoverLabelArtist.rotation.set(rotX, rotY, rotZ);
@@ -1310,7 +1408,12 @@
             // --- NAME LABEL (above artist, from AL column, fallback to D) ---
             const nameText = content.hoverDisplayName || content.name || '';
             if (nameText) {
-                hoverLabel = createHoverTextMesh(nameText, PARAMS.hoverLabelFontSize, maxW);
+                hoverLabel = createHoverTextMesh(nameText, PARAMS.hoverLabelFontSize, maxW, {
+                    fontStyle: PARAMS.hoverLabelFontStyle,
+                    letterSpacing: PARAMS.hoverLabelLetterSpacing,
+                    color: PARAMS.hoverLabelColor,
+                    opacity: PARAMS.hoverLabelOpacity
+                });
                 const nameY = obj.position.y + bboxTopLocal + PARAMS.hoverLiftDistance + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
                 hoverLabel.position.set(obj.position.x, nameY, obj.position.z);
                 hoverLabel.rotation.set(rotX, rotY, rotZ);
@@ -1357,6 +1460,49 @@
                     }
                 }
             }
+        }
+
+        // ========== MOBILE TOUCH HANDLERS ==========
+        let touchSX, touchSY;
+        function onTouchStart(e) {
+            if (e.touches.length !== 1) return;
+            touchSX = e.touches[0].clientX;
+            touchSY = e.touches[0].clientY;
+        }
+        function onTouchEnd(e) {
+            if (editorModeActive) return;
+            if (document.getElementById('side-panel').classList.contains('open')) return;
+            const t = e.changedTouches[0];
+            if (Math.abs(t.clientX - touchSX) > 10 || Math.abs(t.clientY - touchSY) > 10) return; // Was a drag
+            mouse.x = (t.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(t.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, getActiveCamera());
+
+            // Check clickable zones first (bounding boxes)
+            const zoneHits = raycaster.intersectObjects(clickableZones, false);
+            if (zoneHits.length > 0) {
+                const zone = zoneHits[0].object;
+                const parentObj = zone.userData.parentObject;
+                if (parentObj && parentObj.userData.modalContent && parentObj.userData.clickable) {
+                    openPanel(parentObj.userData.modalContent, parentObj);
+                    return;
+                }
+            }
+            // Fallback: check model meshes
+            const hits = raycaster.intersectObjects(clickableObjects, true);
+            if (hits.length > 0) {
+                let obj = hits[0].object;
+                while (obj.parent && !obj.userData.modalContent) obj = obj.parent;
+                if (obj.userData.modalContent && obj.userData.clickable) {
+                    openPanel(obj.userData.modalContent, obj);
+                }
+            }
+        }
+
+        function formatEuroPrice(val) {
+            const num = parseFloat(String(val).replace(/[^0-9.\-]/g, ''));
+            if (isNaN(num)) return val; // Return as-is if not parseable
+            return '€' + num.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
         function openPanel(content, obj) {
@@ -1416,7 +1562,8 @@
             }
 
             if (PARAMS.showPrice && content.price && content.price !== "") {
-                metaHTML += `<span class="meta-label">PRICE:</span> <span class="meta-value">${content.price}</span>`;
+                const formattedPrice = formatEuroPrice(content.price);
+                metaHTML += `<span class="meta-label">PRICE:</span> <span class="meta-value">${formattedPrice}</span>`;
             }
 
             metaGrid.innerHTML = metaHTML;
@@ -1736,6 +1883,7 @@
             // Remove old zones
             clickableZones.forEach(z => scene.remove(z));
             clickableZones.length = 0;
+            const isMobileNow = window.innerWidth <= 768;
 
             clickableObjects.forEach(obj => {
                 if (!obj.userData.clickable) return;
@@ -1744,9 +1892,10 @@
                 const size = box.getSize(new THREE.Vector3());
                 const center = box.getCenter(new THREE.Vector3());
 
-                // Extend the box upward by hoverLiftDistance to cover the hover area
-                const extendedHeight = size.y + PARAMS.hoverLiftDistance;
-                const extendedCenterY = center.y + PARAMS.hoverLiftDistance / 2;
+                // On mobile no hover lift, so zone is just the bounding box; on desktop extend upward
+                const liftExtra = isMobileNow ? 0 : PARAMS.hoverLiftDistance;
+                const extendedHeight = size.y + liftExtra;
+                const extendedCenterY = center.y + liftExtra / 2;
 
                 const geometry = new THREE.BoxGeometry(
                     Math.max(size.x, 50), // Minimum size to be clickable
@@ -1792,6 +1941,64 @@
                 Math.max(size.z, 50)
             );
             zone.position.set(center.x, center.y - lift / 2, center.z);
+        }
+
+        // ========== MOBILE LABELS SYSTEM ==========
+
+        function showMobileLabels() {
+            hideMobileLabels(); // Clear existing first
+            mobileLabelsVisible = true;
+            const maxW = PARAMS.hoverLabelFontBox;
+            const rotX = PARAMS.hoverLabelRotationX * Math.PI / 180;
+            const rotY = PARAMS.hoverLabelRotationY * Math.PI / 180;
+            const rotZ = PARAMS.hoverLabelRotationZ * Math.PI / 180;
+
+            clickableObjects.forEach(obj => {
+                if (!obj.userData.clickable) return;
+                const content = obj.userData.modalContent;
+                if (!content) return;
+
+                const box = new THREE.Box3().setFromObject(obj);
+                const bboxTopLocal = box.max.y - obj.position.y;
+
+                // Artist label
+                const artistText = content.artist || '';
+                if (artistText) {
+                    const label = createHoverTextMesh(artistText, PARAMS.hoverArtistFontSize, maxW, {
+                        fontStyle: PARAMS.hoverArtistFontStyle,
+                        letterSpacing: PARAMS.hoverArtistLetterSpacing,
+                        color: PARAMS.hoverArtistColor,
+                        opacity: PARAMS.hoverArtistOpacity
+                    });
+                    const y = obj.position.y + bboxTopLocal + PARAMS.hoverLabelOffsetY;
+                    label.position.set(obj.position.x, y, obj.position.z);
+                    label.rotation.set(rotX, rotY, rotZ);
+                    scene.add(label);
+                    mobileStaticLabels.push(label);
+                }
+
+                // Name label
+                const nameText = content.hoverDisplayName || content.name || '';
+                if (nameText) {
+                    const label = createHoverTextMesh(nameText, PARAMS.hoverLabelFontSize, maxW, {
+                        fontStyle: PARAMS.hoverLabelFontStyle,
+                        letterSpacing: PARAMS.hoverLabelLetterSpacing,
+                        color: PARAMS.hoverLabelColor,
+                        opacity: PARAMS.hoverLabelOpacity
+                    });
+                    const y = obj.position.y + bboxTopLocal + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
+                    label.position.set(obj.position.x, y, obj.position.z);
+                    label.rotation.set(rotX, rotY, rotZ);
+                    scene.add(label);
+                    mobileStaticLabels.push(label);
+                }
+            });
+        }
+
+        function hideMobileLabels() {
+            mobileLabelsVisible = false;
+            mobileStaticLabels.forEach(l => scene.remove(l));
+            mobileStaticLabels = [];
         }
 
         // ========== EDITOR MODE FUNCTIONS ==========
