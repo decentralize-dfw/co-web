@@ -610,17 +610,6 @@
 
                 sceneObjects = [];
 
-                // 1. ADD ENVIRONMENT
-                sceneObjects.push({
-                    type: 'model',
-                    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/exhbt22-opt.glb',
-                    position: { x: 0, y: -560, z: 0 },
-                    rotation: { x: 0, y: 0, z: 0 },
-                    scale: 400,
-                    clickable: false,
-                    modalContent: { name: "Environment", artist: "VEA", description: "Environment" }
-                });
-
                 // Helper to get value from cell safely
                 const getVal = (row, idx, type = 'string') => {
                     const cell = row.c[idx];
@@ -628,7 +617,7 @@
                     return cell.v;
                 };
 
-                // 2. PARSE EXCEL ROWS (ALL ROWS returned by API)
+                // 1. ITERATE ALL ITEMS (Rows 8 - 81 approx)
                 rows.forEach((row, i) => {
                     // Check for valid GLB link in Column K (Index 10)
                     const glbSrc = getVal(row, 10);
@@ -639,26 +628,26 @@
                         src: glbSrc,
                         width: 700,
                         position: { 
-                            x: parseFloat(getVal(row, 27, 'number')), // AB -> Index 27
-                            y: parseFloat(getVal(row, 28, 'number')), // AC -> Index 28
-                            z: parseFloat(getVal(row, 29, 'number'))  // AD -> Index 29
+                            x: parseFloat(getVal(row, 27, 'number')), // AB
+                            y: parseFloat(getVal(row, 28, 'number')), // AC
+                            z: parseFloat(getVal(row, 29, 'number'))  // AD
                         },
                         rotation: { 
-                            x: parseFloat(getVal(row, 30, 'number')), // AE -> Index 30
-                            y: parseFloat(getVal(row, 31, 'number')), // AF -> Index 31
-                            z: parseFloat(getVal(row, 32, 'number'))  // AG -> Index 32
+                            x: parseFloat(getVal(row, 30, 'number')), // AE
+                            y: parseFloat(getVal(row, 31, 'number')), // AF
+                            z: parseFloat(getVal(row, 32, 'number'))  // AG
                         },
-                        scale: parseFloat(getVal(row, 33, 'number')) || 400, // AH -> Index 33
+                        scale: parseFloat(getVal(row, 33, 'number')) || 400, // AH
                         modalContent: {
-                            artist: getVal(row, 2),       // C -> Artist Name
-                            name: getVal(row, 3),         // D -> Title
-                            dimensions: getVal(row, 15),  // P -> Dimensions (Index 15)
-                            category: getVal(row, 5),     // F -> Category
-                            type: getVal(row, 6),         // G -> Type
-                            color: getVal(row, 7),        // H -> Color
-                            edition: getVal(row, 14),     // O -> Edition (Index 14)
-                            description: getVal(row, 18), // S -> Description
-                            bio: getVal(row, 22),         // W -> Bio
+                            artist: getVal(row, 2),       // C
+                            name: getVal(row, 3),         // D
+                            dimensions: getVal(row, 15),  // P (Index 15)
+                            category: getVal(row, 5),     // F
+                            type: getVal(row, 6),         // G
+                            color: getVal(row, 7),        // H
+                            edition: getVal(row, 14),     // O (Index 14)
+                            description: getVal(row, 18), // S
+                            bio: getVal(row, 22),         // W
                             media: []
                         }
                     };
@@ -685,6 +674,43 @@
                     }
 
                     sceneObjects.push(obj);
+                });
+
+                // 2. ADD ENVIRONMENT (LAST item to appear at bottom of editor)
+                // Model URL from J1 (Index 0, Col 9)
+                let envGlb = 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/exhbt22-opt.glb'; 
+                if (rows[0] && rows[0].c[9] && rows[0].c[9].v) {
+                    envGlb = rows[0].c[9].v;
+                }
+
+                // Transforms from Row 82 (Index 81)
+                const envRow = rows[81];
+                let envPos = { x: 0, y: -560, z: 0 };
+                let envRot = { x: 0, y: 0, z: 0 };
+                let envScale = 400;
+
+                if (envRow) {
+                    envPos = {
+                        x: parseFloat(getVal(envRow, 27, 'number')),
+                        y: parseFloat(getVal(envRow, 28, 'number')),
+                        z: parseFloat(getVal(envRow, 29, 'number'))
+                    };
+                    envRot = {
+                        x: parseFloat(getVal(envRow, 30, 'number')),
+                        y: parseFloat(getVal(envRow, 31, 'number')),
+                        z: parseFloat(getVal(envRow, 32, 'number'))
+                    };
+                    envScale = parseFloat(getVal(envRow, 33, 'number')) || 400;
+                }
+
+                sceneObjects.push({
+                    type: 'model',
+                    src: envGlb,
+                    position: envPos,
+                    rotation: envRot,
+                    scale: envScale,
+                    clickable: false, // Not clickable in UI
+                    modalContent: { name: "Environment", artist: "VEA", description: "Environment" }
                 });
 
             } catch (err) {
@@ -1022,10 +1048,11 @@
                     });
 
                     scene.add(m);
-                    if (m.userData.clickable) {
-                        clickableObjects.push(m);
-                        loadedObjectsMap.set(index, m);
-                    }
+                    
+                    // Always add to clickableObjects for Editor selection, even if not interactable in Public UI
+                    clickableObjects.push(m);
+                    loadedObjectsMap.set(index, m);
+                    
                     loadedAssets++; updateLoader();
                     if(loadedAssets === totalAssets) {
                         fitCameraToScene();
@@ -1187,7 +1214,6 @@
             mediaContainer.innerHTML = '';
             
             // CAROUSEL LOGIC
-            // Filter only image types for the carousel (models can't easily be in carousel yet, handle separately or fallback)
             const images = content.media.filter(m => m.type === 'image');
             const models = content.media.filter(m => m.type === 'model');
 
@@ -1209,17 +1235,12 @@
 
                 // Helper to update carousel state
                 const updateCarousel = () => {
-                    // Hide all images
                     Array.from(carouselDiv.querySelectorAll('.carousel-img')).forEach(img => img.classList.remove('active'));
-                    // Show current
                     carouselDiv.children[currentImgIdx].classList.add('active');
                     
-                    // Logic for arrow visibility (Sequential, No Loop)
-                    // If images <= 1, no arrows needed
                     if(images.length > 1) {
                         const btnL = carouselDiv.querySelector('.nav-left');
                         const btnR = carouselDiv.querySelector('.nav-right');
-                        
                         if(btnL) btnL.style.display = currentImgIdx > 0 ? 'flex' : 'none';
                         if(btnR) btnR.style.display = currentImgIdx < images.length - 1 ? 'flex' : 'none';
                     }
@@ -1253,7 +1274,6 @@
                     };
                     carouselDiv.appendChild(btnRight);
                     
-                    // Initial update to set correct visibility (Right visible, Left hidden)
                     updateCarousel();
                 }
                 
