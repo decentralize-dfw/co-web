@@ -17,23 +17,23 @@
 
         :root {
             --ui-color: #000000;
-            --bg-color: #ffffff; 
-            --accent-color: #FF006A;
+            --bg-color: #ffffff;
+             --accent-color: #FF006A;
             --font-headers: 'Telegrama Render', sans-serif;
             --font-body: 'Telegrama Render', sans-serif;
-            --camera-type: ortho; 
-            --initial-camera-zoom: 2.0; 
-            --cam-pos-x: 5000;
+            --camera-type: ortho;
+             --initial-camera-zoom: 2.0;
+             --cam-pos-x: 5000;
             --cam-pos-y: 5000;
             --cam-pos-z: -5000;
             --cam-lookat-x: 0;
             --cam-lookat-y: 0;
             --cam-lookat-z: 0;
-            --camera-fov: 10; 
-            --camera-min-distance: 1000;
+            --camera-fov: 10;
+             --camera-min-distance: 1000;
             --camera-max-distance: 45000;
-            --enable-pan: yes; 
-            --hover-lift-distance: 100px;
+            --enable-pan: yes;
+             --hover-lift-distance: 100px;
             --hover-animation-duration: 0.3s;
             --hover-label-font-size: 140px;
             --hover-label-rotation-x: 0deg;
@@ -45,9 +45,9 @@
             --panel-top-offset: 80px;
             --panel-bottom-offset: 20px;
             --panel-border-radius: 24px;
-            --panel-bg-opacity: 0.4; 
-            --panel-blur: 8px; 
-            --panel-animation-duration: 0.8s;
+            --panel-bg-opacity: 0.4;
+             --panel-blur: 8px;
+             --panel-animation-duration: 0.8s;
             --panel-media-padding-horizontal: 10%;
             --panel-media-padding-top: 2rem;
             --panel-media-spacing: 20px;
@@ -56,8 +56,8 @@
             --panel-desc-font-size: 0.95rem;
             --panel-text-spacing: 1.5rem;
             --panel-content-padding: 2rem;
-            --selection-zoom-factor: 0.2; 
-            --zoom-in-animation-duration: 1.0s;
+            --selection-zoom-factor: 0.2;
+             --zoom-in-animation-duration: 1.0s;
             --zoom-out-animation-duration: 1.2s;
             --app-height: 100vh;
         }
@@ -76,8 +76,8 @@
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             z-index: 1;
-            background: #ffffff; 
-        }
+            background: #ffffff;
+         }
 
         /* ========== COMPACT GRAPHICS SWITCHER ========== */
         #graphics-switcher {
@@ -186,8 +186,8 @@
         #side-panel::-webkit-scrollbar-thumb {
             background: rgba(0, 0, 0, 0.15);
             background-clip: padding-box;
-            border-right: 5px solid transparent; 
-            border-radius: 10px;
+            border-right: 5px solid transparent;
+             border-radius: 10px;
         }
         #side-panel::-webkit-scrollbar-button { display: none !important; }
         
@@ -198,8 +198,8 @@
         
         .panel-close-btn {
             position: sticky;
-            top: 1.5rem; 
-            margin-left: auto;
+            top: 1.5rem;
+             margin-left: auto;
             margin-right: 1.5rem;
             width: 36px; height: 36px;
             border-radius: 50%;
@@ -266,8 +266,8 @@
         .carousel-nav-btn svg { width: 14px; height: 14px; stroke: black; }
         
         .nav-right { right: 10px; }
-        .nav-left { left: 10px; } 
-
+        .nav-left { left: 10px; }
+ 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .panel-text-section { padding: var(--panel-content-padding); padding-top: 0; }
@@ -449,8 +449,8 @@
         .cam-param-input { width: 50px; text-align: right; border: 1px solid rgba(0,0,0,0.1); }
 
         @media (max-width: 768px) {
-            #side-panel { 
-                right: 0; bottom: 0; top: auto;
+            #side-panel {
+                 right: 0; bottom: 0; top: auto;
                 width: 100%; height: 85vh; max-height: 85vh;
                 border-radius: 32px 32px 0 0;
                 transform: translateY(100%);
@@ -598,7 +598,8 @@
 
         async function loadDataFromSheet() {
             const SHEET_ID = '1NjQC4XOzizmreaxMwL3J7OSey-aopUw7RVVrM0g5hG0';
-            const BASE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=0`;
+            // Added timestamp parameter (&t=...) to prevent browser caching of the JSON response
+            const BASE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=0&t=${Date.now()}`;
 
             try {
                 const response = await fetch(BASE_URL);
@@ -627,12 +628,12 @@
                         type: 'model',
                         src: glbSrc,
                         width: 700,
-                        position: { 
+                        position: {
                             x: parseFloat(getVal(row, 27, 'number')), // AB
                             y: parseFloat(getVal(row, 28, 'number')), // AC
                             z: parseFloat(getVal(row, 29, 'number'))  // AD
                         },
-                        rotation: { 
+                        rotation: {
                             x: parseFloat(getVal(row, 30, 'number')), // AE
                             y: parseFloat(getVal(row, 31, 'number')), // AF
                             z: parseFloat(getVal(row, 32, 'number'))  // AG
@@ -678,29 +679,31 @@
 
                 // 2. ADD ENVIRONMENT (LAST item to appear at bottom of editor)
                 // Model URL from J1 (Index 0, Col 9)
-                let envGlb = 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/exhbt22-opt.glb'; 
-                if (rows[0] && rows[0].c[9] && rows[0].c[9].v) {
+                let envGlb = 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/exhbt22-opt.glb';
+                 if (rows[0] && rows[0].c[9] && rows[0].c[9].v) {
                     envGlb = rows[0].c[9].v;
                 }
 
-                // Transforms from Row 82 (Index 81)
-                const envRow = rows[81];
+                // Transforms from Row 1 (Index 0) - AB1:AH1
+                // Default values if row is missing or empty
                 let envPos = { x: 0, y: -560, z: 0 };
                 let envRot = { x: 0, y: 0, z: 0 };
                 let envScale = 400;
 
-                if (envRow) {
+                // Explicit check for Row 1 (Index 0)
+                if (rows.length > 0 && rows[0]) {
+                    const envRow = rows[0]; // Read from First Row
                     envPos = {
-                        x: parseFloat(getVal(envRow, 27, 'number')),
-                        y: parseFloat(getVal(envRow, 28, 'number')),
-                        z: parseFloat(getVal(envRow, 29, 'number'))
+                        x: parseFloat(getVal(envRow, 27, 'number')), // AB1
+                        y: parseFloat(getVal(envRow, 28, 'number')), // AC1
+                        z: parseFloat(getVal(envRow, 29, 'number'))  // AD1
                     };
                     envRot = {
-                        x: parseFloat(getVal(envRow, 30, 'number')),
-                        y: parseFloat(getVal(envRow, 31, 'number')),
-                        z: parseFloat(getVal(envRow, 32, 'number'))
+                        x: parseFloat(getVal(envRow, 30, 'number')), // AE1
+                        y: parseFloat(getVal(envRow, 31, 'number')), // AF1
+                        z: parseFloat(getVal(envRow, 32, 'number'))  // AG1
                     };
-                    envScale = parseFloat(getVal(envRow, 33, 'number')) || 400;
+                    envScale = parseFloat(getVal(envRow, 33, 'number')) || 400; // AH1
                 }
 
                 sceneObjects.push({
@@ -756,15 +759,15 @@
         let currentHoveredObject = null, hoverLabel = null, currentSelectedObject = null;
         let originalCameraState = null, currentActiveVideos = [];
         let modalAnimationFrameId;
-        let sceneObjects = []; 
-        const clickableObjects = [];
+        let sceneObjects = [];
+         const clickableObjects = [];
 
         // Editor mode variables
         let editorModeActive = false;
         let transformControls = null;
         let selectedEditorObject = null;
-        let loadedObjectsMap = new Map(); 
-        let currentCameraMode = 1;
+        let loadedObjectsMap = new Map();
+         let currentCameraMode = 1;
         let savedCameraState = null;
         let currentTransformMode = 'translate';
         const lockedObjects = new Set(); 
@@ -798,10 +801,10 @@
         function init() {
             const container = document.getElementById('scene-container');
             
-            renderer = new THREE.WebGLRenderer({ 
-                antialias: true, 
-                alpha: true, 
-                powerPreference: "high-performance",
+            renderer = new THREE.WebGLRenderer({
+                 antialias: true,
+                 alpha: true,
+                 powerPreference: "high-performance",
                 precision: "highp",
                 logarithmicDepthBuffer: true
             });
@@ -810,9 +813,9 @@
             
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 0.85; 
-            renderer.shadowMap.enabled = true; 
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMappingExposure = 0.85;
+             renderer.shadowMap.enabled = true;
+             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
             renderer.setClearAlpha(0);
             renderer.setClearColor(0xffffff, 0);
@@ -870,9 +873,9 @@
             controls2.enableDamping = true;
             controls2.dampingFactor = 0.05;
             controls2.enablePan = false;
-            controls2.enableZoom = false; 
-            controls2.target.set(0, 200, 100); 
-            controls2.enabled = false; 
+            controls2.enableZoom = false;
+             controls2.target.set(0, 200, 100);
+             controls2.enabled = false; 
 
             window.addEventListener('keydown', handleKeyDown);
 
@@ -895,9 +898,9 @@
             sun.shadow.camera.left = -5500; sun.shadow.camera.right = 5500;
             sun.shadow.camera.top = 5500; sun.shadow.camera.bottom = -5500;
             
-            sun.shadow.bias = -0.0005; 
-            sun.shadow.normalBias = 0.2; 
-            scene.add(sun);
+            sun.shadow.bias = -0.0005;
+             sun.shadow.normalBias = 0.2;
+             scene.add(sun);
 
             const fill1 = new THREE.PointLight(0xffffff, 0.1, 10000);
             fill1.position.set(3000, 1500, 3000);
@@ -936,7 +939,6 @@
             renderer.domElement.addEventListener('click', handleEditorClick);
         }
 
-        // ... [Keeping Preset Functions exactly as is] ...
         window.handlePresetSelection = function(level) { applyLightingPreset(level); };
         window.applyLightingPreset = function(level) {
             if (!bloomPass || !renderer) return;
@@ -1048,11 +1050,11 @@
                     });
 
                     scene.add(m);
-                    
+                                
                     // Always add to clickableObjects for Editor selection, even if not interactable in Public UI
                     clickableObjects.push(m);
                     loadedObjectsMap.set(index, m);
-                    
+                                
                     loadedAssets++; updateLoader();
                     if(loadedAssets === totalAssets) {
                         fitCameraToScene();
@@ -1060,16 +1062,16 @@
                     }
                 }, undefined, (err) => {
                     console.error("Error loading model:", item.src, err);
-                    loadedAssets++; updateLoader(); 
-                });
+                    loadedAssets++; updateLoader();
+                 });
             });
         }
 
         function updateLoader() {
             const p = Math.round((loadedAssets/totalAssets)*100);
             document.querySelector('.loader-bar').style.width = p+'%';
-            if(loadedAssets>=totalAssets) setTimeout(()=> { 
-                document.getElementById('loader').style.opacity='0';
+            if(loadedAssets>=totalAssets) setTimeout(()=> {
+                 document.getElementById('loader').style.opacity='0';
                 setTimeout(()=>document.getElementById('loader').style.display='none', 800);
             }, 500);
         }
@@ -1118,10 +1120,10 @@
             tex.needsUpdate = true;
             tex.anisotropy = renderer.capabilities.getMaxAnisotropy(); 
 
-            const mat = new THREE.MeshBasicMaterial({ 
-                map: tex, 
-                transparent: true, 
-                depthTest: false,
+            const mat = new THREE.MeshBasicMaterial({
+                 map: tex,
+                 transparent: true,
+                 depthTest: false,
                 depthWrite: false,
                 side: THREE.DoubleSide,
                 toneMapped: false
@@ -1131,9 +1133,9 @@
             hoverLabel.renderOrder = 9999;
             hoverLabel.position.copy(obj.position).y += PARAMS.hoverLabelOffsetY;
             hoverLabel.rotation.set(
-                PARAMS.hoverLabelRotationX * Math.PI / 180, 
-                PARAMS.hoverLabelRotationY * Math.PI / 180, 
-                PARAMS.hoverLabelRotationZ * Math.PI / 180
+                PARAMS.hoverLabelRotationX * Math.PI / 180,
+                 PARAMS.hoverLabelRotationY * Math.PI / 180,
+                 PARAMS.hoverLabelRotationZ * Math.PI / 180
             );
             
             scene.add(hoverLabel);
@@ -1207,11 +1209,11 @@
             document.getElementById('panel-bio-header').innerText = content.artist ? `ABOUT ${content.artist}` : "";
             document.getElementById('panel-bio').innerText = content.bio || "";
             
-            const linksContainer = document.getElementById('panel-links'); 
-            linksContainer.innerHTML = ''; 
-            
-            const mediaContainer = document.getElementById('panel-media'); 
-            mediaContainer.innerHTML = '';
+            const linksContainer = document.getElementById('panel-links');
+             linksContainer.innerHTML = '';
+             
+             const mediaContainer = document.getElementById('panel-media');
+             mediaContainer.innerHTML = '';
             
             // CAROUSEL LOGIC
             const images = content.media.filter(m => m.type === 'image');
@@ -1237,7 +1239,7 @@
                 const updateCarousel = () => {
                     Array.from(carouselDiv.querySelectorAll('.carousel-img')).forEach(img => img.classList.remove('active'));
                     carouselDiv.children[currentImgIdx].classList.add('active');
-                    
+                                
                     if(images.length > 1) {
                         const btnL = carouselDiv.querySelector('.nav-left');
                         const btnR = carouselDiv.querySelector('.nav-right');
@@ -1273,17 +1275,17 @@
                         }
                     };
                     carouselDiv.appendChild(btnRight);
-                    
+                                
                     updateCarousel();
                 }
-                
+                                
                 mediaContainer.appendChild(carouselDiv);
             }
 
             // 2. 3D MODELS (Append below carousel if any, or if no images found)
             models.forEach(m => {
-                const item = document.createElement('div'); 
-                item.className = 'panel-media-item';
+                const item = document.createElement('div');
+                 item.className = 'panel-media-item';
                 let wrapper = document.createElement('div');
                 wrapper.className = 'media-wrapper';
                 wrapper.style.height = '300px'; // Give models fixed height
@@ -1296,12 +1298,10 @@
             document.getElementById('side-panel').scrollTop = 0;
         }
 
-        // ... [Keeping rest of the file unchanged] ...
-        
         function initModal3D(container, src) {
-            const sceneM = new THREE.Scene(); 
-            sceneM.background = new THREE.Color(0xf4f4f4); 
-            if (globalEnvMap) sceneM.environment = globalEnvMap;
+            const sceneM = new THREE.Scene();
+             sceneM.background = new THREE.Color(0xf4f4f4);
+             if (globalEnvMap) sceneM.environment = globalEnvMap;
 
             const renM = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renM.setPixelRatio(window.devicePixelRatio);
@@ -1311,13 +1311,13 @@
 
             const camM = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
             sceneM.add(new THREE.HemisphereLight(0xffffff, 0xffffff, 1.2));
-            const dirLight = new THREE.DirectionalLight(0xffffff, 3.5); 
-            dirLight.position.set(5, 10, 7); 
-            sceneM.add(dirLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 3.5);
+             dirLight.position.set(5, 10, 7);
+             sceneM.add(dirLight);
 
-            const ctrlM = new OrbitControls(camM, renM.domElement); 
-            ctrlM.autoRotate = true; ctrlM.autoRotateSpeed = 2.5; 
-            ctrlM.enableDamping = true;
+            const ctrlM = new OrbitControls(camM, renM.domElement);
+             ctrlM.autoRotate = true; ctrlM.autoRotateSpeed = 2.5;
+             ctrlM.enableDamping = true;
 
             const loader = new GLTFLoader();
             const draco = new DRACOLoader();
@@ -1343,12 +1343,12 @@
                 ctrlM.update();
             });
 
-            function loop() { 
-                if (!document.getElementById('side-panel').classList.contains('open')) { renM.dispose(); return; }
-                modalAnimationFrameId = requestAnimationFrame(loop); 
-                ctrlM.update(); 
-                renM.render(sceneM, camM); 
-            }
+            function loop() {
+                 if (!document.getElementById('side-panel').classList.contains('open')) { renM.dispose(); return; }
+                modalAnimationFrameId = requestAnimationFrame(loop);
+                 ctrlM.update();
+                 renM.render(sceneM, camM);
+             }
             loop();
         }
 
@@ -1668,7 +1668,7 @@
         // ========== PRINT FUNCTION UPDATED FOR EXCEL ==========
         window.printEditorData = function() {
             // No Header needed for direct paste into specific columns if user knows context, 
-            // but user asked for formatted copy.
+             // but user asked for formatted copy.
             // Output format: X \t Y \t Z \t RX \t RY \t RZ \t S
             // Matches Excel Columns AB -> AH
             let output = ""; 
