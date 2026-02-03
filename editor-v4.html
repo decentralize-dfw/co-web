@@ -45,11 +45,14 @@
              --hover-lift-distance: 100px;
             --hover-animation-duration: 0.3s;
             --hover-label-font-size: 140px;
+            --hover-artist-font-size: 80px;
             --hover-label-font-box: 1000px;
             --hover-label-rotation-x: 0deg;
             --hover-label-rotation-y: 90deg;
             --hover-label-rotation-z: 0deg;
-            --hover-label-offset-y: 550px;
+            --hover-label-offset-y: 100px;
+            --hover-label-name-offset-y: 200px;
+            --show-price: yes;
             
             /* PANEL AYARLARI */
             --panel-width: 480px;
@@ -691,6 +694,8 @@
                         modalContent: {
                             artist: getVal(row, 2),       // C
                             name: getVal(row, 3),         // D
+                            hoverDisplayName: getVal(row, 37), // AL - hover label name
+                            price: getVal(row, 16),       // Q - price with currency
                             dimensions: getVal(row, 15),  // P (Index 15)
                             category: getVal(row, 5),     // F
                             type: getVal(row, 6),         // G
@@ -781,11 +786,14 @@
             hoverLiftDistance: getParamNum('--hover-lift-distance'),
             hoverAnimationDuration: parseFloat(getParam('--hover-animation-duration')) * 1000,
             hoverLabelFontSize: getParamNum('--hover-label-font-size'),
+            hoverArtistFontSize: getParamNum('--hover-artist-font-size'),
             hoverLabelFontBox: getParamNum('--hover-label-font-box'),
             hoverLabelRotationX: parseFloat(getParam('--hover-label-rotation-x')),
             hoverLabelRotationY: parseFloat(getParam('--hover-label-rotation-y')),
             hoverLabelRotationZ: parseFloat(getParam('--hover-label-rotation-z')),
             hoverLabelOffsetY: getParamNum('--hover-label-offset-y'),
+            hoverLabelNameOffsetY: getParamNum('--hover-label-name-offset-y'),
+            showPrice: getParam('--show-price') === 'yes',
             selectionZoomFactor: getParamNum('--selection-zoom-factor'),
             selectionZoomFactorMobile: getParamNum('--selection-zoom-factor-mobile'),
             zoomInAnimationDuration: parseFloat(getParam('--zoom-in-animation-duration')) * 1000,
@@ -816,7 +824,7 @@
         let camera, cameraOrtho, scene, renderer, controls, controlsOrtho, raycaster, mouse, composer, globalEnvMap;
         let bloomPass, ssaoPass;
         let loadedAssets = 0, totalAssets = 0;
-        let currentHoveredObject = null, hoverLabel = null, currentSelectedObject = null;
+        let currentHoveredObject = null, hoverLabel = null, hoverLabelArtist = null, currentSelectedObject = null;
         let originalCameraState = null, currentActiveVideos = [];
         let modalAnimationFrameId;
         let sceneObjects = [];
@@ -1218,59 +1226,43 @@
             } else clearHover();
         }
 
-        function applyHover(obj) {
-            currentHoveredObject = obj;
-            new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + PARAMS.hoverLiftDistance }, PARAMS.hoverAnimationDuration).start();
+        // Helper for Text Wrapping (shared by hover labels)
+        function wrapText(context, text, maxWidth) {
+            const words = text.split(' ');
+            let line = '';
+            const lines = [];
+            for(let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = context.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    lines.push(line);
+                    line = words[n] + ' ';
+                } else {
+                    line = testLine;
+                }
+            }
+            lines.push(line);
+            return lines;
+        }
 
-            // Calculate bounding box height relative to the object's local origin
-            const box = new THREE.Box3().setFromObject(obj);
-            const bboxTopLocal = box.max.y - obj.position.y; // bbox top relative to object origin
-            obj.userData._bboxTopLocal = bboxTopLocal; // Store for animate() updates
-
+        function createHoverTextMesh(text, fontSize, maxW) {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            const fs = PARAMS.hoverLabelFontSize;
-            const maxW = PARAMS.hoverLabelFontBox;
+            ctx.font = `bold ${fontSize}px "Telegrama Render"`;
 
-            const labelText = obj.userData.modalContent.name;
-            ctx.font = `bold ${fs}px "Telegrama Render"`;
-
-            // Helper for Text Wrapping
-            function wrapText(context, text, maxWidth) {
-                const words = text.split(' ');
-                let line = '';
-                const lines = [];
-                for(let n = 0; n < words.length; n++) {
-                    const testLine = line + words[n] + ' ';
-                    const metrics = context.measureText(testLine);
-                    const testWidth = metrics.width;
-                    if (testWidth > maxWidth && n > 0) {
-                        lines.push(line);
-                        line = words[n] + ' ';
-                    } else {
-                        line = testLine;
-                    }
-                }
-                lines.push(line);
-                return lines;
-            }
-
-            const lines = wrapText(ctx, labelText, maxW);
-
-            // Calculate canvas dimensions
-            const lineHeight = fs * 1.1;
-            canvas.width = maxW + 100; // Padding
+            const lines = wrapText(ctx, text, maxW);
+            const lineHeight = fontSize * 1.1;
+            canvas.width = maxW + 100;
             canvas.height = (lines.length * lineHeight) + 80;
 
-            // Re-apply font and set props
-            ctx.font = `bold ${fs}px "Telegrama Render"`;
+            ctx.font = `bold ${fontSize}px "Telegrama Render"`;
             ctx.fillStyle = '#000000';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
 
             const centerX = canvas.width / 2;
-            let startY = (canvas.height - (lines.length * lineHeight)) / 2 + (lineHeight/2);
-
+            let startY = (canvas.height - (lines.length * lineHeight)) / 2 + (lineHeight / 2);
             lines.forEach((line, i) => {
                 ctx.fillText(line.trim(), centerX, startY + (i * lineHeight));
             });
@@ -1280,26 +1272,50 @@
             tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
             const mat = new THREE.MeshBasicMaterial({
-                 map: tex,
-                 transparent: true,
-                 depthTest: false,
-                depthWrite: false,
-                side: THREE.DoubleSide,
-                toneMapped: false
+                map: tex, transparent: true,
+                depthTest: false, depthWrite: false,
+                side: THREE.DoubleSide, toneMapped: false
             });
 
-            hoverLabel = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width, canvas.height), mat);
-            hoverLabel.renderOrder = 9999;
-            // Label Y = object position + bboxTop + hoverLiftDistance + offset-y
-            const labelY = obj.position.y + bboxTopLocal + PARAMS.hoverLiftDistance + PARAMS.hoverLabelOffsetY;
-            hoverLabel.position.set(obj.position.x, labelY, obj.position.z);
-            hoverLabel.rotation.set(
-                PARAMS.hoverLabelRotationX * Math.PI / 180,
-                 PARAMS.hoverLabelRotationY * Math.PI / 180,
-                 PARAMS.hoverLabelRotationZ * Math.PI / 180
-            );
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width, canvas.height), mat);
+            mesh.renderOrder = 9999;
+            return mesh;
+        }
 
-            scene.add(hoverLabel);
+        function applyHover(obj) {
+            currentHoveredObject = obj;
+            new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + PARAMS.hoverLiftDistance }, PARAMS.hoverAnimationDuration).start();
+
+            // Calculate bounding box height relative to the object's local origin
+            const box = new THREE.Box3().setFromObject(obj);
+            const bboxTopLocal = box.max.y - obj.position.y;
+            obj.userData._bboxTopLocal = bboxTopLocal;
+
+            const maxW = PARAMS.hoverLabelFontBox;
+            const content = obj.userData.modalContent;
+            const rotX = PARAMS.hoverLabelRotationX * Math.PI / 180;
+            const rotY = PARAMS.hoverLabelRotationY * Math.PI / 180;
+            const rotZ = PARAMS.hoverLabelRotationZ * Math.PI / 180;
+
+            // --- ARTIST LABEL (below, positioned at bbox + lift + offset-y) ---
+            const artistText = content.artist || '';
+            if (artistText) {
+                hoverLabelArtist = createHoverTextMesh(artistText, PARAMS.hoverArtistFontSize, maxW);
+                const artistY = obj.position.y + bboxTopLocal + PARAMS.hoverLiftDistance + PARAMS.hoverLabelOffsetY;
+                hoverLabelArtist.position.set(obj.position.x, artistY, obj.position.z);
+                hoverLabelArtist.rotation.set(rotX, rotY, rotZ);
+                scene.add(hoverLabelArtist);
+            }
+
+            // --- NAME LABEL (above artist, from AL column, fallback to D) ---
+            const nameText = content.hoverDisplayName || content.name || '';
+            if (nameText) {
+                hoverLabel = createHoverTextMesh(nameText, PARAMS.hoverLabelFontSize, maxW);
+                const nameY = obj.position.y + bboxTopLocal + PARAMS.hoverLiftDistance + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
+                hoverLabel.position.set(obj.position.x, nameY, obj.position.z);
+                hoverLabel.rotation.set(rotX, rotY, rotZ);
+                scene.add(hoverLabel);
+            }
         }
 
         function clearHover() {
@@ -1308,6 +1324,7 @@
                 currentHoveredObject = null;
             }
             if(hoverLabel) { scene.remove(hoverLabel); hoverLabel=null; }
+            if(hoverLabelArtist) { scene.remove(hoverLabelArtist); hoverLabelArtist=null; }
         }
 
         let sX, sY;
@@ -1397,7 +1414,11 @@
             if (content.edition && content.edition !== "") {
                 metaHTML += `<span class="meta-label">EDITION:</span> <span class="meta-value">${content.edition}</span>`;
             }
-            
+
+            if (PARAMS.showPrice && content.price && content.price !== "") {
+                metaHTML += `<span class="meta-label">PRICE:</span> <span class="meta-value">${content.price}</span>`;
+            }
+
             metaGrid.innerHTML = metaHTML;
 
             document.getElementById('panel-desc').innerText = content.description || "";
@@ -1645,10 +1666,17 @@
                 composer.passes[0].camera = cameraOrtho;
             }
 
-            if(hoverLabel && currentHoveredObject) {
+            if(currentHoveredObject) {
                 const bboxTop = currentHoveredObject.userData._bboxTopLocal || 0;
-                const labelY = currentHoveredObject.position.y + bboxTop + PARAMS.hoverLiftDistance + PARAMS.hoverLabelOffsetY;
-                hoverLabel.position.set(currentHoveredObject.position.x, labelY, currentHoveredObject.position.z);
+                const baseY = currentHoveredObject.position.y + bboxTop + PARAMS.hoverLiftDistance;
+                if(hoverLabelArtist) {
+                    const artistY = baseY + PARAMS.hoverLabelOffsetY;
+                    hoverLabelArtist.position.set(currentHoveredObject.position.x, artistY, currentHoveredObject.position.z);
+                }
+                if(hoverLabel) {
+                    const nameY = baseY + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
+                    hoverLabel.position.set(currentHoveredObject.position.x, nameY, currentHoveredObject.position.z);
+                }
             }
             composer.render();
         }
