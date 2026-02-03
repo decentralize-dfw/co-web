@@ -72,6 +72,7 @@
              --zoom-in-animation-duration: 1.0s;
             --zoom-out-animation-duration: 1.2s;
             --app-height: 100vh;
+            --initial-camera-zoom-mobile: 2.0;
         }
 
         html, body {
@@ -788,7 +789,8 @@
             zoomInAnimationDuration: parseFloat(getParam('--zoom-in-animation-duration')) * 1000,
             zoomOutAnimationDuration: parseFloat(getParam('--zoom-out-animation-duration')) * 1000,
             initialCameraZoom: getParamNum('--initial-camera-zoom'),
-            
+            initialCameraZoomMobile: getParamNum('--initial-camera-zoom-mobile'),
+
             cameraFov: getParamNum('--camera-fov'),
             cameraMinDist: getParamNum('--camera-min-distance'),
             cameraMaxDist: getParamNum('--camera-max-distance'),
@@ -817,6 +819,12 @@
         let modalAnimationFrameId;
         let sceneObjects = [];
          const clickableObjects = [];
+
+        // Bounding box system
+        let boundingBoxHelpers = [];
+        let boundingBoxesVisible = false;
+        // Extended clickable zones (from ground to hover position)
+        const clickableZones = [];
 
         // Editor mode variables
         let editorModeActive = false;
@@ -856,14 +864,14 @@
             const isMobile = window.innerWidth <= 768; // Check for mobile
             
             renderer = new THREE.WebGLRenderer({
-                 antialias: !isMobile, // Optimization for mobile
+                 antialias: true, // Keep antialias on for quality
                  alpha: true,
                  powerPreference: "high-performance",
-                precision: "highp",
+                precision: isMobile ? "mediump" : "highp",
                 logarithmicDepthBuffer: true
             });
-            // Optimization: Reduce pixel ratio on mobile to prevent crashes
-            renderer.setPixelRatio(isMobile ? 1 : window.devicePixelRatio);
+            // Mobile: cap pixel ratio at 1.5 for balance between quality and performance
+            renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
             
             renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -888,7 +896,7 @@
             // Default to Cam 1 Pos
             cameraOrtho.position.set(PARAMS.cam1PosX, PARAMS.cam1PosY, PARAMS.cam1PosZ);
             cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
-            cameraOrtho.zoom = PARAMS.initialCameraZoom;
+            cameraOrtho.zoom = isMobile ? PARAMS.initialCameraZoomMobile : PARAMS.initialCameraZoom;
 
             scene = new THREE.Scene();
             scene.background = null;
@@ -905,7 +913,9 @@
             controls.enableRotate = true; // ENABLED
             controls.minDistance = PARAMS.cameraMinDist;
             controls.maxDistance = PARAMS.cameraMaxDist;
-            controls.maxPolarAngle = Math.PI / 2;
+            // Lock vertical rotation: only horizontal (azimuthal) rotation allowed
+            controls.minPolarAngle = Math.PI / 4; // Lock vertical angle
+            controls.maxPolarAngle = Math.PI / 4; // Same value = no vertical rotation
             controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controls.enabled = false; // Start in Ortho
 
@@ -916,6 +926,9 @@
             controlsOrtho.enablePan = false; // DISABLED
             controlsOrtho.enableZoom = true;
             controlsOrtho.enableRotate = true; // ENABLED BY DEFAULT
+            // Lock vertical rotation for ortho too
+            controlsOrtho.minPolarAngle = Math.PI / 4;
+            controlsOrtho.maxPolarAngle = Math.PI / 4;
             controlsOrtho.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controlsOrtho.enabled = true; // Start in Ortho
 
@@ -957,8 +970,8 @@
             const sun = new THREE.DirectionalLight(0xffffff, 3.5);
             sun.position.set(1200, 2400, 1200);
             sun.castShadow = true;
-            // Mobile Optimization: Smaller shadow map
-            const shadowSize = isMobile ? 1024 : 2048;
+            // Mobile: slightly smaller shadow map but not too low
+            const shadowSize = isMobile ? 1536 : 2048;
             sun.shadow.mapSize.set(shadowSize, shadowSize);
             sun.shadow.camera.near = 0.5;
             sun.shadow.camera.far = 16000;
@@ -983,13 +996,13 @@
             composer.addPass(renderPass);
 
             bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.25, 0.35, 0.8);
+            if (isMobile) bloomPass.enabled = false; // Skip bloom on mobile for performance
             composer.addPass(bloomPass);
 
             composer.addPass(new OutputPass());
 
             const fxaaPass = new ShaderPass(FXAAShader);
-            // Mobile Optimization: Pixel ratio adjustments
-            const pr = isMobile ? 1 : window.devicePixelRatio;
+            const pr = isMobile ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio;
             fxaaPass.material.uniforms['resolution'].value.set(1/(window.innerWidth*pr), 1/(window.innerHeight*pr));
             composer.addPass(fxaaPass);
 
@@ -1151,6 +1164,8 @@
                         // Default start at Cam 1
                         switchCamera(1);
                         buildEditorPanel();
+                        buildBoundingBoxes();
+                        buildClickableZones();
                     }
                 }, undefined, (err) => {
                     console.error("Error loading model:", item.src, err);
@@ -1174,6 +1189,20 @@
             mouse.x = (e.clientX/window.innerWidth)*2-1;
             mouse.y = -(e.clientY/window.innerHeight)*2+1;
             raycaster.setFromCamera(mouse, getActiveCamera());
+
+            // First check clickable zones (invisible extended bounding boxes)
+            const zoneHits = raycaster.intersectObjects(clickableZones, false);
+            if (zoneHits.length > 0) {
+                const zone = zoneHits[0].object;
+                const parentObj = zone.userData.parentObject;
+                if (parentObj && parentObj.userData.modalContent && parentObj.userData.clickable && currentHoveredObject !== parentObj) {
+                    clearHover();
+                    applyHover(parentObj);
+                }
+                return;
+            }
+
+            // Fallback: check actual model meshes
             const hits = raycaster.intersectObjects(clickableObjects, true);
             if(hits.length>0) {
                 let obj = hits[0].object;
@@ -1280,6 +1309,19 @@
                 mouse.x = (e.clientX/window.innerWidth)*2-1;
                 mouse.y = -(e.clientY/window.innerHeight)*2+1;
                 raycaster.setFromCamera(mouse, getActiveCamera());
+
+                // First check clickable zones
+                const zoneHits = raycaster.intersectObjects(clickableZones, false);
+                if (zoneHits.length > 0) {
+                    const zone = zoneHits[0].object;
+                    const parentObj = zone.userData.parentObject;
+                    if (parentObj && parentObj.userData.modalContent && parentObj.userData.clickable) {
+                        openPanel(parentObj.userData.modalContent, parentObj);
+                        return;
+                    }
+                }
+
+                // Fallback: check actual model meshes
                 const hits = raycaster.intersectObjects(clickableObjects, true);
                 if(hits.length>0) {
                     let obj = hits[0].object;
@@ -1314,7 +1356,9 @@
             // Calculate target zoom: "Dividing initial zoom by factor"
             // For Ortho: initial 1.0 / 0.2 = 5.0 (Zoom In)
             // For Persp: initial 1.0 / 0.2 = 5.0 (Field of View Zoom equivalent)
-            const targetZoom = PARAMS.initialCameraZoom / PARAMS.selectionZoomFactor;
+            const isMobileNow = window.innerWidth <= 768;
+            const baseZoom = isMobileNow ? PARAMS.initialCameraZoomMobile : PARAMS.initialCameraZoom;
+            const targetZoom = baseZoom / PARAMS.selectionZoomFactor;
             
             new TWEEN(activeCam)
                 .to({ zoom: targetZoom }, PARAMS.zoomInAnimationDuration)
@@ -1625,6 +1669,89 @@
                     }
                 }; tick();
             };
+        }
+
+        // ========== BOUNDING BOX & CLICKABLE ZONE FUNCTIONS ==========
+
+        function buildBoundingBoxes() {
+            // Remove old helpers
+            boundingBoxHelpers.forEach(h => scene.remove(h));
+            boundingBoxHelpers = [];
+
+            clickableObjects.forEach(obj => {
+                if (!obj.userData.clickable) return;
+                const box = new THREE.Box3().setFromObject(obj);
+                const helper = new THREE.Box3Helper(box, 0x000000);
+                helper.material.transparent = true;
+                helper.material.opacity = 0.3;
+                helper.material.linewidth = 1;
+                helper.visible = boundingBoxesVisible;
+                helper.userData.isBoundingBoxHelper = true;
+                scene.add(helper);
+                boundingBoxHelpers.push(helper);
+            });
+        }
+
+        function buildClickableZones() {
+            // Remove old zones
+            clickableZones.forEach(z => scene.remove(z));
+            clickableZones.length = 0;
+
+            clickableObjects.forEach(obj => {
+                if (!obj.userData.clickable) return;
+
+                const box = new THREE.Box3().setFromObject(obj);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+
+                // Extend the box upward by hoverLiftDistance to cover the hover area
+                const extendedHeight = size.y + PARAMS.hoverLiftDistance;
+                const extendedCenterY = center.y + PARAMS.hoverLiftDistance / 2;
+
+                const geometry = new THREE.BoxGeometry(
+                    Math.max(size.x, 50), // Minimum size to be clickable
+                    extendedHeight,
+                    Math.max(size.z, 50)
+                );
+                const material = new THREE.MeshBasicMaterial({
+                    visible: false, // Invisible but raycastable
+                    side: THREE.DoubleSide
+                });
+                const zoneMesh = new THREE.Mesh(geometry, material);
+                zoneMesh.position.set(center.x, extendedCenterY, center.z);
+                zoneMesh.userData.parentObject = obj;
+                zoneMesh.userData.isClickableZone = true;
+                zoneMesh.raycast = THREE.Mesh.prototype.raycast; // Ensure standard raycast
+                scene.add(zoneMesh);
+                clickableZones.push(zoneMesh);
+            });
+        }
+
+        function toggleBoundingBoxes() {
+            boundingBoxesVisible = !boundingBoxesVisible;
+            boundingBoxHelpers.forEach(h => {
+                h.visible = boundingBoxesVisible;
+            });
+        }
+
+        // Update clickable zone positions when objects move (hover lift)
+        function updateClickableZonePosition(obj) {
+            const zone = clickableZones.find(z => z.userData.parentObject === obj);
+            if (!zone) return;
+            const box = new THREE.Box3().setFromObject(obj);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const origY = obj.userData.originalPosition.y;
+            const currentY = obj.position.y;
+            const lift = currentY - origY;
+            const extendedHeight = size.y + PARAMS.hoverLiftDistance;
+            zone.geometry.dispose();
+            zone.geometry = new THREE.BoxGeometry(
+                Math.max(size.x, 50),
+                extendedHeight,
+                Math.max(size.z, 50)
+            );
+            zone.position.set(center.x, center.y - lift / 2, center.z);
         }
 
         // ========== EDITOR MODE FUNCTIONS ==========
@@ -1992,6 +2119,12 @@
             if (e.shiftKey && (e.key === 'E' || e.key === 'e')) {
                 e.preventDefault();
                 toggleEditorMode();
+                return;
+            }
+            // Shift + B for Bounding Box Toggle
+            if (e.shiftKey && (e.key === 'B' || e.key === 'b')) {
+                e.preventDefault();
+                toggleBoundingBoxes();
                 return;
             }
 
