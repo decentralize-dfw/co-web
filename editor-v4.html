@@ -64,6 +64,17 @@
             --hover-label-offset-y: 100px;
             --hover-label-name-offset-y: 200px;
             --show-price: yes;
+
+            /* MOBILE HOVER LABEL OVERRIDES */
+            --mobile-hover-label-font-size: 60px;
+            --mobile-hover-label-opacity: 0.9;
+            --mobile-hover-label-offset-y: 40px;
+            --mobile-hover-label-name-offset-y: 80px;
+            --mobile-hover-label-rotation-x: 0deg;
+            --mobile-hover-label-rotation-y: 90deg;
+            --mobile-hover-label-rotation-z: 0deg;
+            --mobile-hover-artist-font-size: 35px;
+            --mobile-hover-artist-opacity: 0.7;
             
             /* PANEL AYARLARI */
             --panel-width: 480px;
@@ -546,9 +557,10 @@
             .panel-description { font-size: 0.76rem; }
             .panel-bio-text { font-size: 0.64rem; }
             .panel-meta-grid { font-size: 0.64rem; }
-            /* Carousel arrows: center between image edge and popup edge */
-            .carousel-nav-btn.nav-left { left: -17%; }
-            .carousel-nav-btn.nav-right { right: -17%; }
+            /* Carousel arrows: inside image area, at edges, higher z-index */
+            .carousel-nav-btn { z-index: 100; }
+            .carousel-nav-btn.nav-left { left: 4px; }
+            .carousel-nav-btn.nav-right { right: 4px; }
         }
     </style>
 </head>
@@ -857,6 +869,18 @@
             hoverLabelOffsetY: getParamNum('--hover-label-offset-y'),
             hoverLabelNameOffsetY: getParamNum('--hover-label-name-offset-y'),
             showPrice: getParam('--show-price') === 'yes',
+
+            // Mobile hover label overrides
+            mobileHoverLabelFontSize: getParamNum('--mobile-hover-label-font-size'),
+            mobileHoverLabelOpacity: parseFloat(getParam('--mobile-hover-label-opacity')) || 0.9,
+            mobileHoverLabelOffsetY: getParamNum('--mobile-hover-label-offset-y'),
+            mobileHoverLabelNameOffsetY: getParamNum('--mobile-hover-label-name-offset-y'),
+            mobileHoverLabelRotationX: parseFloat(getParam('--mobile-hover-label-rotation-x')),
+            mobileHoverLabelRotationY: parseFloat(getParam('--mobile-hover-label-rotation-y')),
+            mobileHoverLabelRotationZ: parseFloat(getParam('--mobile-hover-label-rotation-z')),
+            mobileHoverArtistFontSize: getParamNum('--mobile-hover-artist-font-size'),
+            mobileHoverArtistOpacity: parseFloat(getParam('--mobile-hover-artist-opacity')) || 0.7,
+
             selectionZoomFactor: getParamNum('--selection-zoom-factor'),
             selectionZoomFactorMobile: getParamNum('--selection-zoom-factor-mobile'),
             zoomInAnimationDuration: parseFloat(getParam('--zoom-in-animation-duration')) * 1000,
@@ -1044,13 +1068,14 @@
             });
 
             // === LIGHTING RIG (PBR-optimized key/fill/rim/hemisphere) ===
+            // RULE: Background must NEVER appear gray. All lights pure white ground.
 
-            // Hemisphere: soft ambient with subtle ground bounce
-            const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4);
+            // Hemisphere: soft ambient, white sky + white ground (no gray tint)
+            const hemi = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.35);
             scene.add(hemi);
 
             // Key light (sun) - main directional with shadows
-            const sun = new THREE.DirectionalLight(0xfff8f0, 3.0);
+            const sun = new THREE.DirectionalLight(0xffffff, 2.2);
             sun.position.set(1200, 2400, 1200);
             sun.castShadow = true;
             const shadowSize = isMobile ? 1536 : 4096;
@@ -1064,23 +1089,18 @@
             sun.shadow.radius = isMobile ? 1 : 2;
             scene.add(sun);
 
-            // Fill light - opposite side, cooler tone, softer
-            const fill1 = new THREE.DirectionalLight(0xe8eeff, 0.8);
+            // Fill light - opposite side, cooler tone
+            const fill1 = new THREE.DirectionalLight(0xf0f0ff, 0.5);
             fill1.position.set(-2000, 1800, -1500);
             scene.add(fill1);
 
             // Rim light - back/top, catches metallic edges
-            const rim = new THREE.DirectionalLight(0xffffff, 0.6);
+            const rim = new THREE.DirectionalLight(0xffffff, 0.35);
             rim.position.set(-500, 3000, -2500);
             scene.add(rim);
 
-            // Ground bounce fill - warm, from below-front
-            const bounce = new THREE.PointLight(0xffeedd, 0.15, 12000);
-            bounce.position.set(0, -200, 2000);
-            scene.add(bounce);
-
             // Side accent - subtle catchlight for metallic surfaces
-            const accent = new THREE.PointLight(0xffffff, 0.1, 10000);
+            const accent = new THREE.PointLight(0xffffff, 0.08, 10000);
             accent.position.set(3000, 1000, -2000);
             scene.add(accent);
 
@@ -1090,22 +1110,22 @@
             renderPass.clearAlpha = 0;
             composer.addPass(renderPass);
 
-            // SSAO - Ambient occlusion for depth and contact shadows (desktop only)
+            // SSAO - Subtle ambient occlusion for contact shadows (desktop only)
             if (!isMobile) {
                 ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
-                ssaoPass.kernelRadius = 24;
-                ssaoPass.minDistance = 0.001;
-                ssaoPass.maxDistance = 0.15;
+                ssaoPass.kernelRadius = 16;
+                ssaoPass.minDistance = 0.005;
+                ssaoPass.maxDistance = 0.1;
                 ssaoPass.output = SSAOPass.OUTPUT.Default;
                 composer.addPass(ssaoPass);
             }
 
-            // Bloom - subtle glow for specular highlights
+            // Bloom - very subtle, only catches bright specular
             bloomPass = new UnrealBloomPass(
                 new THREE.Vector2(window.innerWidth, window.innerHeight),
-                0.15,  // strength - subtle
-                0.4,   // radius
-                0.85   // threshold - only bright specular highlights
+                0.08,  // strength - minimal
+                0.3,   // radius
+                0.9    // threshold - only very bright highlights
             );
             if (isMobile) bloomPass.enabled = false;
             composer.addPass(bloomPass);
@@ -1196,7 +1216,7 @@
                 isWireMode = false;
                 btnMid.classList.add('active');
                 bloomPass.enabled = true;
-                bloomPass.strength = 0.15;
+                bloomPass.strength = 0.08;
                 if (ssaoPass) ssaoPass.enabled = true;
                 renderer.shadowMap.enabled = true;
                 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -1282,7 +1302,7 @@
                             const mat = c.material;
                             if (mat && mat.isMeshStandardMaterial) {
                                 // Boost environment reflections for metallics
-                                mat.envMapIntensity = 1.5;
+                                mat.envMapIntensity = 1.2;
 
                                 // Maximize texture quality
                                 const maxAniso = renderer.capabilities.getMaxAnisotropy();
@@ -1771,7 +1791,7 @@
                         c.castShadow = true;
                         c.receiveShadow = true;
                         if (c.material && c.material.isMeshStandardMaterial) {
-                            c.material.envMapIntensity = 1.5;
+                            c.material.envMapIntensity = 1.2;
                             c.material.needsUpdate = true;
                         }
                     }
@@ -2019,9 +2039,17 @@
             hideMobileLabels(); // Clear existing first
             mobileLabelsVisible = true;
             const maxW = PARAMS.hoverLabelFontBox;
-            const rotX = PARAMS.hoverLabelRotationX * Math.PI / 180;
-            const rotY = PARAMS.hoverLabelRotationY * Math.PI / 180;
-            const rotZ = PARAMS.hoverLabelRotationZ * Math.PI / 180;
+
+            // Use mobile-specific params
+            const rotX = PARAMS.mobileHoverLabelRotationX * Math.PI / 180;
+            const rotY = PARAMS.mobileHoverLabelRotationY * Math.PI / 180;
+            const rotZ = PARAMS.mobileHoverLabelRotationZ * Math.PI / 180;
+            const mArtistFs = PARAMS.mobileHoverArtistFontSize;
+            const mLabelFs = PARAMS.mobileHoverLabelFontSize;
+            const mOffsetY = PARAMS.mobileHoverLabelOffsetY;
+            const mNameOffsetY = PARAMS.mobileHoverLabelNameOffsetY;
+            const mArtistOp = PARAMS.mobileHoverArtistOpacity;
+            const mLabelOp = PARAMS.mobileHoverLabelOpacity;
 
             clickableObjects.forEach(obj => {
                 if (!obj.userData.clickable) return;
@@ -2031,32 +2059,32 @@
                 const box = new THREE.Box3().setFromObject(obj);
                 const bboxTopLocal = box.max.y - obj.position.y;
 
-                // Artist label
+                // Artist label (mobile params)
                 const artistText = content.artist || '';
                 if (artistText) {
-                    const label = createHoverTextMesh(artistText, PARAMS.hoverArtistFontSize, maxW, {
+                    const label = createHoverTextMesh(artistText, mArtistFs, maxW, {
                         fontStyle: PARAMS.hoverArtistFontStyle,
                         letterSpacing: PARAMS.hoverArtistLetterSpacing,
                         color: PARAMS.hoverArtistColor,
-                        opacity: PARAMS.hoverArtistOpacity
+                        opacity: mArtistOp
                     });
-                    const y = obj.position.y + bboxTopLocal + PARAMS.hoverLabelOffsetY;
+                    const y = obj.position.y + bboxTopLocal + mOffsetY;
                     label.position.set(obj.position.x, y, obj.position.z);
                     label.rotation.set(rotX, rotY, rotZ);
                     scene.add(label);
                     mobileStaticLabels.push(label);
                 }
 
-                // Name label
+                // Name label (mobile params)
                 const nameText = content.hoverDisplayName || content.name || '';
                 if (nameText) {
-                    const label = createHoverTextMesh(nameText, PARAMS.hoverLabelFontSize, maxW, {
+                    const label = createHoverTextMesh(nameText, mLabelFs, maxW, {
                         fontStyle: PARAMS.hoverLabelFontStyle,
                         letterSpacing: PARAMS.hoverLabelLetterSpacing,
                         color: PARAMS.hoverLabelColor,
-                        opacity: PARAMS.hoverLabelOpacity
+                        opacity: mLabelOp
                     });
-                    const y = obj.position.y + bboxTopLocal + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
+                    const y = obj.position.y + bboxTopLocal + mOffsetY + mNameOffsetY;
                     label.position.set(obj.position.x, y, obj.position.z);
                     label.rotation.set(rotX, rotY, rotZ);
                     scene.add(label);
