@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,18 +24,19 @@
              --accent-color: #FF006A;
             --font-headers: 'Space Mono', monospace;
             --font-body: 'Space Mono', monospace;
+
 /* ============================================= */
 /* RENDER PARAMETERS - DESKTOP / MOBILE         */
-/* (Desktop: editor-v4 ile birebir aynı)        */
+/* (v4 default değerleri - birebir aynı)        */
 /* ============================================= */
 
 /* SSAO (v4'te yok, kapalı) */
 --ssao-enabled-desktop: no;
 --ssao-enabled-mobile: no;
---ssao-kernel-radius: 32;
+--ssao-kernel-radius: 8;
 --ssao-intensity: 0.5;
 
-/* BLOOM (v4 default preset: 0.05/0.35/0.8) */
+/* BLOOM (v4 default: 0.05/0.35/0.8) */
 --bloom-enabled-desktop: yes;
 --bloom-enabled-mobile: no;
 --bloom-strength: 0.05;
@@ -64,16 +64,16 @@
 --anisotropy-enabled-desktop: no;
 --anisotropy-enabled-mobile: no;
 
-/* ENVIRONMENT MAP (v4: venice_sunset, intensity default 1.0) */
+/* ENVIRONMENT MAP (v4: venice_sunset, intensity 1.0) */
 --envmap-enabled-desktop: yes;
 --envmap-enabled-mobile: yes;
 --envmap-intensity-desktop: 1.0;
---envmap-intensity-mobile: 1.2;
+--envmap-intensity-mobile: 1.0;
 
 /* RECT AREA LIGHT (v4'te yok, kapalı) */
 --rectarealight-enabled-desktop: no;
---rectarealight-enabled-mobile: yes;
---rectarealight-intensity: 2.8;
+--rectarealight-enabled-mobile: no;
+--rectarealight-intensity: 2.0;
 
 /* LIGHTING INTENSITIES (v4 ile birebir aynı) */
 --light-hemisphere-intensity: 0.3;
@@ -93,15 +93,24 @@
 --filter-saturation: 1.0;
 --filter-hue-rotate: 0;
 
-/* CAMERA 3-P */
---cam3p-show-public: yes;
+/* CAMERA 3-P (v4'te public'te gizli) */
+--cam3p-show-public: no;
 
-/* HDRI PRESET (1=venice_sunset, 2=white_studio, 3=qwantani, 4=story_studio, 5=white_home, 6=studio_kominka) */
+/* HDRI PRESET (1=venice_sunset) */
 --hdri-preset: 1;
 
+/* MOBILE HOVER LABEL OVERRIDES */
+--mobile-hover-label-font-size: 60px;
+--mobile-hover-label-opacity: 0.9;
+--mobile-hover-label-offset-y: 40px;
+--mobile-hover-label-name-offset-y: 80px;
+--mobile-hover-label-rotation-x: 0deg;
+--mobile-hover-label-rotation-y: 90deg;
+--mobile-hover-label-rotation-z: 0deg;
+--mobile-hover-artist-font-size: 35px;
+--mobile-hover-artist-opacity: 0.7;
 
-
-            /* ============================================= */
+/* ============================================= */
 
             /* KAMERA POZİSYONLARI (ORTHO) */
             /* CAM 1 */
@@ -142,17 +151,6 @@
             --hover-label-offset-y: 100px;
             --hover-label-name-offset-y: 70px;
             --show-price: yes;
-
-            /* MOBILE HOVER LABEL OVERRIDES */
-            --mobile-hover-label-font-size: 60px;
-            --mobile-hover-label-opacity: 0.9;
-            --mobile-hover-label-offset-y: 40px;
-            --mobile-hover-label-name-offset-y: 80px;
-            --mobile-hover-label-rotation-x: 0deg;
-            --mobile-hover-label-rotation-y: 90deg;
-            --mobile-hover-label-rotation-z: 0deg;
-            --mobile-hover-artist-font-size: 35px;
-            --mobile-hover-artist-opacity: 0.7;
             
             /* PANEL AYARLARI */
             --panel-width: 480px;
@@ -821,10 +819,9 @@
             .panel-description { font-size: 0.76rem; }
             .panel-bio-text { font-size: 0.64rem; }
             .panel-meta-grid { font-size: 0.64rem; }
-            /* Carousel arrows: inside image area, at edges, higher z-index */
-            .carousel-nav-btn { z-index: 100; }
-            .carousel-nav-btn.nav-left { left: 4px; }
-            .carousel-nav-btn.nav-right { right: 4px; }
+            /* Carousel arrows: center between image edge and popup edge */
+            .carousel-nav-btn.nav-left { left: -17%; }
+            .carousel-nav-btn.nav-right { right: -17%; }
         }
     </style>
 </head>
@@ -849,7 +846,7 @@
             <div class="toggle-group">
                 <button class="toggle-btn active" id="btn-cam1" onclick="switchCamera(1)">1</button>
                 <button class="toggle-btn" id="btn-cam2" onclick="switchCamera(2)">2</button>
-                <button class="toggle-btn" id="btn-cam3p" onclick="switchCamera('persp')">3-P</button>
+                <button class="toggle-btn" id="btn-cam3p" onclick="switchCamera('persp')" style="display:none">3-P</button>
             </div>
         </div>
 
@@ -1154,36 +1151,29 @@
             ssaoEnabledDesktop: getParamBool('--ssao-enabled-desktop'),
             ssaoEnabledMobile: getParamBool('--ssao-enabled-mobile'),
             ssaoKernelRadius: getParamNum('--ssao-kernel-radius') || 8,
-            ssaoMinDistance: getParamNum('--ssao-min-distance') || 0.001,
-            ssaoMaxDistance: getParamNum('--ssao-max-distance') || 0.05,
             ssaoIntensity: getParamNum('--ssao-intensity') || 0.5,
 
             // Bloom
             bloomEnabledDesktop: getParamBool('--bloom-enabled-desktop'),
             bloomEnabledMobile: getParamBool('--bloom-enabled-mobile'),
-            bloomStrength: getParamNum('--bloom-strength') || 0.06,
-            bloomRadius: getParamNum('--bloom-radius') || 0.4,
-            bloomThreshold: getParamNum('--bloom-threshold') || 0.92,
+            bloomStrength: getParamNum('--bloom-strength') || 0.05,
+            bloomRadius: getParamNum('--bloom-radius') || 0.35,
+            bloomThreshold: getParamNum('--bloom-threshold') || 0.8,
 
             // Tone Mapping
             tonemappingEnabledDesktop: getParamBool('--tonemapping-enabled-desktop'),
             tonemappingEnabledMobile: getParamBool('--tonemapping-enabled-mobile'),
-            tonemappingType: getParam('--tonemapping-type') || 'ACES',
-            tonemappingExposureDesktop: getParamNum('--tonemapping-exposure-desktop') || 1.3,
-            tonemappingExposureMobile: getParamNum('--tonemapping-exposure-mobile') || 1.2,
+            tonemappingExposureDesktop: getParamNum('--tonemapping-exposure-desktop') || 0.75,
+            tonemappingExposureMobile: getParamNum('--tonemapping-exposure-mobile') || 1.0,
 
             // Shadows
             shadowsEnabledDesktop: getParamBool('--shadows-enabled-desktop'),
             shadowsEnabledMobile: getParamBool('--shadows-enabled-mobile'),
-            shadowType: getParam('--shadow-type') || 'PCFSoft',
-            shadowMapSizeDesktop: getParamNum('--shadow-map-size-desktop') || 4096,
-            shadowMapSizeMobile: getParamNum('--shadow-map-size-mobile') || 1024,
-            shadowBias: getParamNum('--shadow-bias') || -0.0002,
-            shadowNormalBias: getParamNum('--shadow-normal-bias') || 0.1,
+            shadowType: getParam('--shadow-type') || 'PCF',
+            shadowBias: getParamNum('--shadow-bias') || -0.0005,
+            shadowNormalBias: getParamNum('--shadow-normal-bias') || 0.2,
 
             // Anti-Aliasing
-            antialiasEnabledDesktop: getParamBool('--antialias-enabled-desktop'),
-            antialiasEnabledMobile: getParamBool('--antialias-enabled-mobile'),
             fxaaEnabledDesktop: getParamBool('--fxaa-enabled-desktop'),
             fxaaEnabledMobile: getParamBool('--fxaa-enabled-mobile'),
 
@@ -1194,28 +1184,23 @@
             // Environment Map
             envmapEnabledDesktop: getParamBool('--envmap-enabled-desktop'),
             envmapEnabledMobile: getParamBool('--envmap-enabled-mobile'),
-            envmapIntensityDesktop: getParamNum('--envmap-intensity-desktop') || 1.3,
+            envmapIntensityDesktop: getParamNum('--envmap-intensity-desktop') || 1.0,
             envmapIntensityMobile: getParamNum('--envmap-intensity-mobile') || 1.0,
 
             // RectAreaLight
             rectarealightEnabledDesktop: getParamBool('--rectarealight-enabled-desktop'),
             rectarealightEnabledMobile: getParamBool('--rectarealight-enabled-mobile'),
             rectarealightIntensity: getParamNum('--rectarealight-intensity') || 2.0,
-            rectarealightWidth: getParamNum('--rectarealight-width') || 1000,
-            rectarealightHeight: getParamNum('--rectarealight-height') || 1000,
-
-            // Color Space
-            colorspaceSrgb: getParamBool('--colorspace-srgb'),
 
             // Lighting
-            lightHemisphereIntensity: getParamNum('--light-hemisphere-intensity') || 0.45,
-            lightSunIntensity: getParamNum('--light-sun-intensity') || 2.0,
-            lightFillIntensity: getParamNum('--light-fill-intensity') || 0.6,
-            lightRimIntensity: getParamNum('--light-rim-intensity') || 0.4,
+            lightHemisphereIntensity: getParamNum('--light-hemisphere-intensity') || 0.3,
+            lightSunIntensity: getParamNum('--light-sun-intensity') || 3.5,
+            lightFillIntensity: getParamNum('--light-fill-intensity') || 0.1,
+            lightRimIntensity: getParamNum('--light-rim-intensity') || 0,
             lightAccentIntensity: getParamNum('--light-accent-intensity') || 0.1,
 
             // PBR
-            pbrEnvmapIntensity: getParamNum('--pbr-envmap-intensity') || 1.2,
+            pbrEnvmapIntensity: getParamNum('--pbr-envmap-intensity') || 1.0,
             pbrRoughnessBoost: getParamNum('--pbr-roughness-boost') || 0,
             pbrMetalnessBoost: getParamNum('--pbr-metalness-boost') || 0,
 
@@ -1255,18 +1240,6 @@
             hoverLabelOffsetY: getParamNum('--hover-label-offset-y'),
             hoverLabelNameOffsetY: getParamNum('--hover-label-name-offset-y'),
             showPrice: getParam('--show-price') === 'yes',
-
-            // Mobile hover label overrides
-            mobileHoverLabelFontSize: getParamNum('--mobile-hover-label-font-size'),
-            mobileHoverLabelOpacity: parseFloat(getParam('--mobile-hover-label-opacity')) || 0.9,
-            mobileHoverLabelOffsetY: getParamNum('--mobile-hover-label-offset-y'),
-            mobileHoverLabelNameOffsetY: getParamNum('--mobile-hover-label-name-offset-y'),
-            mobileHoverLabelRotationX: parseFloat(getParam('--mobile-hover-label-rotation-x')),
-            mobileHoverLabelRotationY: parseFloat(getParam('--mobile-hover-label-rotation-y')),
-            mobileHoverLabelRotationZ: parseFloat(getParam('--mobile-hover-label-rotation-z')),
-            mobileHoverArtistFontSize: getParamNum('--mobile-hover-artist-font-size'),
-            mobileHoverArtistOpacity: parseFloat(getParam('--mobile-hover-artist-opacity')) || 0.7,
-
             selectionZoomFactor: getParamNum('--selection-zoom-factor'),
             selectionZoomFactorMobile: getParamNum('--selection-zoom-factor-mobile'),
             zoomInAnimationDuration: parseFloat(getParam('--zoom-in-animation-duration')) * 1000,
@@ -1301,7 +1274,7 @@
         let lightHemi, lightSun, lightFill, lightRim, lightAccent;
         let rectLight1, rectLight2;
 
-        // HDRI Presets: selectable via Shift+1..6
+        // HDRI Presets
         const hdriPresets = {
             1: { name: 'Venice Sunset', url: 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr' },
             2: { name: 'White Studio', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/white_studio_04_1k.hdr' },
@@ -1325,18 +1298,14 @@
             new RGBELoader().load(preset.url, (tex) => {
                 tex.mapping = THREE.EquirectangularReflectionMapping;
 
-                // Dispose old env map
                 if (globalEnvMap) globalEnvMap.dispose();
-
                 globalEnvMap = localPmrem.fromEquirectangular(tex).texture;
 
-                // Apply environment based on settings
                 const useEnvMap = isMobile ? runtimeParams.envmapEnabledMobile : runtimeParams.envmapEnabledDesktop;
                 if (useEnvMap && !isWireMode) {
                     scene.environment = globalEnvMap;
                 }
 
-                // Update all materials with new env intensity
                 const envIntensity = isMobile ? runtimeParams.envmapIntensityMobile : runtimeParams.envmapIntensityDesktop;
                 scene.traverse(child => {
                     if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
@@ -1347,7 +1316,6 @@
 
                 tex.dispose();
                 if (!pmremGen) localPmrem.dispose();
-
                 console.log(`HDRI switched to: ${presetNum} - ${preset.name}`);
             });
         }
@@ -1404,53 +1372,26 @@
         function init() {
             const container = document.getElementById('scene-container');
             const isMobile = window.innerWidth <= 768; // Check for mobile
-
-            // Initialize RectAreaLight uniforms
-            RectAreaLightUniformsLib.init();
-
-            // Determine which parameters to use based on device
-            const useAntialias = isMobile ? runtimeParams.antialiasEnabledMobile : runtimeParams.antialiasEnabledDesktop;
-
+            
             renderer = new THREE.WebGLRenderer({
-                 antialias: useAntialias,
+                 antialias: true, // Keep antialias on for quality
                  alpha: true,
                  powerPreference: "high-performance",
                 precision: isMobile ? "mediump" : "highp",
                 logarithmicDepthBuffer: true
             });
+            // Mobile: cap pixel ratio at 1.5 for balance between quality and performance
             renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 0.85;
+             renderer.shadowMap.enabled = true;
+             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-            // Color Space
-            renderer.outputColorSpace = runtimeParams.colorspaceSrgb ? THREE.SRGBColorSpace : THREE.LinearSRGBColorSpace;
-
-            // Tone Mapping
-            const useTonemapping = isMobile ? runtimeParams.tonemappingEnabledMobile : runtimeParams.tonemappingEnabledDesktop;
-            if (useTonemapping) {
-                switch (runtimeParams.tonemappingType) {
-                    case 'ACES': renderer.toneMapping = THREE.ACESFilmicToneMapping; break;
-                    case 'Reinhard': renderer.toneMapping = THREE.ReinhardToneMapping; break;
-                    case 'Cineon': renderer.toneMapping = THREE.CineonToneMapping; break;
-                    default: renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                }
-                renderer.toneMappingExposure = isMobile ? runtimeParams.tonemappingExposureMobile : runtimeParams.tonemappingExposureDesktop;
-            } else {
-                renderer.toneMapping = THREE.NoToneMapping;
-                renderer.toneMappingExposure = 1.0;
-            }
-
-            // Shadows
-            const useShadows = isMobile ? runtimeParams.shadowsEnabledMobile : runtimeParams.shadowsEnabledDesktop;
-            renderer.shadowMap.enabled = useShadows;
-            switch (runtimeParams.shadowType) {
-                case 'PCFSoft': renderer.shadowMap.type = THREE.PCFSoftShadowMap; break;
-                case 'PCF': renderer.shadowMap.type = THREE.PCFShadowMap; break;
-                case 'Basic': renderer.shadowMap.type = THREE.BasicShadowMap; break;
-                default: renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            }
-
-            // Background: Pure white, no alpha issues
-            renderer.setClearColor(0xffffff, 1);
+            renderer.setClearAlpha(0);
+            renderer.setClearColor(0xffffff, 0);
 
             container.appendChild(renderer.domElement);
 
@@ -1468,7 +1409,7 @@
             cameraOrtho.zoom = isMobile ? PARAMS.initialCameraZoomMobile : PARAMS.initialCameraZoom;
 
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xffffff); // Pure white background
+            scene.background = null;
 
             setTimeout(() => {
                 if (transformControls) scene.add(transformControls);
@@ -1478,7 +1419,7 @@
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.enablePan = false; // Disabled by default, enabled in editor mode
+            controls.enablePan = false; // DISABLED
             controls.enableRotate = true; // ENABLED
             controls.minDistance = PARAMS.cameraMinDist;
             controls.maxDistance = PARAMS.cameraMaxDist;
@@ -1488,24 +1429,11 @@
             controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controls.enabled = false; // Start in Ortho
 
-            // Touch controls: 1 finger = rotate, 2 finger = zoom/pan
-            controls.touches = {
-                ONE: THREE.TOUCH.ROTATE,
-                TWO: THREE.TOUCH.DOLLY_PAN
-            };
-
-            // Prevent camera from going below ground
-            controls.addEventListener('change', () => {
-                if (controls.target.y < 0) {
-                    controls.target.y = 0;
-                }
-            });
-
             // CONTROLS FOR ORTHO
             controlsOrtho = new OrbitControls(cameraOrtho, renderer.domElement);
             controlsOrtho.enableDamping = true;
             controlsOrtho.dampingFactor = 0.05;
-            controlsOrtho.enablePan = false; // Disabled by default, enabled in editor mode
+            controlsOrtho.enablePan = false; // DISABLED
             controlsOrtho.enableZoom = true;
             controlsOrtho.enableRotate = true; // ENABLED BY DEFAULT
             // Allow vertical rotation from top down to horizon, but not below
@@ -1513,24 +1441,6 @@
             controlsOrtho.maxPolarAngle = Math.PI / 2;
             controlsOrtho.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controlsOrtho.enabled = true; // Start in Ortho
-
-            // Touch controls: 1 finger = rotate, 2 finger = zoom/pan
-            // Pan will be enabled only in editor mode
-            controlsOrtho.touches = {
-                ONE: THREE.TOUCH.ROTATE,
-                TWO: THREE.TOUCH.DOLLY_PAN
-            };
-
-            // Prevent camera from going below ground (y < 0)
-            controlsOrtho.maxPolarAngle = Math.PI / 2;
-
-            // Limit pan to keep scene visible
-            controlsOrtho.addEventListener('change', () => {
-                // Clamp target Y to prevent going underground
-                if (controlsOrtho.target.y < 0) {
-                    controlsOrtho.target.y = 0;
-                }
-            });
 
             transformControls = new TransformControls(camera, renderer.domElement);
             transformControls.setMode('translate');
@@ -1557,25 +1467,26 @@
 
             window.addEventListener('keydown', handleKeyDown);
 
-            // === ENVIRONMENT MAP (HDRI Preset System) ===
             const pmrem = new THREE.PMREMGenerator(renderer);
-            pmrem.compileEquirectangularShader();
+            new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (tex) => {
+                tex.mapping = THREE.EquirectangularReflectionMapping;
+                globalEnvMap = pmrem.fromEquirectangular(tex).texture;
+                scene.environment = globalEnvMap;
+                tex.dispose(); pmrem.dispose();
+            });
 
-            // Load default HDRI
-            loadHDRI(currentHdriPreset, pmrem);
+            // Initialize RectAreaLight uniforms
+            RectAreaLightUniformsLib.init();
 
-            // === LIGHTING RIG (PBR-optimized key/fill/rim/hemisphere) ===
-            // RULE: Background must NEVER appear gray. Balanced, realistic lighting.
-
-            // Hemisphere: soft ambient, white sky + slightly warm ground
-            lightHemi = new THREE.HemisphereLight(0xffffff, 0xfff8f0, runtimeParams.lightHemisphereIntensity);
+            // HEMISPHERE LIGHT
+            lightHemi = new THREE.HemisphereLight(0xffffff, 0x000000, runtimeParams.lightHemisphereIntensity);
             scene.add(lightHemi);
 
-            // Key light (sun) - main directional with shadows, less intense for balanced look
+            // SUN (DIRECTIONAL LIGHT)
             lightSun = new THREE.DirectionalLight(0xffffff, runtimeParams.lightSunIntensity);
             lightSun.position.set(1200, 2400, 1200);
-            lightSun.castShadow = useShadows;
-            const shadowSize = isMobile ? runtimeParams.shadowMapSizeMobile : runtimeParams.shadowMapSizeDesktop;
+            lightSun.castShadow = isMobile ? runtimeParams.shadowsEnabledMobile : runtimeParams.shadowsEnabledDesktop;
+            const shadowSize = isMobile ? 1536 : 2048;
             lightSun.shadow.mapSize.set(shadowSize, shadowSize);
             lightSun.shadow.camera.near = 0.5;
             lightSun.shadow.camera.far = 16000;
@@ -1583,84 +1494,61 @@
             lightSun.shadow.camera.top = 5500; lightSun.shadow.camera.bottom = -5500;
             lightSun.shadow.bias = runtimeParams.shadowBias;
             lightSun.shadow.normalBias = runtimeParams.shadowNormalBias;
-            lightSun.shadow.radius = isMobile ? 1 : 2;
             scene.add(lightSun);
 
-            // Fill light - opposite side, cooler tone for contrast
-            lightFill = new THREE.DirectionalLight(0xf0f4ff, runtimeParams.lightFillIntensity);
-            lightFill.position.set(-2000, 1800, -1500);
+            // FILL LIGHTS
+            lightFill = new THREE.PointLight(0xffffff, runtimeParams.lightFillIntensity, 10000);
+            lightFill.position.set(3000, 1500, 3000);
             scene.add(lightFill);
 
-            // Rim light - back/top, catches metallic edges
-            lightRim = new THREE.DirectionalLight(0xffffff, runtimeParams.lightRimIntensity);
-            lightRim.position.set(-500, 3000, -2500);
+            // RIM LIGHT (v4'te kapalı - intensity 0)
+            lightRim = new THREE.PointLight(0xffffff, runtimeParams.lightRimIntensity, 10000);
+            lightRim.position.set(-3000, 1500, -3000);
             scene.add(lightRim);
 
-            // Side accent - subtle catchlight for metallic surfaces
-            lightAccent = new THREE.PointLight(0xffffff, runtimeParams.lightAccentIntensity, 10000);
-            lightAccent.position.set(3000, 1000, -2000);
+            // ACCENT LIGHT
+            lightAccent = new THREE.PointLight(0xffffff, runtimeParams.lightAccentIntensity, 8000);
+            lightAccent.position.set(0, 2000, -2000);
             scene.add(lightAccent);
 
-            // === RECT AREA LIGHTS (Soft Panel Lighting) ===
-            // Always create them, toggle visibility based on settings
+            // RECT AREA LIGHTS (v4'te kapalı)
             const useRectAreaLight = isMobile ? runtimeParams.rectarealightEnabledMobile : runtimeParams.rectarealightEnabledDesktop;
-
-            // Front-left soft panel
-            rectLight1 = new THREE.RectAreaLight(
-                0xffffff,
-                runtimeParams.rectarealightIntensity,
-                runtimeParams.rectarealightWidth,
-                runtimeParams.rectarealightHeight
-            );
-            rectLight1.position.set(-2000, 1500, 2000);
+            rectLight1 = new THREE.RectAreaLight(0xffffff, runtimeParams.rectarealightIntensity, 1000, 1000);
+            rectLight1.position.set(0, 3000, 3000);
             rectLight1.lookAt(0, 0, 0);
             rectLight1.visible = useRectAreaLight;
             scene.add(rectLight1);
 
-            // Front-right soft panel
-            rectLight2 = new THREE.RectAreaLight(
-                0xfff8f0,
-                runtimeParams.rectarealightIntensity * 0.6,
-                runtimeParams.rectarealightWidth,
-                runtimeParams.rectarealightHeight
-            );
-            rectLight2.position.set(2500, 1200, 1500);
+            rectLight2 = new THREE.RectAreaLight(0xffffff, runtimeParams.rectarealightIntensity * 0.6, 800, 800);
+            rectLight2.position.set(-2000, 2000, -2000);
             rectLight2.lookAt(0, 0, 0);
             rectLight2.visible = useRectAreaLight;
             scene.add(rectLight2);
 
-            // === POST-PROCESSING PIPELINE ===
+            // COMPOSER & POST-PROCESSING
             composer = new EffectComposer(renderer);
             const renderPass = new RenderPass(scene, camera);
-            renderPass.clearColor = new THREE.Color(0xffffff);
-            renderPass.clearAlpha = 1;
+            renderPass.clearAlpha = 0;
             composer.addPass(renderPass);
 
-            // SSAO - Subtle ambient occlusion for contact shadows
-            // Always create so it can be toggled at runtime
+            // SSAO Pass (v4'te kapalı)
             const useSSAO = isMobile ? runtimeParams.ssaoEnabledMobile : runtimeParams.ssaoEnabledDesktop;
             ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
             ssaoPass.kernelRadius = runtimeParams.ssaoKernelRadius;
-            ssaoPass.minDistance = runtimeParams.ssaoMinDistance;
-            ssaoPass.maxDistance = runtimeParams.ssaoMaxDistance;
-            ssaoPass.output = SSAOPass.OUTPUT.Default;
+            ssaoPass.minDistance = 0.001;
+            ssaoPass.maxDistance = 0.05;
             ssaoPass.enabled = useSSAO;
             composer.addPass(ssaoPass);
 
-            // Bloom - subtle glow for specular highlights
+            // BLOOM Pass
             const useBloom = isMobile ? runtimeParams.bloomEnabledMobile : runtimeParams.bloomEnabledDesktop;
-            bloomPass = new UnrealBloomPass(
-                new THREE.Vector2(window.innerWidth, window.innerHeight),
-                runtimeParams.bloomStrength,
-                runtimeParams.bloomRadius,
-                runtimeParams.bloomThreshold
-            );
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), runtimeParams.bloomStrength, runtimeParams.bloomRadius, runtimeParams.bloomThreshold);
             bloomPass.enabled = useBloom;
             composer.addPass(bloomPass);
 
             composer.addPass(new OutputPass());
 
-            // FXAA anti-aliasing
+            // FXAA Pass
             const useFXAA = isMobile ? runtimeParams.fxaaEnabledMobile : runtimeParams.fxaaEnabledDesktop;
             fxaaPass = new ShaderPass(FXAAShader);
             const pr = isMobile ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio;
@@ -1674,15 +1562,6 @@
             buildScene(isMobile);
 
             applyLightingPreset('default');
-
-            // Setup Cam 3-P visibility based on parameter
-            const btnCam3p = document.getElementById('btn-cam3p');
-            if (btnCam3p) {
-                btnCam3p.style.display = runtimeParams.cam3pShowPublic ? 'inline-block' : 'none';
-            }
-
-            // Apply color filters
-            applyColorFilters();
 
             window.addEventListener('resize', onWindowResize);
             renderer.domElement.addEventListener('mousemove', onMouseMove);
@@ -1735,40 +1614,39 @@
             if (!bloomPass || !renderer) return;
             const btnLow = document.getElementById('btn-low');
             const btnMid = document.getElementById('btn-mid');
-            const isMobile = window.innerWidth <= 768;
             [btnLow, btnMid].forEach(b => b?.classList.remove('active'));
 
             if (level === 'low') {
                 isWireMode = true;
                 btnLow.classList.add('active');
                 bloomPass.enabled = false;
-                if (ssaoPass) ssaoPass.enabled = false;
                 renderer.shadowMap.enabled = false;
                 renderer.toneMappingExposure = 1.0;
                 renderer.toneMapping = THREE.NoToneMapping;
-
+                
+                // Black Background updated color
                 scene.background = new THREE.Color(0xb6a5d0);
                 scene.environment = null;
-
-                // Reset color filters for wireframe mode
-                if (renderer.domElement) {
-                    renderer.domElement.style.filter = 'none';
-                }
-
+                
+                // Wireframe + Color
                 applyLowModeMaterials(true);
             }
             else if (level === 'default') {
                 isWireMode = false;
                 btnMid.classList.add('active');
-
-                // White background
-                scene.background = new THREE.Color(0xffffff);
+                bloomPass.enabled = true;
+                bloomPass.strength = 0.05;
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFShadowMap;
+                renderer.toneMappingExposure = 0.75;
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                
+                // Transparent Background (original behavior)
+                scene.background = null;
                 scene.environment = globalEnvMap;
-
+                
+                // Normal Materials
                 applyLowModeMaterials(false);
-
-                // Apply ALL runtime parameters from CSS
-                applyRuntimeParameters();
             }
         };
 
@@ -1839,28 +1717,6 @@
                             c.castShadow = true;
                             c.receiveShadow = true;
                             if(c.geometry.computeBoundsTree) c.geometry.computeBoundsTree();
-
-                            // === PBR Material Enhancement ===
-                            const mat = c.material;
-                            if (mat && mat.isMeshStandardMaterial) {
-                                // Environment map intensity based on device
-                                const envIntensity = isMobile ? runtimeParams.envmapIntensityMobile : runtimeParams.envmapIntensityDesktop;
-                                mat.envMapIntensity = envIntensity;
-
-                                // Anisotropic filtering for sharp textures
-                                const useAnisotropy = isMobile ? runtimeParams.anisotropyEnabledMobile : runtimeParams.anisotropyEnabledDesktop;
-                                if (useAnisotropy) {
-                                    const maxAniso = renderer.capabilities.getMaxAnisotropy();
-                                    if (mat.map) { mat.map.anisotropy = maxAniso; }
-                                    if (mat.normalMap) { mat.normalMap.anisotropy = maxAniso; }
-                                    if (mat.roughnessMap) { mat.roughnessMap.anisotropy = maxAniso; }
-                                    if (mat.metalnessMap) { mat.metalnessMap.anisotropy = maxAniso; }
-                                    if (mat.aoMap) { mat.aoMap.anisotropy = maxAniso; }
-                                }
-
-                                // Ensure proper needsUpdate
-                                mat.needsUpdate = true;
-                            }
                         }
                     });
 
@@ -1894,55 +1750,14 @@
             }, 500);
         }
 
-        // Secondary hover system (when item is selected/panel open)
-        let secondaryHoveredObject = null;
-        let secondaryHoverLabel = null;
-
         function onMouseMove(e) {
             if (window.innerWidth <= 768) return; // No hover on mobile
+            if (document.getElementById('side-panel').classList.contains('open')) return;
             if (editorModeActive) return;
-
-            const panelOpen = document.getElementById('side-panel').classList.contains('open');
-
             mouse.x = (e.clientX/window.innerWidth)*2-1;
             mouse.y = -(e.clientY/window.innerHeight)*2+1;
             raycaster.setFromCamera(mouse, getActiveCamera());
 
-            if (panelOpen && currentSelectedObject) {
-                // === SECONDARY HOVER MODE: panel is open, selected item stays hovering ===
-                // Check what we're hovering over (not the selected item)
-                let hitObj = null;
-
-                const zoneHits = raycaster.intersectObjects(clickableZones, false);
-                if (zoneHits.length > 0) {
-                    const zone = zoneHits[0].object;
-                    const parentObj = zone.userData.parentObject;
-                    if (parentObj && parentObj.userData.modalContent && parentObj.userData.clickable && parentObj !== currentSelectedObject) {
-                        hitObj = parentObj;
-                    }
-                }
-
-                if (!hitObj) {
-                    const hits = raycaster.intersectObjects(clickableObjects, true);
-                    if (hits.length > 0) {
-                        let obj = hits[0].object;
-                        while(obj.parent && !obj.userData.modalContent) obj = obj.parent;
-                        if (obj.userData.modalContent && obj.userData.clickable && obj !== currentSelectedObject) {
-                            hitObj = obj;
-                        }
-                    }
-                }
-
-                if (hitObj && secondaryHoveredObject !== hitObj) {
-                    clearSecondaryHover();
-                    applySecondaryHover(hitObj);
-                } else if (!hitObj) {
-                    clearSecondaryHover();
-                }
-                return;
-            }
-
-            // === NORMAL HOVER MODE ===
             // First check clickable zones (invisible extended bounding boxes)
             const zoneHits = raycaster.intersectObjects(clickableZones, false);
             if (zoneHits.length > 0) {
@@ -1967,45 +1782,6 @@
                     clearHover();
                 }
             } else clearHover();
-        }
-
-        function applySecondaryHover(obj) {
-            secondaryHoveredObject = obj;
-            const halfLift = PARAMS.hoverLiftDistance * 0.5;
-            new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + halfLift }, PARAMS.hoverAnimationDuration).start();
-
-            // Only show title (name), no artist
-            const box = new THREE.Box3().setFromObject(obj);
-            const bboxTopLocal = box.max.y - obj.position.y;
-            obj.userData._bboxTopLocal = bboxTopLocal;
-
-            const maxW = PARAMS.hoverLabelFontBox;
-            const content = obj.userData.modalContent;
-            const rotX = PARAMS.hoverLabelRotationX * Math.PI / 180;
-            const rotY = PARAMS.hoverLabelRotationY * Math.PI / 180;
-            const rotZ = PARAMS.hoverLabelRotationZ * Math.PI / 180;
-
-            const nameText = content.hoverDisplayName || content.name || '';
-            if (nameText) {
-                secondaryHoverLabel = createHoverTextMesh(nameText, PARAMS.hoverLabelFontSize, maxW, {
-                    fontStyle: PARAMS.hoverLabelFontStyle,
-                    letterSpacing: PARAMS.hoverLabelLetterSpacing,
-                    color: PARAMS.hoverLabelColor,
-                    opacity: PARAMS.hoverLabelOpacity
-                });
-                const nameY = obj.position.y + bboxTopLocal + halfLift + PARAMS.hoverLabelOffsetY;
-                secondaryHoverLabel.position.set(obj.position.x, nameY, obj.position.z);
-                secondaryHoverLabel.rotation.set(rotX, rotY, rotZ);
-                scene.add(secondaryHoverLabel);
-            }
-        }
-
-        function clearSecondaryHover() {
-            if (secondaryHoveredObject) {
-                new TWEEN(secondaryHoveredObject.position).to({ y: secondaryHoveredObject.userData.originalPosition.y }, PARAMS.hoverAnimationDuration).start();
-                secondaryHoveredObject = null;
-            }
-            if (secondaryHoverLabel) { scene.remove(secondaryHoverLabel); secondaryHoverLabel = null; }
         }
 
         // Helper for Text Wrapping (shared by hover labels)
@@ -2205,24 +1981,7 @@
 
         function openPanel(content, obj) {
             if(currentSelectedObject === obj && document.getElementById('side-panel').classList.contains('open')) return;
-            // Clear any secondary hover
-            clearSecondaryHover();
-            // Clear hover labels but keep selected object lifted (desktop only)
-            if (currentHoveredObject && currentHoveredObject !== obj) {
-                // Lower the previously hovered object if it's different
-                new TWEEN(currentHoveredObject.position).to({ y: currentHoveredObject.userData.originalPosition.y }, PARAMS.hoverAnimationDuration).start();
-            }
-            // Remove labels only (don't lower the selected obj)
-            if(hoverLabel) { scene.remove(hoverLabel); hoverLabel=null; }
-            if(hoverLabelArtist) { scene.remove(hoverLabelArtist); hoverLabelArtist=null; }
-            currentHoveredObject = null;
-
-            // If on desktop, lift the selected object and keep it hovering
-            const isMobileNow = window.innerWidth <= 768;
-            if (!isMobileNow) {
-                // Ensure the selected object is at hover height
-                new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + PARAMS.hoverLiftDistance }, PARAMS.hoverAnimationDuration).start();
-            }
+            clearHover();
             currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); });
             currentActiveVideos = [];
             
@@ -2243,6 +2002,7 @@
             // Calculate target zoom: "Dividing initial zoom by factor"
             // For Ortho: initial 1.0 / 0.2 = 5.0 (Zoom In)
             // For Persp: initial 1.0 / 0.2 = 5.0 (Field of View Zoom equivalent)
+            const isMobileNow = window.innerWidth <= 768;
             const baseZoom = isMobileNow ? PARAMS.initialCameraZoomMobile : PARAMS.initialCameraZoom;
             const zoomFactor = isMobileNow ? PARAMS.selectionZoomFactorMobile : PARAMS.selectionZoomFactor;
             const targetZoom = baseZoom / zoomFactor;
@@ -2402,19 +2162,15 @@
 
             const renM = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renM.setPixelRatio(window.devicePixelRatio);
-            renM.outputColorSpace = THREE.SRGBColorSpace;
             renM.toneMapping = THREE.ACESFilmicToneMapping;
-            renM.toneMappingExposure = 1.1;
+            renM.toneMappingExposure = 1.3;
             container.appendChild(renM.domElement);
 
             const camM = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
-            sceneM.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.5));
-            const dirLight = new THREE.DirectionalLight(0xfff8f0, 2.5);
-            dirLight.position.set(5, 10, 7);
-            sceneM.add(dirLight);
-            const fillM = new THREE.DirectionalLight(0xe8eeff, 0.6);
-            fillM.position.set(-5, 5, -5);
-            sceneM.add(fillM);
+            sceneM.add(new THREE.HemisphereLight(0xffffff, 0xffffff, 1.2));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 3.5);
+             dirLight.position.set(5, 10, 7);
+             sceneM.add(dirLight);
 
             const ctrlM = new OrbitControls(camM, renM.domElement);
              ctrlM.autoRotate = true; ctrlM.autoRotateSpeed = 2.5;
@@ -2428,16 +2184,7 @@
 
             loader.load(src, (gltf) => {
                 const model = gltf.scene;
-                model.traverse(c => {
-                    if (c.isMesh) {
-                        c.castShadow = true;
-                        c.receiveShadow = true;
-                        if (c.material && c.material.isMeshStandardMaterial) {
-                            c.material.envMapIntensity = 1.2;
-                            c.material.needsUpdate = true;
-                        }
-                    }
-                });
+                model.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
                 sceneM.add(model);
                 const box = new THREE.Box3().setFromObject(model);
                 const center = box.getCenter(new THREE.Vector3());
@@ -2466,15 +2213,6 @@
             currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); v.remove(); });
             currentActiveVideos = [];
             document.getElementById('panel-media').innerHTML = "";
-
-            // Clear secondary hover
-            clearSecondaryHover();
-
-            // Lower the selected object back to original position (desktop)
-            if (currentSelectedObject && currentSelectedObject.userData.originalPosition) {
-                new TWEEN(currentSelectedObject.position).to({ y: currentSelectedObject.userData.originalPosition.y }, PARAMS.hoverAnimationDuration).start();
-            }
-
             if(originalCameraState) {
                 const activeCam = getActiveCamera();
                 const activeControls = currentCameraMode === 'persp' ? controls : controlsOrtho;
@@ -2510,17 +2248,14 @@
 
         function onWindowResize() {
             const aspect = window.innerWidth / window.innerHeight;
-
+            
             camera.aspect = aspect;
             camera.updateProjectionMatrix();
-
+            
             updateOrthoFrustum();
-
+            
             renderer.setSize(window.innerWidth, window.innerHeight);
             composer.setSize(window.innerWidth, window.innerHeight);
-            if (ssaoPass) {
-                ssaoPass.setSize(window.innerWidth, window.innerHeight);
-            }
         }
 
         window.toggleCameraLock = function() {
@@ -2547,11 +2282,9 @@
             if (currentCameraMode === 'persp') {
                 controls.update();
                 composer.passes[0].camera = camera;
-                if (ssaoPass) ssaoPass.camera = camera;
             } else {
                 controlsOrtho.update();
                 composer.passes[0].camera = cameraOrtho;
-                if (ssaoPass) ssaoPass.camera = cameraOrtho;
             }
 
             if(currentHoveredObject) {
@@ -2565,13 +2298,6 @@
                     const nameY = baseY + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
                     hoverLabel.position.set(currentHoveredObject.position.x, nameY, currentHoveredObject.position.z);
                 }
-            }
-            // Update secondary hover label position
-            if(secondaryHoveredObject && secondaryHoverLabel) {
-                const bboxTop = secondaryHoveredObject.userData._bboxTopLocal || 0;
-                const halfLift = PARAMS.hoverLiftDistance * 0.5;
-                const nameY = secondaryHoveredObject.position.y + bboxTop + halfLift + PARAMS.hoverLabelOffsetY;
-                secondaryHoverLabel.position.set(secondaryHoveredObject.position.x, nameY, secondaryHoveredObject.position.z);
             }
             composer.render();
         }
@@ -2697,17 +2423,9 @@
             hideMobileLabels(); // Clear existing first
             mobileLabelsVisible = true;
             const maxW = PARAMS.hoverLabelFontBox;
-
-            // Use mobile-specific params
-            const rotX = PARAMS.mobileHoverLabelRotationX * Math.PI / 180;
-            const rotY = PARAMS.mobileHoverLabelRotationY * Math.PI / 180;
-            const rotZ = PARAMS.mobileHoverLabelRotationZ * Math.PI / 180;
-            const mArtistFs = PARAMS.mobileHoverArtistFontSize;
-            const mLabelFs = PARAMS.mobileHoverLabelFontSize;
-            const mOffsetY = PARAMS.mobileHoverLabelOffsetY;
-            const mNameOffsetY = PARAMS.mobileHoverLabelNameOffsetY;
-            const mArtistOp = PARAMS.mobileHoverArtistOpacity;
-            const mLabelOp = PARAMS.mobileHoverLabelOpacity;
+            const rotX = PARAMS.hoverLabelRotationX * Math.PI / 180;
+            const rotY = PARAMS.hoverLabelRotationY * Math.PI / 180;
+            const rotZ = PARAMS.hoverLabelRotationZ * Math.PI / 180;
 
             clickableObjects.forEach(obj => {
                 if (!obj.userData.clickable) return;
@@ -2717,32 +2435,32 @@
                 const box = new THREE.Box3().setFromObject(obj);
                 const bboxTopLocal = box.max.y - obj.position.y;
 
-                // Artist label (mobile params)
+                // Artist label
                 const artistText = content.artist || '';
                 if (artistText) {
-                    const label = createHoverTextMesh(artistText, mArtistFs, maxW, {
+                    const label = createHoverTextMesh(artistText, PARAMS.hoverArtistFontSize, maxW, {
                         fontStyle: PARAMS.hoverArtistFontStyle,
                         letterSpacing: PARAMS.hoverArtistLetterSpacing,
                         color: PARAMS.hoverArtistColor,
-                        opacity: mArtistOp
+                        opacity: PARAMS.hoverArtistOpacity
                     });
-                    const y = obj.position.y + bboxTopLocal + mOffsetY;
+                    const y = obj.position.y + bboxTopLocal + PARAMS.hoverLabelOffsetY;
                     label.position.set(obj.position.x, y, obj.position.z);
                     label.rotation.set(rotX, rotY, rotZ);
                     scene.add(label);
                     mobileStaticLabels.push(label);
                 }
 
-                // Name label (mobile params)
+                // Name label
                 const nameText = content.hoverDisplayName || content.name || '';
                 if (nameText) {
-                    const label = createHoverTextMesh(nameText, mLabelFs, maxW, {
+                    const label = createHoverTextMesh(nameText, PARAMS.hoverLabelFontSize, maxW, {
                         fontStyle: PARAMS.hoverLabelFontStyle,
                         letterSpacing: PARAMS.hoverLabelLetterSpacing,
                         color: PARAMS.hoverLabelColor,
-                        opacity: mLabelOp
+                        opacity: PARAMS.hoverLabelOpacity
                     });
-                    const y = obj.position.y + bboxTopLocal + mOffsetY + mNameOffsetY;
+                    const y = obj.position.y + bboxTopLocal + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
                     label.position.set(obj.position.x, y, obj.position.z);
                     label.rotation.set(rotX, rotY, rotZ);
                     scene.add(label);
@@ -2774,12 +2492,7 @@
                 cameraParams.classList.add('open');
                 transformControls.visible = true;
                 transformControls.enabled = true;
-                // Always show Cam 3-P in editor mode
-                if(btnCam3p) btnCam3p.style.display = 'inline-block';
-
-                // Enable pan in editor mode
-                controls.enablePan = true;
-                controlsOrtho.enablePan = true;
+                if(btnCam3p) btnCam3p.style.display = 'inline-block'; // Show Cam 3-P in editor
 
                 updateCameraParamsDisplay();
 
@@ -2801,18 +2514,11 @@
                 transformControls.enabled = false;
                 transformControls.detach();
                 selectedEditorObject = null;
+                // Hide 3-P unless cam3pShowPublic is enabled
+                updateCam3pVisibility();
 
-                // Hide Cam 3-P only if not set to show in public
-                if(btnCam3p && !runtimeParams.cam3pShowPublic) {
-                    btnCam3p.style.display = 'none';
-                }
-
-                // Disable pan in public mode
-                controls.enablePan = false;
-                controlsOrtho.enablePan = false;
-
-                // If currently in Cam 3-P and not public, switch back to Cam 1
-                if(currentCameraMode === 'persp' && !runtimeParams.cam3pShowPublic) {
+                // If currently in Cam 3-P, switch back to Cam 1
+                if(currentCameraMode === 'persp') {
                     switchCamera(1);
                 }
             }
@@ -2975,13 +2681,13 @@
         }
 
         window.switchCamera = function(mode) {
-            const btnCam4p = document.getElementById('btn-cam3p');
+            const btnCam3p = document.getElementById('btn-cam3p');
             const btnCam1 = document.getElementById('btn-cam1');
             const btnCam2 = document.getElementById('btn-cam2');
             const btnLockIcon = document.getElementById('btn-lock-icon');
-            
+
             // Remove active from all
-            [btnCam4p, btnCam1, btnCam2].forEach(b => { if(b) b.classList.remove('active') });
+            [btnCam3p, btnCam1, btnCam2].forEach(b => { if(b) b.classList.remove('active') });
 
             // Unlock camera when switching views
             isCameraLocked = false;
@@ -2993,16 +2699,13 @@
             if (mode === 'persp') {
                 // PERSPECTIVE CAMERA (Cam 3-P)
                 currentCameraMode = 'persp';
-                if(btnCam4p) btnCam4p.classList.add('active');
-
+                if(btnCam3p) btnCam3p.classList.add('active');
+                
                 controlsOrtho.enabled = false;
                 controls.enabled = true;
                 controls.enableRotate = true; // Ensure rotate is on
-
+                
                 if (transformControls) transformControls.camera = camera;
-
-                // Update post-processing cameras
-                updatePostProcessingCamera(camera);
 
             } else {
                 // ORTHO CAMERAS (1, 2)
@@ -3012,12 +2715,9 @@
 
                 controls.enabled = false;
                 controlsOrtho.enabled = false; // Disable controls during animation
-
+                
                 if (transformControls) transformControls.camera = cameraOrtho;
                 updateOrthoFrustum();
-
-                // Update post-processing cameras
-                updatePostProcessingCamera(cameraOrtho);
 
                 let tx=0, ty=0, tz=0;
                 let targetUp = new THREE.Vector3(0, 1, 0); // Default up
@@ -3073,26 +2773,6 @@
             }
         };
 
-        function updatePostProcessingCamera(cam) {
-            // Update RenderPass camera
-            if (composer && composer.passes) {
-                composer.passes.forEach(pass => {
-                    if (pass.camera) {
-                        pass.camera = cam;
-                    }
-                    // SSAOPass has a special camera property
-                    if (pass.isSSAOPass) {
-                        pass.camera = cam;
-                        pass.beautyRenderTarget.setSize(window.innerWidth, window.innerHeight);
-                    }
-                });
-            }
-            // Direct update for ssaoPass
-            if (ssaoPass) {
-                ssaoPass.camera = cam;
-            }
-        }
-
         function getActiveCamera() { 
             return currentCameraMode === 'persp' ? camera : cameraOrtho; 
         }
@@ -3111,19 +2791,44 @@
             }
         }
 
-        // ========== EDITOR TAB FUNCTIONS ==========
+        // ========== PRINT FUNCTION UPDATED FOR EXCEL ==========
+        window.printEditorData = function() {
+            // No Header needed for direct paste into specific columns if user knows context, 
+             // but user asked for formatted copy.
+            // Output format: X \t Y \t Z \t RX \t RY \t RZ \t S
+            // Matches Excel Columns AB -> AH
+            let output = ""; 
+
+            sceneObjects.forEach((item, index) => {
+                const obj = loadedObjectsMap.get(index);
+                if (!obj) return;
+
+                const pos = obj.position;
+                const rot = obj.rotation;
+                const scl = obj.scale.x;
+
+                // Tab separated values
+                output += `${pos.x.toFixed(0)}\t${pos.y.toFixed(0)}\t${pos.z.toFixed(0)}\t`;
+                output += `${(rot.x * 180 / Math.PI).toFixed(0)}\t${(rot.y * 180 / Math.PI).toFixed(0)}\t${(rot.z * 180 / Math.PI).toFixed(0)}\t`;
+                output += `${scl.toFixed(0)}\n`;
+            });
+
+            navigator.clipboard.writeText(output).then(() => {
+                alert('COPIED TO CLIPBOARD!\n\nPaste this directly into your Excel sheet starting at cell AB8 (Columns AB -> AH).');
+            }).catch(err => {
+                console.log(output);
+                alert('Copy failed. Check console for data.');
+            });
+        };
+
+        // ========== EDITOR TAB SWITCHING ==========
         window.switchEditorTab = function(tabName) {
-            // Update tab buttons
             document.querySelectorAll('.editor-tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.tab === tabName);
             });
-
-            // Update tab content
             document.querySelectorAll('.editor-tab-content').forEach(content => {
                 content.classList.toggle('active', content.id === `tab-${tabName}`);
             });
-
-            // Build panels based on tab
             if (tabName === 'parameters') {
                 buildParametersPanel();
             } else if (tabName === 'scene') {
@@ -3131,6 +2836,7 @@
             }
         };
 
+        // ========== PARAMETERS PANEL ==========
         function buildParametersPanel() {
             const grid = document.getElementById('params-grid');
             const isMobile = window.innerWidth <= 768;
@@ -3189,13 +2895,13 @@
 
                 <div class="params-slider-row">
                     <span class="params-slider-label">Exposure Desktop</span>
-                    <input type="range" class="params-slider" min="0.5" max="2.5" step="0.1" value="${runtimeParams.tonemappingExposureDesktop}" onchange="updateSliderParam('tonemappingExposureDesktop', this.value)">
+                    <input type="range" class="params-slider" min="0.5" max="2.5" step="0.05" value="${runtimeParams.tonemappingExposureDesktop}" onchange="updateSliderParam('tonemappingExposureDesktop', this.value)">
                     <span class="params-slider-value">${runtimeParams.tonemappingExposureDesktop}</span>
                 </div>
 
                 <div class="params-slider-row">
                     <span class="params-slider-label">Exposure Mobile</span>
-                    <input type="range" class="params-slider" min="0.5" max="2.5" step="0.1" value="${runtimeParams.tonemappingExposureMobile}" onchange="updateSliderParam('tonemappingExposureMobile', this.value)">
+                    <input type="range" class="params-slider" min="0.5" max="2.5" step="0.05" value="${runtimeParams.tonemappingExposureMobile}" onchange="updateSliderParam('tonemappingExposureMobile', this.value)">
                     <span class="params-slider-value">${runtimeParams.tonemappingExposureMobile}</span>
                 </div>
 
@@ -3271,7 +2977,7 @@
 
                 <div class="params-slider-row">
                     <span class="params-slider-label">Sun</span>
-                    <input type="range" class="params-slider" min="0" max="4" step="0.1" value="${runtimeParams.lightSunIntensity}" onchange="updateSliderParam('lightSunIntensity', this.value)">
+                    <input type="range" class="params-slider" min="0" max="5" step="0.1" value="${runtimeParams.lightSunIntensity}" onchange="updateSliderParam('lightSunIntensity', this.value)">
                     <span class="params-slider-value">${runtimeParams.lightSunIntensity}</span>
                 </div>
 
@@ -3345,6 +3051,50 @@
             `;
         }
 
+        // ========== SCENE PARAMETERS PANEL ==========
+        function buildSceneParametersPanel() {
+            const grid = document.getElementById('scene-params-grid');
+            grid.innerHTML = `
+                <div class="params-section-title">HOVER LABEL (Desktop)</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Font Size</span>
+                    <span class="params-slider-value">${PARAMS.hoverLabelFontSize}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Offset Y</span>
+                    <span class="params-slider-value">${PARAMS.hoverLabelOffsetY}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Name Offset Y</span>
+                    <span class="params-slider-value">${PARAMS.hoverLabelNameOffsetY}px</span>
+                </div>
+
+                <div class="params-section-title">CAMERA POSITIONS</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Cam 1 Pos</span>
+                    <span class="params-slider-value">${PARAMS.cam1PosX}, ${PARAMS.cam1PosY}, ${PARAMS.cam1PosZ}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Cam 2 Pos</span>
+                    <span class="params-slider-value">${PARAMS.cam2PosX}, ${PARAMS.cam2PosY}, ${PARAMS.cam2PosZ}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Initial Zoom</span>
+                    <span class="params-slider-value">${PARAMS.initialCameraZoom}</span>
+                </div>
+
+                <div class="params-section-title">PANEL SETTINGS</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Panel Width</span>
+                    <span class="params-slider-value">${getParam('--panel-width')}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Panel Top Offset</span>
+                    <span class="params-slider-value">${getParam('--panel-top-offset')}</span>
+                </div>
+            `;
+        }
+
         window.toggleParam = function(paramName) {
             runtimeParams[paramName] = !runtimeParams[paramName];
             applyRuntimeParameters();
@@ -3354,7 +3104,6 @@
         window.updateSliderParam = function(paramName, value) {
             runtimeParams[paramName] = parseFloat(value);
             applyRuntimeParameters();
-            // Update the value display next to slider
             const slider = event.target;
             const valueSpan = slider.parentElement.querySelector('.params-slider-value');
             if (valueSpan) {
@@ -3382,7 +3131,6 @@
                 if (!isNaN(newValue)) {
                     runtimeParams[paramName] = newValue;
                     applyRuntimeParameters();
-                    // Update slider if exists
                     const slider = span.parentElement.querySelector('.params-slider');
                     if (slider) slider.value = newValue;
                 }
@@ -3421,24 +3169,16 @@
         function applyRuntimeParameters() {
             const isMobile = window.innerWidth <= 768;
 
-            // ===== LIGHTING =====
-            if (lightHemi) {
-                lightHemi.intensity = runtimeParams.lightHemisphereIntensity;
-            }
+            // LIGHTING
+            if (lightHemi) lightHemi.intensity = runtimeParams.lightHemisphereIntensity;
             if (lightSun) {
                 lightSun.intensity = runtimeParams.lightSunIntensity;
                 const useShadows = isMobile ? runtimeParams.shadowsEnabledMobile : runtimeParams.shadowsEnabledDesktop;
                 lightSun.castShadow = useShadows;
             }
-            if (lightFill) {
-                lightFill.intensity = runtimeParams.lightFillIntensity;
-            }
-            if (lightRim) {
-                lightRim.intensity = runtimeParams.lightRimIntensity;
-            }
-            if (lightAccent) {
-                lightAccent.intensity = runtimeParams.lightAccentIntensity;
-            }
+            if (lightFill) lightFill.intensity = runtimeParams.lightFillIntensity;
+            if (lightRim) lightRim.intensity = runtimeParams.lightRimIntensity;
+            if (lightAccent) lightAccent.intensity = runtimeParams.lightAccentIntensity;
 
             // RectAreaLights
             const useRectAreaLight = isMobile ? runtimeParams.rectarealightEnabledMobile : runtimeParams.rectarealightEnabledDesktop;
@@ -3451,16 +3191,14 @@
                 rectLight2.intensity = runtimeParams.rectarealightIntensity * 0.6;
             }
 
-            // ===== SSAO =====
+            // SSAO
             if (ssaoPass) {
                 const useSSAO = isMobile ? runtimeParams.ssaoEnabledMobile : runtimeParams.ssaoEnabledDesktop;
                 ssaoPass.enabled = useSSAO;
                 ssaoPass.kernelRadius = runtimeParams.ssaoKernelRadius;
-                ssaoPass.minDistance = runtimeParams.ssaoMinDistance;
-                ssaoPass.maxDistance = runtimeParams.ssaoMaxDistance;
             }
 
-            // ===== BLOOM =====
+            // BLOOM
             if (bloomPass) {
                 const useBloom = isMobile ? runtimeParams.bloomEnabledMobile : runtimeParams.bloomEnabledDesktop;
                 bloomPass.enabled = useBloom;
@@ -3469,7 +3207,7 @@
                 bloomPass.threshold = runtimeParams.bloomThreshold;
             }
 
-            // ===== TONE MAPPING =====
+            // TONE MAPPING
             if (renderer) {
                 const useTonemapping = isMobile ? runtimeParams.tonemappingEnabledMobile : runtimeParams.tonemappingEnabledDesktop;
                 if (useTonemapping) {
@@ -3480,24 +3218,24 @@
                     renderer.toneMappingExposure = 1.0;
                 }
 
-                // ===== SHADOWS =====
+                // SHADOWS
                 const useShadows = isMobile ? runtimeParams.shadowsEnabledMobile : runtimeParams.shadowsEnabledDesktop;
                 renderer.shadowMap.enabled = useShadows;
             }
 
-            // ===== FXAA =====
+            // FXAA
             if (fxaaPass) {
                 const useFXAA = isMobile ? runtimeParams.fxaaEnabledMobile : runtimeParams.fxaaEnabledDesktop;
                 fxaaPass.enabled = useFXAA;
             }
 
-            // ===== ENVIRONMENT MAP =====
+            // ENVIRONMENT MAP
             const useEnvMap = isMobile ? runtimeParams.envmapEnabledMobile : runtimeParams.envmapEnabledDesktop;
             if (scene) {
                 scene.environment = useEnvMap ? globalEnvMap : null;
             }
 
-            // ===== PBR MATERIALS (EnvMap Intensity, Roughness, Metalness) =====
+            // PBR MATERIALS
             const envIntensity = isMobile ? runtimeParams.envmapIntensityMobile : runtimeParams.envmapIntensityDesktop;
             const roughnessBoost = runtimeParams.pbrRoughnessBoost || 0;
             const metalnessBoost = runtimeParams.pbrMetalnessBoost || 0;
@@ -3506,11 +3244,8 @@
                 obj.traverse(child => {
                     if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
                         const mat = child.material;
-
-                        // EnvMap Intensity
                         mat.envMapIntensity = envIntensity;
 
-                        // Store original values if not stored
                         if (mat._originalRoughness === undefined) {
                             mat._originalRoughness = mat.roughness;
                         }
@@ -3518,16 +3253,14 @@
                             mat._originalMetalness = mat.metalness;
                         }
 
-                        // Apply boosts (clamped 0-1)
                         mat.roughness = Math.max(0, Math.min(1, mat._originalRoughness + roughnessBoost));
                         mat.metalness = Math.max(0, Math.min(1, mat._originalMetalness + metalnessBoost));
-
                         mat.needsUpdate = true;
                     }
                 });
             });
 
-            // ===== COLOR FILTERS =====
+            // COLOR FILTERS
             applyColorFilters();
         }
 
@@ -3538,7 +3271,6 @@
             const contrast = runtimeParams.filterContrast;
             const saturation = runtimeParams.filterSaturation;
             const hueRotate = runtimeParams.filterHueRotate;
-
             canvas.style.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturation}) hue-rotate(${hueRotate}deg)`;
         }
 
@@ -3548,18 +3280,23 @@
             buildParametersPanel();
         };
 
+        window.resetSceneParameters = function() {
+            // Scene parameters are read-only in this version
+            buildSceneParametersPanel();
+        };
+
         window.printParameters = function() {
             let output = "/* ============================================= */\n";
             output += "/* RENDER PARAMETERS - DESKTOP / MOBILE         */\n";
             output += "/* ============================================= */\n\n";
 
-            output += "/* SSAO (Screen Space Ambient Occlusion) */\n";
+            output += "/* SSAO */\n";
             output += `--ssao-enabled-desktop: ${runtimeParams.ssaoEnabledDesktop ? 'yes' : 'no'};\n`;
             output += `--ssao-enabled-mobile: ${runtimeParams.ssaoEnabledMobile ? 'yes' : 'no'};\n`;
             output += `--ssao-kernel-radius: ${runtimeParams.ssaoKernelRadius};\n`;
             output += `--ssao-intensity: ${runtimeParams.ssaoIntensity};\n\n`;
 
-            output += "/* BLOOM (Glow Effect) */\n";
+            output += "/* BLOOM */\n";
             output += `--bloom-enabled-desktop: ${runtimeParams.bloomEnabledDesktop ? 'yes' : 'no'};\n`;
             output += `--bloom-enabled-mobile: ${runtimeParams.bloomEnabledMobile ? 'yes' : 'no'};\n`;
             output += `--bloom-strength: ${runtimeParams.bloomStrength};\n`;
@@ -3576,13 +3313,9 @@
             output += `--shadows-enabled-desktop: ${runtimeParams.shadowsEnabledDesktop ? 'yes' : 'no'};\n`;
             output += `--shadows-enabled-mobile: ${runtimeParams.shadowsEnabledMobile ? 'yes' : 'no'};\n\n`;
 
-            output += "/* ANTI-ALIASING */\n";
+            output += "/* FXAA */\n";
             output += `--fxaa-enabled-desktop: ${runtimeParams.fxaaEnabledDesktop ? 'yes' : 'no'};\n`;
             output += `--fxaa-enabled-mobile: ${runtimeParams.fxaaEnabledMobile ? 'yes' : 'no'};\n\n`;
-
-            output += "/* ANISOTROPIC FILTERING */\n";
-            output += `--anisotropy-enabled-desktop: ${runtimeParams.anisotropyEnabledDesktop ? 'yes' : 'no'};\n`;
-            output += `--anisotropy-enabled-mobile: ${runtimeParams.anisotropyEnabledMobile ? 'yes' : 'no'};\n\n`;
 
             output += "/* ENVIRONMENT MAP */\n";
             output += `--envmap-enabled-desktop: ${runtimeParams.envmapEnabledDesktop ? 'yes' : 'no'};\n`;
@@ -3595,279 +3328,47 @@
             output += `--rectarealight-enabled-mobile: ${runtimeParams.rectarealightEnabledMobile ? 'yes' : 'no'};\n`;
             output += `--rectarealight-intensity: ${runtimeParams.rectarealightIntensity};\n\n`;
 
-            output += "/* LIGHTING INTENSITIES */\n";
+            output += "/* LIGHTING */\n";
             output += `--light-hemisphere-intensity: ${runtimeParams.lightHemisphereIntensity};\n`;
             output += `--light-sun-intensity: ${runtimeParams.lightSunIntensity};\n`;
             output += `--light-fill-intensity: ${runtimeParams.lightFillIntensity};\n`;
             output += `--light-rim-intensity: ${runtimeParams.lightRimIntensity};\n`;
             output += `--light-accent-intensity: ${runtimeParams.lightAccentIntensity};\n\n`;
 
-            output += "/* PBR MATERIAL SETTINGS */\n";
-            output += `--pbr-envmap-intensity: ${runtimeParams.pbrEnvmapIntensity};\n`;
+            output += "/* PBR */\n";
             output += `--pbr-roughness-boost: ${runtimeParams.pbrRoughnessBoost};\n`;
             output += `--pbr-metalness-boost: ${runtimeParams.pbrMetalnessBoost};\n\n`;
 
-            output += "/* COLOR CORRECTION FILTERS */\n";
+            output += "/* COLOR CORRECTION */\n";
             output += `--filter-brightness: ${runtimeParams.filterBrightness};\n`;
             output += `--filter-contrast: ${runtimeParams.filterContrast};\n`;
             output += `--filter-saturation: ${runtimeParams.filterSaturation};\n`;
             output += `--filter-hue-rotate: ${runtimeParams.filterHueRotate};\n\n`;
 
-            output += "/* CAMERA 3-P */\n";
-            output += `--cam3p-show-public: ${runtimeParams.cam3pShowPublic ? 'yes' : 'no'};\n\n`;
+            output += "/* HDRI */\n";
+            output += `--hdri-preset: ${currentHdriPreset};\n\n`;
 
-            output += "/* HDRI PRESET (1=venice_sunset, 2=white_studio, 3=qwantani, 4=story_studio, 5=white_home, 6=studio_kominka) */\n";
-            output += `--hdri-preset: ${runtimeParams.hdriPreset || currentHdriPreset};\n`;
+            output += "/* CAMERA 3-P */\n";
+            output += `--cam3p-show-public: ${runtimeParams.cam3pShowPublic ? 'yes' : 'no'};\n`;
 
             navigator.clipboard.writeText(output).then(() => {
-                alert('PARAMETERS COPIED TO CLIPBOARD!\n\nPaste this into your CSS :root section.');
+                alert('RENDER PARAMETERS COPIED!\n\nPaste into your :root CSS section.');
             }).catch(err => {
                 console.log(output);
                 alert('Copy failed. Check console for data.');
             });
-        };
-
-        // ========== SCENE PARAMETERS TAB ==========
-        function buildSceneParametersPanel() {
-            const grid = document.getElementById('scene-params-grid');
-
-            grid.innerHTML = `
-                <div class="params-section-title">CAMERA POSITIONS (ORTHO)</div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 1 X</span>
-                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${PARAMS.cam1PosX}" onchange="updateSceneParam('cam1PosX', this.value)">
-                    <span class="params-slider-value">${PARAMS.cam1PosX}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 1 Y</span>
-                    <input type="range" class="params-slider" min="0" max="10000" step="100" value="${PARAMS.cam1PosY}" onchange="updateSceneParam('cam1PosY', this.value)">
-                    <span class="params-slider-value">${PARAMS.cam1PosY}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 1 Z</span>
-                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${PARAMS.cam1PosZ}" onchange="updateSceneParam('cam1PosZ', this.value)">
-                    <span class="params-slider-value">${PARAMS.cam1PosZ}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 2 X</span>
-                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${PARAMS.cam2PosX}" onchange="updateSceneParam('cam2PosX', this.value)">
-                    <span class="params-slider-value">${PARAMS.cam2PosX}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 2 Y</span>
-                    <input type="range" class="params-slider" min="0" max="10000" step="100" value="${PARAMS.cam2PosY}" onchange="updateSceneParam('cam2PosY', this.value)">
-                    <span class="params-slider-value">${PARAMS.cam2PosY}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 2 Z</span>
-                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${PARAMS.cam2PosZ}" onchange="updateSceneParam('cam2PosZ', this.value)">
-                    <span class="params-slider-value">${PARAMS.cam2PosZ}</span>
-                </div>
-
-                <div class="params-section-title">CAM 3-P (PERSPECTIVE)</div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">FOV</span>
-                    <input type="range" class="params-slider" min="10" max="120" step="5" value="${PARAMS.cameraFov}" onchange="updateSceneParam('cameraFov', this.value); if(camera){camera.fov=parseFloat(this.value);camera.updateProjectionMatrix();}">
-                    <span class="params-slider-value" onclick="makeEditable(this, 'cameraFov')">${PARAMS.cameraFov}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 3-P X</span>
-                    <span class="params-slider-value" style="flex:1;text-align:left;">${camera ? Math.round(camera.position.x) : '---'}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 3-P Y</span>
-                    <span class="params-slider-value" style="flex:1;text-align:left;">${camera ? Math.round(camera.position.y) : '---'}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 3-P Z</span>
-                    <span class="params-slider-value" style="flex:1;text-align:left;">${camera ? Math.round(camera.position.z) : '---'}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Target X</span>
-                    <span class="params-slider-value" style="flex:1;text-align:left;">${controls ? Math.round(controls.target.x) : '---'}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Target Y</span>
-                    <span class="params-slider-value" style="flex:1;text-align:left;">${controls ? Math.round(controls.target.y) : '---'}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Target Z</span>
-                    <span class="params-slider-value" style="flex:1;text-align:left;">${controls ? Math.round(controls.target.z) : '---'}</span>
-                </div>
-
-                <div class="params-section-title">CAMERA SETTINGS</div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Ortho Frustum</span>
-                    <input type="range" class="params-slider" min="500" max="5000" step="100" value="${PARAMS.orthoFrustumSize}" onchange="updateSceneParam('orthoFrustumSize', this.value)">
-                    <span class="params-slider-value">${PARAMS.orthoFrustumSize}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Min Distance</span>
-                    <input type="range" class="params-slider" min="100" max="5000" step="100" value="${PARAMS.cameraMinDist}" onchange="updateSceneParam('cameraMinDist', this.value)">
-                    <span class="params-slider-value">${PARAMS.cameraMinDist}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Max Distance</span>
-                    <input type="range" class="params-slider" min="1000" max="20000" step="500" value="${PARAMS.cameraMaxDist}" onchange="updateSceneParam('cameraMaxDist', this.value)">
-                    <span class="params-slider-value">${PARAMS.cameraMaxDist}</span>
-                </div>
-
-                <div class="params-section-title">HOVER LABELS</div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Lift Distance</span>
-                    <input type="range" class="params-slider" min="0" max="500" step="10" value="${PARAMS.hoverLiftDistance}" onchange="updateSceneParam('hoverLiftDistance', this.value)">
-                    <span class="params-slider-value">${PARAMS.hoverLiftDistance}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Animation (ms)</span>
-                    <input type="range" class="params-slider" min="100" max="1000" step="50" value="${PARAMS.hoverAnimationDuration}" onchange="updateSceneParam('hoverAnimationDuration', this.value)">
-                    <span class="params-slider-value">${PARAMS.hoverAnimationDuration}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Label Offset Y</span>
-                    <input type="range" class="params-slider" min="0" max="500" step="10" value="${PARAMS.hoverLabelOffsetY}" onchange="updateSceneParam('hoverLabelOffsetY', this.value)">
-                    <span class="params-slider-value">${PARAMS.hoverLabelOffsetY}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Name Offset Y</span>
-                    <input type="range" class="params-slider" min="0" max="200" step="5" value="${PARAMS.hoverLabelNameOffsetY}" onchange="updateSceneParam('hoverLabelNameOffsetY', this.value)">
-                    <span class="params-slider-value">${PARAMS.hoverLabelNameOffsetY}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Font Size</span>
-                    <input type="range" class="params-slider" min="20" max="120" step="5" value="${PARAMS.hoverLabelFontSize}" onchange="updateSceneParam('hoverLabelFontSize', this.value)">
-                    <span class="params-slider-value">${PARAMS.hoverLabelFontSize}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Artist Font Size</span>
-                    <input type="range" class="params-slider" min="15" max="80" step="5" value="${PARAMS.hoverArtistFontSize}" onchange="updateSceneParam('hoverArtistFontSize', this.value)">
-                    <span class="params-slider-value">${PARAMS.hoverArtistFontSize}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Rotation X</span>
-                    <input type="range" class="params-slider" min="-90" max="0" step="5" value="${PARAMS.hoverLabelRotationX}" onchange="updateSceneParam('hoverLabelRotationX', this.value)">
-                    <span class="params-slider-value">${PARAMS.hoverLabelRotationX}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Rotation Y</span>
-                    <input type="range" class="params-slider" min="-180" max="180" step="5" value="${PARAMS.hoverLabelRotationY}" onchange="updateSceneParam('hoverLabelRotationY', this.value)">
-                    <span class="params-slider-value">${PARAMS.hoverLabelRotationY}</span>
-                </div>
-
-                <div class="params-section-title">MOBILE HOVER LABELS</div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Mobile Font Size</span>
-                    <input type="range" class="params-slider" min="20" max="120" step="5" value="${PARAMS.mobileHoverLabelFontSize}" onchange="updateSceneParam('mobileHoverLabelFontSize', this.value)">
-                    <span class="params-slider-value">${PARAMS.mobileHoverLabelFontSize}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Mobile Artist Size</span>
-                    <input type="range" class="params-slider" min="15" max="80" step="5" value="${PARAMS.mobileHoverArtistFontSize}" onchange="updateSceneParam('mobileHoverArtistFontSize', this.value)">
-                    <span class="params-slider-value">${PARAMS.mobileHoverArtistFontSize}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Mobile Offset Y</span>
-                    <input type="range" class="params-slider" min="0" max="500" step="10" value="${PARAMS.mobileHoverLabelOffsetY}" onchange="updateSceneParam('mobileHoverLabelOffsetY', this.value)">
-                    <span class="params-slider-value">${PARAMS.mobileHoverLabelOffsetY}</span>
-                </div>
-            `;
-        }
-
-        window.updateSceneParam = function(paramName, value) {
-            PARAMS[paramName] = parseFloat(value);
-            // Update the value display next to slider
-            const slider = event.target;
-            const valueSpan = slider.parentElement.querySelector('.params-slider-value');
-            if (valueSpan) valueSpan.textContent = value;
-        };
-
-        window.resetSceneParameters = function() {
-            // Reset PARAMS to original values from CSS
-            Object.keys(PARAMS).forEach(key => {
-                const cssVar = '--' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
-                const cssValue = getParam(cssVar);
-                if (cssValue) {
-                    PARAMS[key] = parseFloat(cssValue) || cssValue;
-                }
-            });
-            buildSceneParametersPanel();
         };
 
         window.printSceneParameters = function() {
-            let output = "/* ============================================= */\n";
-            output += "/* SCENE PARAMETERS                              */\n";
-            output += "/* ============================================= */\n\n";
-
-            output += "/* CAMERA POSITIONS (ORTHO) */\n";
+            let output = "/* SCENE PARAMETERS */\n";
+            output += `--hover-label-font-size: ${PARAMS.hoverLabelFontSize}px;\n`;
+            output += `--hover-label-offset-y: ${PARAMS.hoverLabelOffsetY}px;\n`;
             output += `--cam1-pos-x: ${PARAMS.cam1PosX};\n`;
             output += `--cam1-pos-y: ${PARAMS.cam1PosY};\n`;
             output += `--cam1-pos-z: ${PARAMS.cam1PosZ};\n`;
-            output += `--cam2-pos-x: ${PARAMS.cam2PosX};\n`;
-            output += `--cam2-pos-y: ${PARAMS.cam2PosY};\n`;
-            output += `--cam2-pos-z: ${PARAMS.cam2PosZ};\n\n`;
-
-            output += "/* CAM 3-P (PERSPECTIVE) */\n";
-            output += `--camera-fov: ${PARAMS.cameraFov};\n`;
-            if (camera) {
-                output += `/* Cam 3-P Position: X=${Math.round(camera.position.x)} Y=${Math.round(camera.position.y)} Z=${Math.round(camera.position.z)} */\n`;
-            }
-            if (controls) {
-                output += `/* Cam 3-P Target: X=${Math.round(controls.target.x)} Y=${Math.round(controls.target.y)} Z=${Math.round(controls.target.z)} */\n`;
-            }
-            output += '\n';
-
-            output += "/* CAMERA SETTINGS */\n";
-            output += `--ortho-frustum-size: ${PARAMS.orthoFrustumSize};\n`;
-            output += `--camera-min-dist: ${PARAMS.cameraMinDist};\n`;
-            output += `--camera-max-dist: ${PARAMS.cameraMaxDist};\n\n`;
-
-            output += "/* HOVER LABELS */\n";
-            output += `--hover-lift-distance: ${PARAMS.hoverLiftDistance};\n`;
-            output += `--hover-animation-duration: ${PARAMS.hoverAnimationDuration};\n`;
-            output += `--hover-label-offset-y: ${PARAMS.hoverLabelOffsetY};\n`;
-            output += `--hover-label-name-offset-y: ${PARAMS.hoverLabelNameOffsetY};\n`;
-            output += `--hover-label-font-size: ${PARAMS.hoverLabelFontSize};\n`;
-            output += `--hover-artist-font-size: ${PARAMS.hoverArtistFontSize};\n`;
-            output += `--hover-label-rotation-x: ${PARAMS.hoverLabelRotationX};\n`;
-            output += `--hover-label-rotation-y: ${PARAMS.hoverLabelRotationY};\n\n`;
-
-            output += "/* MOBILE HOVER LABELS */\n";
-            output += `--mobile-hover-label-font-size: ${PARAMS.mobileHoverLabelFontSize};\n`;
-            output += `--mobile-hover-artist-font-size: ${PARAMS.mobileHoverArtistFontSize};\n`;
-            output += `--mobile-hover-label-offset-y: ${PARAMS.mobileHoverLabelOffsetY};\n`;
 
             navigator.clipboard.writeText(output).then(() => {
-                alert('SCENE PARAMETERS COPIED TO CLIPBOARD!\n\nPaste this into your CSS :root section.');
-            }).catch(err => {
-                console.log(output);
-                alert('Copy failed. Check console for data.');
-            });
-        };
-
-        // ========== PRINT FUNCTION UPDATED FOR EXCEL ==========
-        window.printEditorData = function() {
-            // No Header needed for direct paste into specific columns if user knows context, 
-             // but user asked for formatted copy.
-            // Output format: X \t Y \t Z \t RX \t RY \t RZ \t S
-            // Matches Excel Columns AB -> AH
-            let output = ""; 
-
-            sceneObjects.forEach((item, index) => {
-                const obj = loadedObjectsMap.get(index);
-                if (!obj) return;
-
-                const pos = obj.position;
-                const rot = obj.rotation;
-                const scl = obj.scale.x;
-
-                // Tab separated values
-                output += `${pos.x.toFixed(0)}\t${pos.y.toFixed(0)}\t${pos.z.toFixed(0)}\t`;
-                output += `${(rot.x * 180 / Math.PI).toFixed(0)}\t${(rot.y * 180 / Math.PI).toFixed(0)}\t${(rot.z * 180 / Math.PI).toFixed(0)}\t`;
-                output += `${scl.toFixed(0)}\n`;
-            });
-
-            navigator.clipboard.writeText(output).then(() => {
-                alert('COPIED TO CLIPBOARD!\n\nPaste this directly into your Excel sheet starting at cell AB8 (Columns AB -> AH).');
+                alert('SCENE PARAMETERS COPIED!');
             }).catch(err => {
                 console.log(output);
                 alert('Copy failed. Check console for data.');
@@ -3900,17 +3401,6 @@
             if (e.shiftKey && (e.key === 'B' || e.key === 'b')) {
                 e.preventDefault();
                 toggleBoundingBoxes();
-                return;
-            }
-            // Shift + 1-6 for HDRI Preset Selection
-            if (e.shiftKey && e.key >= '1' && e.key <= '6') {
-                e.preventDefault();
-                const presetNum = parseInt(e.key);
-                if (hdriPresets && hdriPresets[presetNum]) {
-                    loadHDRI(presetNum);
-                    // Rebuild parameters panel if open
-                    if (editorModeActive) buildParametersPanel();
-                }
                 return;
             }
 
