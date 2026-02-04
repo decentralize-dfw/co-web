@@ -24,7 +24,94 @@
              --accent-color: #FF006A;
             --font-headers: 'Space Mono', monospace;
             --font-body: 'Space Mono', monospace;
-            
+
+/* ============================================= */
+/* RENDER PARAMETERS - DESKTOP / MOBILE         */
+/* (v4 default değerleri - birebir aynı)        */
+/* ============================================= */
+
+/* SSAO (v4'te yok, kapalı) */
+--ssao-enabled-desktop: no;
+--ssao-enabled-mobile: no;
+--ssao-kernel-radius: 8;
+--ssao-intensity: 0.5;
+
+/* BLOOM (v4 default: 0.05/0.35/0.8) */
+--bloom-enabled-desktop: yes;
+--bloom-enabled-mobile: no;
+--bloom-strength: 0.05;
+--bloom-radius: 0.35;
+--bloom-threshold: 0.8;
+
+/* TONE MAPPING (v4: ACES, exposure 0.75) */
+--tonemapping-enabled-desktop: yes;
+--tonemapping-enabled-mobile: no;
+--tonemapping-exposure-desktop: 0.75;
+--tonemapping-exposure-mobile: 1.0;
+
+/* SHADOWS (v4: PCF, bias -0.0005, normalBias 0.2) */
+--shadows-enabled-desktop: yes;
+--shadows-enabled-mobile: yes;
+--shadow-type: PCF;
+--shadow-bias: -0.0005;
+--shadow-normal-bias: 0.2;
+
+/* ANTI-ALIASING */
+--fxaa-enabled-desktop: yes;
+--fxaa-enabled-mobile: no;
+
+/* ANISOTROPIC FILTERING (v4'te yok, kapalı) */
+--anisotropy-enabled-desktop: no;
+--anisotropy-enabled-mobile: no;
+
+/* ENVIRONMENT MAP (v4: venice_sunset, intensity 1.0) */
+--envmap-enabled-desktop: yes;
+--envmap-enabled-mobile: yes;
+--envmap-intensity-desktop: 1.0;
+--envmap-intensity-mobile: 1.0;
+
+/* RECT AREA LIGHT (v4'te yok, kapalı) */
+--rectarealight-enabled-desktop: no;
+--rectarealight-enabled-mobile: no;
+--rectarealight-intensity: 2.0;
+
+/* LIGHTING INTENSITIES (v4 ile birebir aynı) */
+--light-hemisphere-intensity: 0.3;
+--light-sun-intensity: 3.5;
+--light-fill-intensity: 0.1;
+--light-rim-intensity: 0;
+--light-accent-intensity: 0.1;
+
+/* PBR MATERIAL SETTINGS (v4 default) */
+--pbr-envmap-intensity: 1.0;
+--pbr-roughness-boost: 0.0;
+--pbr-metalness-boost: 0.0;
+
+/* COLOR CORRECTION FILTERS (v4'te filtre yok, hepsi nötr) */
+--filter-brightness: 1.0;
+--filter-contrast: 1.0;
+--filter-saturation: 1.0;
+--filter-hue-rotate: 0;
+
+/* CAMERA 3-P (v4'te public'te gizli) */
+--cam3p-show-public: no;
+
+/* HDRI PRESET (1=venice_sunset) */
+--hdri-preset: 1;
+
+/* MOBILE HOVER LABEL OVERRIDES */
+--mobile-hover-label-font-size: 60px;
+--mobile-hover-label-opacity: 0.9;
+--mobile-hover-label-offset-y: 40px;
+--mobile-hover-label-name-offset-y: 80px;
+--mobile-hover-label-rotation-x: 0deg;
+--mobile-hover-label-rotation-y: 90deg;
+--mobile-hover-label-rotation-z: 0deg;
+--mobile-hover-artist-font-size: 35px;
+--mobile-hover-artist-opacity: 0.7;
+
+/* ============================================= */
+
             /* KAMERA POZİSYONLARI (ORTHO) */
             /* CAM 1 */
             --cam1-pos-x: 5000;
@@ -471,6 +558,192 @@
             background: rgba(0, 0, 0, 0.85); color: #fff; border-color: rgba(0, 0, 0, 0.85);
         }
 
+        /* Editor Tabs */
+        .editor-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.98);
+            z-index: 20;
+        }
+
+        .editor-tab {
+            flex: 1;
+            padding: 8px 12px;
+            font-family: var(--font-headers);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: rgba(0, 0, 0, 0.5);
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+
+        .editor-tab:hover {
+            color: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .editor-tab.active {
+            color: #000;
+            border-bottom-color: #000;
+            font-weight: bold;
+        }
+
+        .editor-tab-content {
+            display: none;
+        }
+
+        .editor-tab-content.active {
+            display: block;
+        }
+
+        /* Parameters Panel Styles */
+        .params-grid {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 4px 8px;
+            padding: 8px;
+            font-family: var(--font-body);
+            font-size: 11px;
+        }
+
+        .params-section-title {
+            grid-column: 1 / -1;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+            padding: 8px 0 4px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            margin-top: 8px;
+            color: rgba(0, 0, 0, 0.7);
+        }
+
+        .params-section-title:first-child {
+            margin-top: 0;
+        }
+
+        .params-label {
+            padding: 4px 0;
+            color: rgba(0, 0, 0, 0.7);
+        }
+
+        .params-value {
+            text-align: center;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 4px;
+            min-width: 50px;
+        }
+
+        .params-value.on {
+            background: rgba(39, 174, 96, 0.15);
+            color: #27ae60;
+        }
+
+        .params-value.off {
+            background: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+        }
+
+        .params-toggle {
+            width: 36px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s;
+        }
+
+        .params-toggle.on {
+            background: rgba(39, 174, 96, 0.8);
+        }
+
+        .params-toggle::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .params-toggle.on::after {
+            left: 18px;
+        }
+
+        .params-slider-row {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+        }
+
+        .params-slider-label {
+            flex: 0 0 120px;
+            color: rgba(0, 0, 0, 0.7);
+        }
+
+        .params-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .params-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #000;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .params-slider-value {
+            flex: 0 0 55px;
+            text-align: right;
+            font-size: 10px;
+            color: rgba(0, 0, 0, 0.6);
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+
+        .params-slider-value:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        .params-slider-input {
+            flex: 0 0 55px;
+            width: 55px;
+            text-align: right;
+            font-size: 10px;
+            font-family: var(--font-body);
+            border: 1px solid rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            padding: 2px 4px;
+            outline: none;
+        }
+
+        .params-slider-input:focus {
+            border-color: var(--accent-color);
+        }
+
         /* Editor UI Elements */
         .editor-btn, .camera-btn, .transform-btn {
             padding: 6px 12px; font-family: var(--font-headers); font-size: 9px;
@@ -573,7 +846,7 @@
             <div class="toggle-group">
                 <button class="toggle-btn active" id="btn-cam1" onclick="switchCamera(1)">1</button>
                 <button class="toggle-btn" id="btn-cam2" onclick="switchCamera(2)">2</button>
-                <button class="toggle-btn" id="btn-cam4p" onclick="switchCamera('persp')" style="display:none">4-P</button>
+                <button class="toggle-btn" id="btn-cam3p" onclick="switchCamera('persp')" style="display:none">3-P</button>
             </div>
         </div>
 
@@ -596,24 +869,56 @@
 
     <!-- EDITOR PANEL (LEFT SIDE) - EXCEL STYLE -->
     <div id="editor-panel">
-        <table class="editor-table">
-            <thead>
-                <tr>
-                    <th style="width:20px;"></th>
-                    <th class="name-col">NAME</th>
-                    <th class="col-x">X</th>
-                    <th class="col-y">Y</th>
-                    <th class="col-z">Z</th>
-                    <th class="col-x">RX</th>
-                    <th class="col-y">RY</th>
-                    <th class="col-z">RZ</th>
-                    <th class="col-s">S</th>
-                </tr>
-            </thead>
-            <tbody id="editor-table-body"></tbody>
-        </table>
-        <div class="editor-footer">
-            <button class="editor-footer-btn print-btn" onclick="printEditorData()">PRINT</button>
+        <!-- TABS -->
+        <div class="editor-tabs">
+            <button class="editor-tab active" data-tab="products" onclick="switchEditorTab('products')">Products</button>
+            <button class="editor-tab" data-tab="parameters" onclick="switchEditorTab('parameters')">Render</button>
+            <button class="editor-tab" data-tab="scene" onclick="switchEditorTab('scene')">Scene</button>
+        </div>
+
+        <!-- PRODUCTS TAB -->
+        <div class="editor-tab-content active" id="tab-products">
+            <table class="editor-table">
+                <thead>
+                    <tr>
+                        <th style="width:20px;"></th>
+                        <th class="name-col">NAME</th>
+                        <th class="col-x">X</th>
+                        <th class="col-y">Y</th>
+                        <th class="col-z">Z</th>
+                        <th class="col-x">RX</th>
+                        <th class="col-y">RY</th>
+                        <th class="col-z">RZ</th>
+                        <th class="col-s">S</th>
+                    </tr>
+                </thead>
+                <tbody id="editor-table-body"></tbody>
+            </table>
+            <div class="editor-footer">
+                <button class="editor-footer-btn print-btn" onclick="printEditorData()">PRINT</button>
+            </div>
+        </div>
+
+        <!-- PARAMETERS TAB -->
+        <div class="editor-tab-content" id="tab-parameters">
+            <div class="params-grid" id="params-grid">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            <div class="editor-footer">
+                <button class="editor-footer-btn" onclick="resetParameters()">RESET</button>
+                <button class="editor-footer-btn print-btn" onclick="printParameters()">PRINT</button>
+            </div>
+        </div>
+
+        <!-- SCENE TAB -->
+        <div class="editor-tab-content" id="tab-scene">
+            <div class="params-grid" id="scene-params-grid">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            <div class="editor-footer">
+                <button class="editor-footer-btn" onclick="resetSceneParameters()">RESET</button>
+                <button class="editor-footer-btn print-btn" onclick="printSceneParameters()">PRINT</button>
+            </div>
         </div>
     </div>
 
@@ -691,7 +996,10 @@
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
         import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+        import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
         import { TransformControls } from 'three/addons/controls/TransformControls.js';
+        import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js';
+        import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
         import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 
         THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -835,6 +1143,82 @@
 
         const getParam = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
         const getParamNum = (name) => parseFloat(getParam(name));
+        const getParamBool = (name) => getParam(name).toLowerCase() === 'yes';
+
+        // RENDER PARAMETERS (read from CSS variables)
+        const RENDER_PARAMS = {
+            // SSAO
+            ssaoEnabledDesktop: getParamBool('--ssao-enabled-desktop'),
+            ssaoEnabledMobile: getParamBool('--ssao-enabled-mobile'),
+            ssaoKernelRadius: getParamNum('--ssao-kernel-radius') || 8,
+            ssaoIntensity: getParamNum('--ssao-intensity') || 0.5,
+
+            // Bloom
+            bloomEnabledDesktop: getParamBool('--bloom-enabled-desktop'),
+            bloomEnabledMobile: getParamBool('--bloom-enabled-mobile'),
+            bloomStrength: getParamNum('--bloom-strength') || 0.05,
+            bloomRadius: getParamNum('--bloom-radius') || 0.35,
+            bloomThreshold: getParamNum('--bloom-threshold') || 0.8,
+
+            // Tone Mapping
+            tonemappingEnabledDesktop: getParamBool('--tonemapping-enabled-desktop'),
+            tonemappingEnabledMobile: getParamBool('--tonemapping-enabled-mobile'),
+            tonemappingExposureDesktop: getParamNum('--tonemapping-exposure-desktop') || 0.75,
+            tonemappingExposureMobile: getParamNum('--tonemapping-exposure-mobile') || 1.0,
+
+            // Shadows
+            shadowsEnabledDesktop: getParamBool('--shadows-enabled-desktop'),
+            shadowsEnabledMobile: getParamBool('--shadows-enabled-mobile'),
+            shadowType: getParam('--shadow-type') || 'PCF',
+            shadowBias: getParamNum('--shadow-bias') || -0.0005,
+            shadowNormalBias: getParamNum('--shadow-normal-bias') || 0.2,
+
+            // Anti-Aliasing
+            fxaaEnabledDesktop: getParamBool('--fxaa-enabled-desktop'),
+            fxaaEnabledMobile: getParamBool('--fxaa-enabled-mobile'),
+
+            // Anisotropy
+            anisotropyEnabledDesktop: getParamBool('--anisotropy-enabled-desktop'),
+            anisotropyEnabledMobile: getParamBool('--anisotropy-enabled-mobile'),
+
+            // Environment Map
+            envmapEnabledDesktop: getParamBool('--envmap-enabled-desktop'),
+            envmapEnabledMobile: getParamBool('--envmap-enabled-mobile'),
+            envmapIntensityDesktop: getParamNum('--envmap-intensity-desktop') || 1.0,
+            envmapIntensityMobile: getParamNum('--envmap-intensity-mobile') || 1.0,
+
+            // RectAreaLight
+            rectarealightEnabledDesktop: getParamBool('--rectarealight-enabled-desktop'),
+            rectarealightEnabledMobile: getParamBool('--rectarealight-enabled-mobile'),
+            rectarealightIntensity: getParamNum('--rectarealight-intensity') || 2.0,
+
+            // Lighting
+            lightHemisphereIntensity: getParamNum('--light-hemisphere-intensity') || 0.3,
+            lightSunIntensity: getParamNum('--light-sun-intensity') || 3.5,
+            lightFillIntensity: getParamNum('--light-fill-intensity') || 0.1,
+            lightRimIntensity: getParamNum('--light-rim-intensity') || 0,
+            lightAccentIntensity: getParamNum('--light-accent-intensity') || 0.1,
+
+            // PBR
+            pbrEnvmapIntensity: getParamNum('--pbr-envmap-intensity') || 1.0,
+            pbrRoughnessBoost: getParamNum('--pbr-roughness-boost') || 0,
+            pbrMetalnessBoost: getParamNum('--pbr-metalness-boost') || 0,
+
+            // Color Correction Filters
+            filterBrightness: getParamNum('--filter-brightness') || 1.0,
+            filterContrast: getParamNum('--filter-contrast') || 1.0,
+            filterSaturation: getParamNum('--filter-saturation') || 1.0,
+            filterHueRotate: getParamNum('--filter-hue-rotate') || 0,
+
+            // Camera 3-P
+            cam3pShowPublic: getParamBool('--cam3p-show-public'),
+
+            // HDRI Preset
+            hdriPreset: getParamNum('--hdri-preset') || 1
+        };
+
+        // Runtime state for parameters (can be toggled)
+        let runtimeParams = { ...RENDER_PARAMS };
 
         const PARAMS = {
             hoverLiftDistance: getParamNum('--hover-lift-distance'),
@@ -884,7 +1268,57 @@
         };
 
         let camera, cameraOrtho, scene, renderer, controls, controlsOrtho, raycaster, mouse, composer, globalEnvMap;
-        let bloomPass, ssaoPass;
+        let bloomPass, ssaoPass, fxaaPass;
+
+        // Global light references for runtime adjustment
+        let lightHemi, lightSun, lightFill, lightRim, lightAccent;
+        let rectLight1, rectLight2;
+
+        // HDRI Presets
+        const hdriPresets = {
+            1: { name: 'Venice Sunset', url: 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr' },
+            2: { name: 'White Studio', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/white_studio_04_1k.hdr' },
+            3: { name: 'Qwantani Puresky', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/qwantani_mid_morning_puresky_1k.hdr' },
+            4: { name: 'Story Studio', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/story_studio_03_1k.hdr' },
+            5: { name: 'White Home Studio', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/white_home_studio_1k.hdr' },
+            6: { name: 'Studio Kominka', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/studio_kominka_02_1k.hdr' }
+        };
+        let currentHdriPreset = runtimeParams.hdriPreset || 1;
+
+        function loadHDRI(presetNum, pmremGen) {
+            const preset = hdriPresets[presetNum];
+            if (!preset) return;
+            currentHdriPreset = presetNum;
+            runtimeParams.hdriPreset = presetNum;
+
+            const isMobile = window.innerWidth <= 768;
+            const localPmrem = pmremGen || new THREE.PMREMGenerator(renderer);
+            if (!pmremGen) localPmrem.compileEquirectangularShader();
+
+            new RGBELoader().load(preset.url, (tex) => {
+                tex.mapping = THREE.EquirectangularReflectionMapping;
+
+                if (globalEnvMap) globalEnvMap.dispose();
+                globalEnvMap = localPmrem.fromEquirectangular(tex).texture;
+
+                const useEnvMap = isMobile ? runtimeParams.envmapEnabledMobile : runtimeParams.envmapEnabledDesktop;
+                if (useEnvMap && !isWireMode) {
+                    scene.environment = globalEnvMap;
+                }
+
+                const envIntensity = isMobile ? runtimeParams.envmapIntensityMobile : runtimeParams.envmapIntensityDesktop;
+                scene.traverse(child => {
+                    if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
+                        child.material.envMapIntensity = envIntensity;
+                        child.material.needsUpdate = true;
+                    }
+                });
+
+                tex.dispose();
+                if (!pmremGen) localPmrem.dispose();
+                console.log(`HDRI switched to: ${presetNum} - ${preset.name}`);
+            });
+        }
         let loadedAssets = 0, totalAssets = 0;
         let currentHoveredObject = null, hoverLabel = null, hoverLabelArtist = null, currentSelectedObject = null;
         let originalCameraState = null, currentActiveVideos = [];
@@ -1041,45 +1475,85 @@
                 tex.dispose(); pmrem.dispose();
             });
 
-            scene.add(new THREE.HemisphereLight(0xffffff, 0x000000, 0.3));
-            
-            const sun = new THREE.DirectionalLight(0xffffff, 3.5);
-            sun.position.set(1200, 2400, 1200);
-            sun.castShadow = true;
-            // Mobile: slightly smaller shadow map but not too low
+            // Initialize RectAreaLight uniforms
+            RectAreaLightUniformsLib.init();
+
+            // HEMISPHERE LIGHT
+            lightHemi = new THREE.HemisphereLight(0xffffff, 0x000000, runtimeParams.lightHemisphereIntensity);
+            scene.add(lightHemi);
+
+            // SUN (DIRECTIONAL LIGHT)
+            lightSun = new THREE.DirectionalLight(0xffffff, runtimeParams.lightSunIntensity);
+            lightSun.position.set(1200, 2400, 1200);
+            lightSun.castShadow = isMobile ? runtimeParams.shadowsEnabledMobile : runtimeParams.shadowsEnabledDesktop;
             const shadowSize = isMobile ? 1536 : 2048;
-            sun.shadow.mapSize.set(shadowSize, shadowSize);
-            sun.shadow.camera.near = 0.5;
-            sun.shadow.camera.far = 16000;
-            sun.shadow.camera.left = -5500; sun.shadow.camera.right = 5500;
-            sun.shadow.camera.top = 5500; sun.shadow.camera.bottom = -5500;
-            
-            sun.shadow.bias = -0.0005;
-             sun.shadow.normalBias = 0.2;
-             scene.add(sun);
+            lightSun.shadow.mapSize.set(shadowSize, shadowSize);
+            lightSun.shadow.camera.near = 0.5;
+            lightSun.shadow.camera.far = 16000;
+            lightSun.shadow.camera.left = -5500; lightSun.shadow.camera.right = 5500;
+            lightSun.shadow.camera.top = 5500; lightSun.shadow.camera.bottom = -5500;
+            lightSun.shadow.bias = runtimeParams.shadowBias;
+            lightSun.shadow.normalBias = runtimeParams.shadowNormalBias;
+            scene.add(lightSun);
 
-            const fill1 = new THREE.PointLight(0xffffff, 0.1, 10000);
-            fill1.position.set(3000, 1500, 3000);
-            scene.add(fill1);
+            // FILL LIGHTS
+            lightFill = new THREE.PointLight(0xffffff, runtimeParams.lightFillIntensity, 10000);
+            lightFill.position.set(3000, 1500, 3000);
+            scene.add(lightFill);
 
-            const fill2 = new THREE.PointLight(0xffffff, 0.1, 10000);
-            fill2.position.set(-3000, 1500, -3000);
-            scene.add(fill2);
+            // RIM LIGHT (v4'te kapalı - intensity 0)
+            lightRim = new THREE.PointLight(0xffffff, runtimeParams.lightRimIntensity, 10000);
+            lightRim.position.set(-3000, 1500, -3000);
+            scene.add(lightRim);
 
+            // ACCENT LIGHT
+            lightAccent = new THREE.PointLight(0xffffff, runtimeParams.lightAccentIntensity, 8000);
+            lightAccent.position.set(0, 2000, -2000);
+            scene.add(lightAccent);
+
+            // RECT AREA LIGHTS (v4'te kapalı)
+            const useRectAreaLight = isMobile ? runtimeParams.rectarealightEnabledMobile : runtimeParams.rectarealightEnabledDesktop;
+            rectLight1 = new THREE.RectAreaLight(0xffffff, runtimeParams.rectarealightIntensity, 1000, 1000);
+            rectLight1.position.set(0, 3000, 3000);
+            rectLight1.lookAt(0, 0, 0);
+            rectLight1.visible = useRectAreaLight;
+            scene.add(rectLight1);
+
+            rectLight2 = new THREE.RectAreaLight(0xffffff, runtimeParams.rectarealightIntensity * 0.6, 800, 800);
+            rectLight2.position.set(-2000, 2000, -2000);
+            rectLight2.lookAt(0, 0, 0);
+            rectLight2.visible = useRectAreaLight;
+            scene.add(rectLight2);
+
+            // COMPOSER & POST-PROCESSING
             composer = new EffectComposer(renderer);
-            const renderPass = new RenderPass(scene, camera); // Initially camera, update in animate
+            const renderPass = new RenderPass(scene, camera);
             renderPass.clearAlpha = 0;
             composer.addPass(renderPass);
 
-            bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.25, 0.35, 0.8);
-            if (isMobile) bloomPass.enabled = false; // Skip bloom on mobile for performance
+            // SSAO Pass (v4'te kapalı)
+            const useSSAO = isMobile ? runtimeParams.ssaoEnabledMobile : runtimeParams.ssaoEnabledDesktop;
+            ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
+            ssaoPass.kernelRadius = runtimeParams.ssaoKernelRadius;
+            ssaoPass.minDistance = 0.001;
+            ssaoPass.maxDistance = 0.05;
+            ssaoPass.enabled = useSSAO;
+            composer.addPass(ssaoPass);
+
+            // BLOOM Pass
+            const useBloom = isMobile ? runtimeParams.bloomEnabledMobile : runtimeParams.bloomEnabledDesktop;
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), runtimeParams.bloomStrength, runtimeParams.bloomRadius, runtimeParams.bloomThreshold);
+            bloomPass.enabled = useBloom;
             composer.addPass(bloomPass);
 
             composer.addPass(new OutputPass());
 
-            const fxaaPass = new ShaderPass(FXAAShader);
+            // FXAA Pass
+            const useFXAA = isMobile ? runtimeParams.fxaaEnabledMobile : runtimeParams.fxaaEnabledDesktop;
+            fxaaPass = new ShaderPass(FXAAShader);
             const pr = isMobile ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio;
             fxaaPass.material.uniforms['resolution'].value.set(1/(window.innerWidth*pr), 1/(window.innerHeight*pr));
+            fxaaPass.enabled = useFXAA;
             composer.addPass(fxaaPass);
 
             raycaster = new THREE.Raycaster();
@@ -2009,7 +2483,7 @@
             const editorPanel = document.getElementById('editor-panel');
             const transformGroup = document.getElementById('transform-group');
             const cameraParams = document.getElementById('camera-params');
-            const btnCam4p = document.getElementById('btn-cam4p');
+            const btnCam3p = document.getElementById('btn-cam3p');
 
             if (editorModeActive) {
                 if(btnEditor) btnEditor.classList.add('active');
@@ -2018,8 +2492,8 @@
                 cameraParams.classList.add('open');
                 transformControls.visible = true;
                 transformControls.enabled = true;
-                if(btnCam4p) btnCam4p.style.display = 'inline-block'; // Show Cam 4-P
-                
+                if(btnCam3p) btnCam3p.style.display = 'inline-block'; // Show Cam 3-P in editor
+
                 updateCameraParamsDisplay();
 
                 if (!selectedEditorObject && clickableObjects.length > 0) {
@@ -2040,9 +2514,10 @@
                 transformControls.enabled = false;
                 transformControls.detach();
                 selectedEditorObject = null;
-                if(btnCam4p) btnCam4p.style.display = 'none'; // Hide Cam 4-P
-                
-                // If currently in Cam 4-P, switch back to Cam 1
+                // Hide 3-P unless cam3pShowPublic is enabled
+                updateCam3pVisibility();
+
+                // If currently in Cam 3-P, switch back to Cam 1
                 if(currentCameraMode === 'persp') {
                     switchCamera(1);
                 }
@@ -2206,13 +2681,13 @@
         }
 
         window.switchCamera = function(mode) {
-            const btnCam4p = document.getElementById('btn-cam4p');
+            const btnCam3p = document.getElementById('btn-cam3p');
             const btnCam1 = document.getElementById('btn-cam1');
             const btnCam2 = document.getElementById('btn-cam2');
             const btnLockIcon = document.getElementById('btn-lock-icon');
-            
+
             // Remove active from all
-            [btnCam4p, btnCam1, btnCam2].forEach(b => { if(b) b.classList.remove('active') });
+            [btnCam3p, btnCam1, btnCam2].forEach(b => { if(b) b.classList.remove('active') });
 
             // Unlock camera when switching views
             isCameraLocked = false;
@@ -2222,9 +2697,9 @@
             btnLockIcon.style.opacity = '0.5';
 
             if (mode === 'persp') {
-                // PERSPECTIVE CAMERA (Cam 4-P)
+                // PERSPECTIVE CAMERA (Cam 3-P)
                 currentCameraMode = 'persp';
-                if(btnCam4p) btnCam4p.classList.add('active');
+                if(btnCam3p) btnCam3p.classList.add('active');
                 
                 controlsOrtho.enabled = false;
                 controls.enabled = true;
@@ -2340,6 +2815,560 @@
 
             navigator.clipboard.writeText(output).then(() => {
                 alert('COPIED TO CLIPBOARD!\n\nPaste this directly into your Excel sheet starting at cell AB8 (Columns AB -> AH).');
+            }).catch(err => {
+                console.log(output);
+                alert('Copy failed. Check console for data.');
+            });
+        };
+
+        // ========== EDITOR TAB SWITCHING ==========
+        window.switchEditorTab = function(tabName) {
+            document.querySelectorAll('.editor-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+            document.querySelectorAll('.editor-tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `tab-${tabName}`);
+            });
+            if (tabName === 'parameters') {
+                buildParametersPanel();
+            } else if (tabName === 'scene') {
+                buildSceneParametersPanel();
+            }
+        };
+
+        // ========== PARAMETERS PANEL ==========
+        function buildParametersPanel() {
+            const grid = document.getElementById('params-grid');
+            const isMobile = window.innerWidth <= 768;
+
+            grid.innerHTML = `
+                <div class="params-section-title">SSAO (Ambient Occlusion)</div>
+                <span class="params-label">SSAO Desktop</span>
+                <span class="params-value ${runtimeParams.ssaoEnabledDesktop ? 'on' : 'off'}">${runtimeParams.ssaoEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.ssaoEnabledDesktop ? 'on' : ''}" onclick="toggleParam('ssaoEnabledDesktop')"></div>
+
+                <span class="params-label">SSAO Mobile</span>
+                <span class="params-value ${runtimeParams.ssaoEnabledMobile ? 'on' : 'off'}">${runtimeParams.ssaoEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.ssaoEnabledMobile ? 'on' : ''}" onclick="toggleParam('ssaoEnabledMobile')"></div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Kernel Radius</span>
+                    <input type="range" class="params-slider" min="1" max="32" step="1" value="${runtimeParams.ssaoKernelRadius}" onchange="updateSliderParam('ssaoKernelRadius', this.value)">
+                    <span class="params-slider-value">${runtimeParams.ssaoKernelRadius}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Intensity</span>
+                    <input type="range" class="params-slider" min="0" max="2" step="0.1" value="${runtimeParams.ssaoIntensity}" onchange="updateSliderParam('ssaoIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.ssaoIntensity}</span>
+                </div>
+
+                <div class="params-section-title">BLOOM (Glow)</div>
+                <span class="params-label">Bloom Desktop</span>
+                <span class="params-value ${runtimeParams.bloomEnabledDesktop ? 'on' : 'off'}">${runtimeParams.bloomEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.bloomEnabledDesktop ? 'on' : ''}" onclick="toggleParam('bloomEnabledDesktop')"></div>
+
+                <span class="params-label">Bloom Mobile</span>
+                <span class="params-value ${runtimeParams.bloomEnabledMobile ? 'on' : 'off'}">${runtimeParams.bloomEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.bloomEnabledMobile ? 'on' : ''}" onclick="toggleParam('bloomEnabledMobile')"></div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Strength</span>
+                    <input type="range" class="params-slider" min="0" max="0.5" step="0.01" value="${runtimeParams.bloomStrength}" onchange="updateSliderParam('bloomStrength', this.value)">
+                    <span class="params-slider-value">${runtimeParams.bloomStrength}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Threshold</span>
+                    <input type="range" class="params-slider" min="0.5" max="1" step="0.01" value="${runtimeParams.bloomThreshold}" onchange="updateSliderParam('bloomThreshold', this.value)">
+                    <span class="params-slider-value">${runtimeParams.bloomThreshold}</span>
+                </div>
+
+                <div class="params-section-title">TONE MAPPING</div>
+                <span class="params-label">Tone Mapping Desktop</span>
+                <span class="params-value ${runtimeParams.tonemappingEnabledDesktop ? 'on' : 'off'}">${runtimeParams.tonemappingEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.tonemappingEnabledDesktop ? 'on' : ''}" onclick="toggleParam('tonemappingEnabledDesktop')"></div>
+
+                <span class="params-label">Tone Mapping Mobile</span>
+                <span class="params-value ${runtimeParams.tonemappingEnabledMobile ? 'on' : 'off'}">${runtimeParams.tonemappingEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.tonemappingEnabledMobile ? 'on' : ''}" onclick="toggleParam('tonemappingEnabledMobile')"></div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Exposure Desktop</span>
+                    <input type="range" class="params-slider" min="0.5" max="2.5" step="0.05" value="${runtimeParams.tonemappingExposureDesktop}" onchange="updateSliderParam('tonemappingExposureDesktop', this.value)">
+                    <span class="params-slider-value">${runtimeParams.tonemappingExposureDesktop}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Exposure Mobile</span>
+                    <input type="range" class="params-slider" min="0.5" max="2.5" step="0.05" value="${runtimeParams.tonemappingExposureMobile}" onchange="updateSliderParam('tonemappingExposureMobile', this.value)">
+                    <span class="params-slider-value">${runtimeParams.tonemappingExposureMobile}</span>
+                </div>
+
+                <div class="params-section-title">SHADOWS</div>
+                <span class="params-label">Shadows Desktop</span>
+                <span class="params-value ${runtimeParams.shadowsEnabledDesktop ? 'on' : 'off'}">${runtimeParams.shadowsEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.shadowsEnabledDesktop ? 'on' : ''}" onclick="toggleParam('shadowsEnabledDesktop')"></div>
+
+                <span class="params-label">Shadows Mobile</span>
+                <span class="params-value ${runtimeParams.shadowsEnabledMobile ? 'on' : 'off'}">${runtimeParams.shadowsEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.shadowsEnabledMobile ? 'on' : ''}" onclick="toggleParam('shadowsEnabledMobile')"></div>
+
+                <div class="params-section-title">ANTI-ALIASING</div>
+                <span class="params-label">FXAA Desktop</span>
+                <span class="params-value ${runtimeParams.fxaaEnabledDesktop ? 'on' : 'off'}">${runtimeParams.fxaaEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.fxaaEnabledDesktop ? 'on' : ''}" onclick="toggleParam('fxaaEnabledDesktop')"></div>
+
+                <span class="params-label">FXAA Mobile</span>
+                <span class="params-value ${runtimeParams.fxaaEnabledMobile ? 'on' : 'off'}">${runtimeParams.fxaaEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.fxaaEnabledMobile ? 'on' : ''}" onclick="toggleParam('fxaaEnabledMobile')"></div>
+
+                <div class="params-section-title">ANISOTROPY (Texture Quality)</div>
+                <span class="params-label">Anisotropy Desktop</span>
+                <span class="params-value ${runtimeParams.anisotropyEnabledDesktop ? 'on' : 'off'}">${runtimeParams.anisotropyEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.anisotropyEnabledDesktop ? 'on' : ''}" onclick="toggleParam('anisotropyEnabledDesktop')"></div>
+
+                <span class="params-label">Anisotropy Mobile</span>
+                <span class="params-value ${runtimeParams.anisotropyEnabledMobile ? 'on' : 'off'}">${runtimeParams.anisotropyEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.anisotropyEnabledMobile ? 'on' : ''}" onclick="toggleParam('anisotropyEnabledMobile')"></div>
+
+                <div class="params-section-title">ENVIRONMENT MAP</div>
+                <span class="params-label">EnvMap Desktop</span>
+                <span class="params-value ${runtimeParams.envmapEnabledDesktop ? 'on' : 'off'}">${runtimeParams.envmapEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.envmapEnabledDesktop ? 'on' : ''}" onclick="toggleParam('envmapEnabledDesktop')"></div>
+
+                <span class="params-label">EnvMap Mobile</span>
+                <span class="params-value ${runtimeParams.envmapEnabledMobile ? 'on' : 'off'}">${runtimeParams.envmapEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.envmapEnabledMobile ? 'on' : ''}" onclick="toggleParam('envmapEnabledMobile')"></div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Intensity Desktop</span>
+                    <input type="range" class="params-slider" min="0" max="3" step="0.1" value="${runtimeParams.envmapIntensityDesktop}" onchange="updateSliderParam('envmapIntensityDesktop', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'envmapIntensityDesktop')">${runtimeParams.envmapIntensityDesktop}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Intensity Mobile</span>
+                    <input type="range" class="params-slider" min="0" max="2" step="0.1" value="${runtimeParams.envmapIntensityMobile}" onchange="updateSliderParam('envmapIntensityMobile', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'envmapIntensityMobile')">${runtimeParams.envmapIntensityMobile}</span>
+                </div>
+
+                <div class="params-section-title">RECT AREA LIGHT</div>
+                <span class="params-label">RectAreaLight Desktop</span>
+                <span class="params-value ${runtimeParams.rectarealightEnabledDesktop ? 'on' : 'off'}">${runtimeParams.rectarealightEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.rectarealightEnabledDesktop ? 'on' : ''}" onclick="toggleParam('rectarealightEnabledDesktop')"></div>
+
+                <span class="params-label">RectAreaLight Mobile</span>
+                <span class="params-value ${runtimeParams.rectarealightEnabledMobile ? 'on' : 'off'}">${runtimeParams.rectarealightEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.rectarealightEnabledMobile ? 'on' : ''}" onclick="toggleParam('rectarealightEnabledMobile')"></div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Intensity</span>
+                    <input type="range" class="params-slider" min="0" max="5" step="0.1" value="${runtimeParams.rectarealightIntensity}" onchange="updateSliderParam('rectarealightIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.rectarealightIntensity}</span>
+                </div>
+
+                <div class="params-section-title">LIGHTING</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Hemisphere</span>
+                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${runtimeParams.lightHemisphereIntensity}" onchange="updateSliderParam('lightHemisphereIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.lightHemisphereIntensity}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Sun</span>
+                    <input type="range" class="params-slider" min="0" max="5" step="0.1" value="${runtimeParams.lightSunIntensity}" onchange="updateSliderParam('lightSunIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.lightSunIntensity}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Fill</span>
+                    <input type="range" class="params-slider" min="0" max="2" step="0.1" value="${runtimeParams.lightFillIntensity}" onchange="updateSliderParam('lightFillIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.lightFillIntensity}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Rim</span>
+                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${runtimeParams.lightRimIntensity}" onchange="updateSliderParam('lightRimIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.lightRimIntensity}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Accent</span>
+                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${runtimeParams.lightAccentIntensity}" onchange="updateSliderParam('lightAccentIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.lightAccentIntensity}</span>
+                </div>
+
+                <div class="params-section-title">PBR MATERIALS</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Roughness Boost</span>
+                    <input type="range" class="params-slider" min="-0.5" max="0.5" step="0.05" value="${runtimeParams.pbrRoughnessBoost}" onchange="updateSliderParam('pbrRoughnessBoost', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'pbrRoughnessBoost')">${runtimeParams.pbrRoughnessBoost}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Metalness Boost</span>
+                    <input type="range" class="params-slider" min="-0.5" max="0.5" step="0.05" value="${runtimeParams.pbrMetalnessBoost}" onchange="updateSliderParam('pbrMetalnessBoost', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'pbrMetalnessBoost')">${runtimeParams.pbrMetalnessBoost}</span>
+                </div>
+
+                <div class="params-section-title">COLOR CORRECTION</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Brightness</span>
+                    <input type="range" class="params-slider" min="0.5" max="2" step="0.05" value="${runtimeParams.filterBrightness}" onchange="updateSliderParam('filterBrightness', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'filterBrightness')">${runtimeParams.filterBrightness}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Contrast</span>
+                    <input type="range" class="params-slider" min="0.5" max="2" step="0.05" value="${runtimeParams.filterContrast}" onchange="updateSliderParam('filterContrast', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'filterContrast')">${runtimeParams.filterContrast}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Saturation</span>
+                    <input type="range" class="params-slider" min="0" max="2" step="0.05" value="${runtimeParams.filterSaturation}" onchange="updateSliderParam('filterSaturation', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'filterSaturation')">${runtimeParams.filterSaturation}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Hue Rotate</span>
+                    <input type="range" class="params-slider" min="-180" max="180" step="5" value="${runtimeParams.filterHueRotate}" onchange="updateSliderParam('filterHueRotate', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'filterHueRotate')">${runtimeParams.filterHueRotate}°</span>
+                </div>
+
+                <div class="params-section-title">CAMERA 3-P</div>
+                <span class="params-label">Show in Public UI</span>
+                <span class="params-value ${runtimeParams.cam3pShowPublic ? 'on' : 'off'}">${runtimeParams.cam3pShowPublic ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.cam3pShowPublic ? 'on' : ''}" onclick="toggleParam('cam3pShowPublic'); updateCam3pVisibility()"></div>
+
+                <div class="params-section-title">HDRI PRESET (Shift+1..6)</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Active: ${currentHdriPreset} - ${hdriPresets[currentHdriPreset]?.name || 'Unknown'}</span>
+                    <input type="range" class="params-slider" min="1" max="6" step="1" value="${currentHdriPreset}" onchange="switchHdriPreset(parseInt(this.value))">
+                    <span class="params-slider-value">${currentHdriPreset}</span>
+                </div>
+            `;
+        }
+
+        // ========== SCENE PARAMETERS PANEL ==========
+        function buildSceneParametersPanel() {
+            const grid = document.getElementById('scene-params-grid');
+            grid.innerHTML = `
+                <div class="params-section-title">HOVER LABEL (Desktop)</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Font Size</span>
+                    <span class="params-slider-value">${PARAMS.hoverLabelFontSize}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Offset Y</span>
+                    <span class="params-slider-value">${PARAMS.hoverLabelOffsetY}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Name Offset Y</span>
+                    <span class="params-slider-value">${PARAMS.hoverLabelNameOffsetY}px</span>
+                </div>
+
+                <div class="params-section-title">CAMERA POSITIONS</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Cam 1 Pos</span>
+                    <span class="params-slider-value">${PARAMS.cam1PosX}, ${PARAMS.cam1PosY}, ${PARAMS.cam1PosZ}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Cam 2 Pos</span>
+                    <span class="params-slider-value">${PARAMS.cam2PosX}, ${PARAMS.cam2PosY}, ${PARAMS.cam2PosZ}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Initial Zoom</span>
+                    <span class="params-slider-value">${PARAMS.initialCameraZoom}</span>
+                </div>
+
+                <div class="params-section-title">PANEL SETTINGS</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Panel Width</span>
+                    <span class="params-slider-value">${getParam('--panel-width')}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Panel Top Offset</span>
+                    <span class="params-slider-value">${getParam('--panel-top-offset')}</span>
+                </div>
+            `;
+        }
+
+        window.toggleParam = function(paramName) {
+            runtimeParams[paramName] = !runtimeParams[paramName];
+            applyRuntimeParameters();
+            buildParametersPanel();
+        };
+
+        window.updateSliderParam = function(paramName, value) {
+            runtimeParams[paramName] = parseFloat(value);
+            applyRuntimeParameters();
+            const slider = event.target;
+            const valueSpan = slider.parentElement.querySelector('.params-slider-value');
+            if (valueSpan) {
+                valueSpan.textContent = paramName === 'filterHueRotate' ? value + '°' : value;
+            }
+        };
+
+        window.updateSliderDisplay = function(slider) {
+            const valueSpan = slider.parentElement.querySelector('.params-slider-value');
+            if (valueSpan) {
+                valueSpan.textContent = slider.value;
+            }
+        };
+
+        window.makeEditable = function(span, paramName) {
+            const currentValue = runtimeParams[paramName];
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'params-slider-input';
+            input.value = currentValue;
+            input.step = 'any';
+
+            const finishEdit = () => {
+                const newValue = parseFloat(input.value);
+                if (!isNaN(newValue)) {
+                    runtimeParams[paramName] = newValue;
+                    applyRuntimeParameters();
+                    const slider = span.parentElement.querySelector('.params-slider');
+                    if (slider) slider.value = newValue;
+                }
+                buildParametersPanel();
+            };
+
+            input.onblur = finishEdit;
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') finishEdit();
+                if (e.key === 'Escape') buildParametersPanel();
+            };
+
+            span.replaceWith(input);
+            input.focus();
+            input.select();
+        };
+
+        window.switchHdriPreset = function(presetNum) {
+            if (hdriPresets && hdriPresets[presetNum]) {
+                loadHDRI(presetNum);
+                if (editorModeActive) buildParametersPanel();
+            }
+        };
+
+        window.updateCam3pVisibility = function() {
+            const btnCam3p = document.getElementById('btn-cam3p');
+            if (btnCam3p) {
+                if (editorModeActive || runtimeParams.cam3pShowPublic) {
+                    btnCam3p.style.display = 'inline-block';
+                } else {
+                    btnCam3p.style.display = 'none';
+                }
+            }
+        };
+
+        function applyRuntimeParameters() {
+            const isMobile = window.innerWidth <= 768;
+
+            // LIGHTING
+            if (lightHemi) lightHemi.intensity = runtimeParams.lightHemisphereIntensity;
+            if (lightSun) {
+                lightSun.intensity = runtimeParams.lightSunIntensity;
+                const useShadows = isMobile ? runtimeParams.shadowsEnabledMobile : runtimeParams.shadowsEnabledDesktop;
+                lightSun.castShadow = useShadows;
+            }
+            if (lightFill) lightFill.intensity = runtimeParams.lightFillIntensity;
+            if (lightRim) lightRim.intensity = runtimeParams.lightRimIntensity;
+            if (lightAccent) lightAccent.intensity = runtimeParams.lightAccentIntensity;
+
+            // RectAreaLights
+            const useRectAreaLight = isMobile ? runtimeParams.rectarealightEnabledMobile : runtimeParams.rectarealightEnabledDesktop;
+            if (rectLight1) {
+                rectLight1.visible = useRectAreaLight;
+                rectLight1.intensity = runtimeParams.rectarealightIntensity;
+            }
+            if (rectLight2) {
+                rectLight2.visible = useRectAreaLight;
+                rectLight2.intensity = runtimeParams.rectarealightIntensity * 0.6;
+            }
+
+            // SSAO
+            if (ssaoPass) {
+                const useSSAO = isMobile ? runtimeParams.ssaoEnabledMobile : runtimeParams.ssaoEnabledDesktop;
+                ssaoPass.enabled = useSSAO;
+                ssaoPass.kernelRadius = runtimeParams.ssaoKernelRadius;
+            }
+
+            // BLOOM
+            if (bloomPass) {
+                const useBloom = isMobile ? runtimeParams.bloomEnabledMobile : runtimeParams.bloomEnabledDesktop;
+                bloomPass.enabled = useBloom;
+                bloomPass.strength = runtimeParams.bloomStrength;
+                bloomPass.radius = runtimeParams.bloomRadius;
+                bloomPass.threshold = runtimeParams.bloomThreshold;
+            }
+
+            // TONE MAPPING
+            if (renderer) {
+                const useTonemapping = isMobile ? runtimeParams.tonemappingEnabledMobile : runtimeParams.tonemappingEnabledDesktop;
+                if (useTonemapping) {
+                    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                    renderer.toneMappingExposure = isMobile ? runtimeParams.tonemappingExposureMobile : runtimeParams.tonemappingExposureDesktop;
+                } else {
+                    renderer.toneMapping = THREE.NoToneMapping;
+                    renderer.toneMappingExposure = 1.0;
+                }
+
+                // SHADOWS
+                const useShadows = isMobile ? runtimeParams.shadowsEnabledMobile : runtimeParams.shadowsEnabledDesktop;
+                renderer.shadowMap.enabled = useShadows;
+            }
+
+            // FXAA
+            if (fxaaPass) {
+                const useFXAA = isMobile ? runtimeParams.fxaaEnabledMobile : runtimeParams.fxaaEnabledDesktop;
+                fxaaPass.enabled = useFXAA;
+            }
+
+            // ENVIRONMENT MAP
+            const useEnvMap = isMobile ? runtimeParams.envmapEnabledMobile : runtimeParams.envmapEnabledDesktop;
+            if (scene) {
+                scene.environment = useEnvMap ? globalEnvMap : null;
+            }
+
+            // PBR MATERIALS
+            const envIntensity = isMobile ? runtimeParams.envmapIntensityMobile : runtimeParams.envmapIntensityDesktop;
+            const roughnessBoost = runtimeParams.pbrRoughnessBoost || 0;
+            const metalnessBoost = runtimeParams.pbrMetalnessBoost || 0;
+
+            clickableObjects.forEach(obj => {
+                obj.traverse(child => {
+                    if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
+                        const mat = child.material;
+                        mat.envMapIntensity = envIntensity;
+
+                        if (mat._originalRoughness === undefined) {
+                            mat._originalRoughness = mat.roughness;
+                        }
+                        if (mat._originalMetalness === undefined) {
+                            mat._originalMetalness = mat.metalness;
+                        }
+
+                        mat.roughness = Math.max(0, Math.min(1, mat._originalRoughness + roughnessBoost));
+                        mat.metalness = Math.max(0, Math.min(1, mat._originalMetalness + metalnessBoost));
+                        mat.needsUpdate = true;
+                    }
+                });
+            });
+
+            // COLOR FILTERS
+            applyColorFilters();
+        }
+
+        function applyColorFilters() {
+            if (!renderer) return;
+            const canvas = renderer.domElement;
+            const brightness = runtimeParams.filterBrightness;
+            const contrast = runtimeParams.filterContrast;
+            const saturation = runtimeParams.filterSaturation;
+            const hueRotate = runtimeParams.filterHueRotate;
+            canvas.style.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturation}) hue-rotate(${hueRotate}deg)`;
+        }
+
+        window.resetParameters = function() {
+            runtimeParams = { ...RENDER_PARAMS };
+            applyRuntimeParameters();
+            buildParametersPanel();
+        };
+
+        window.resetSceneParameters = function() {
+            // Scene parameters are read-only in this version
+            buildSceneParametersPanel();
+        };
+
+        window.printParameters = function() {
+            let output = "/* ============================================= */\n";
+            output += "/* RENDER PARAMETERS - DESKTOP / MOBILE         */\n";
+            output += "/* ============================================= */\n\n";
+
+            output += "/* SSAO */\n";
+            output += `--ssao-enabled-desktop: ${runtimeParams.ssaoEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--ssao-enabled-mobile: ${runtimeParams.ssaoEnabledMobile ? 'yes' : 'no'};\n`;
+            output += `--ssao-kernel-radius: ${runtimeParams.ssaoKernelRadius};\n`;
+            output += `--ssao-intensity: ${runtimeParams.ssaoIntensity};\n\n`;
+
+            output += "/* BLOOM */\n";
+            output += `--bloom-enabled-desktop: ${runtimeParams.bloomEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--bloom-enabled-mobile: ${runtimeParams.bloomEnabledMobile ? 'yes' : 'no'};\n`;
+            output += `--bloom-strength: ${runtimeParams.bloomStrength};\n`;
+            output += `--bloom-radius: ${runtimeParams.bloomRadius};\n`;
+            output += `--bloom-threshold: ${runtimeParams.bloomThreshold};\n\n`;
+
+            output += "/* TONE MAPPING */\n";
+            output += `--tonemapping-enabled-desktop: ${runtimeParams.tonemappingEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--tonemapping-enabled-mobile: ${runtimeParams.tonemappingEnabledMobile ? 'yes' : 'no'};\n`;
+            output += `--tonemapping-exposure-desktop: ${runtimeParams.tonemappingExposureDesktop};\n`;
+            output += `--tonemapping-exposure-mobile: ${runtimeParams.tonemappingExposureMobile};\n\n`;
+
+            output += "/* SHADOWS */\n";
+            output += `--shadows-enabled-desktop: ${runtimeParams.shadowsEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--shadows-enabled-mobile: ${runtimeParams.shadowsEnabledMobile ? 'yes' : 'no'};\n\n`;
+
+            output += "/* FXAA */\n";
+            output += `--fxaa-enabled-desktop: ${runtimeParams.fxaaEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--fxaa-enabled-mobile: ${runtimeParams.fxaaEnabledMobile ? 'yes' : 'no'};\n\n`;
+
+            output += "/* ENVIRONMENT MAP */\n";
+            output += `--envmap-enabled-desktop: ${runtimeParams.envmapEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--envmap-enabled-mobile: ${runtimeParams.envmapEnabledMobile ? 'yes' : 'no'};\n`;
+            output += `--envmap-intensity-desktop: ${runtimeParams.envmapIntensityDesktop};\n`;
+            output += `--envmap-intensity-mobile: ${runtimeParams.envmapIntensityMobile};\n\n`;
+
+            output += "/* RECT AREA LIGHT */\n";
+            output += `--rectarealight-enabled-desktop: ${runtimeParams.rectarealightEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--rectarealight-enabled-mobile: ${runtimeParams.rectarealightEnabledMobile ? 'yes' : 'no'};\n`;
+            output += `--rectarealight-intensity: ${runtimeParams.rectarealightIntensity};\n\n`;
+
+            output += "/* LIGHTING */\n";
+            output += `--light-hemisphere-intensity: ${runtimeParams.lightHemisphereIntensity};\n`;
+            output += `--light-sun-intensity: ${runtimeParams.lightSunIntensity};\n`;
+            output += `--light-fill-intensity: ${runtimeParams.lightFillIntensity};\n`;
+            output += `--light-rim-intensity: ${runtimeParams.lightRimIntensity};\n`;
+            output += `--light-accent-intensity: ${runtimeParams.lightAccentIntensity};\n\n`;
+
+            output += "/* PBR */\n";
+            output += `--pbr-roughness-boost: ${runtimeParams.pbrRoughnessBoost};\n`;
+            output += `--pbr-metalness-boost: ${runtimeParams.pbrMetalnessBoost};\n\n`;
+
+            output += "/* COLOR CORRECTION */\n";
+            output += `--filter-brightness: ${runtimeParams.filterBrightness};\n`;
+            output += `--filter-contrast: ${runtimeParams.filterContrast};\n`;
+            output += `--filter-saturation: ${runtimeParams.filterSaturation};\n`;
+            output += `--filter-hue-rotate: ${runtimeParams.filterHueRotate};\n\n`;
+
+            output += "/* HDRI */\n";
+            output += `--hdri-preset: ${currentHdriPreset};\n\n`;
+
+            output += "/* CAMERA 3-P */\n";
+            output += `--cam3p-show-public: ${runtimeParams.cam3pShowPublic ? 'yes' : 'no'};\n`;
+
+            navigator.clipboard.writeText(output).then(() => {
+                alert('RENDER PARAMETERS COPIED!\n\nPaste into your :root CSS section.');
+            }).catch(err => {
+                console.log(output);
+                alert('Copy failed. Check console for data.');
+            });
+        };
+
+        window.printSceneParameters = function() {
+            let output = "/* SCENE PARAMETERS */\n";
+            output += `--hover-label-font-size: ${PARAMS.hoverLabelFontSize}px;\n`;
+            output += `--hover-label-offset-y: ${PARAMS.hoverLabelOffsetY}px;\n`;
+            output += `--cam1-pos-x: ${PARAMS.cam1PosX};\n`;
+            output += `--cam1-pos-y: ${PARAMS.cam1PosY};\n`;
+            output += `--cam1-pos-z: ${PARAMS.cam1PosZ};\n`;
+
+            navigator.clipboard.writeText(output).then(() => {
+                alert('SCENE PARAMETERS COPIED!');
             }).catch(err => {
                 console.log(output);
                 alert('Copy failed. Check console for data.');
