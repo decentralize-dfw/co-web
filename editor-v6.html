@@ -25,72 +25,79 @@
              --accent-color: #FF006A;
             --font-headers: 'Space Mono', monospace;
             --font-body: 'Space Mono', monospace;
-//kankaa
 /* ============================================= */
 /* RENDER PARAMETERS - DESKTOP / MOBILE         */
+/* (Desktop: editor-v4 ile birebir aynı)        */
 /* ============================================= */
 
-/* SSAO (Gölgeleri kirletmeden derinlik katar) */
---ssao-enabled-desktop: yes;
+/* SSAO (v4'te yok, kapalı) */
+--ssao-enabled-desktop: no;
 --ssao-enabled-mobile: no;
 --ssao-kernel-radius: 32;
 --ssao-intensity: 0.5;
 
-/* BLOOM (Patlamayı önleyen, sadece en parlak noktaları parlatan ayar) */
+/* BLOOM (v4 default preset: 0.05/0.35/0.8) */
 --bloom-enabled-desktop: yes;
 --bloom-enabled-mobile: no;
---bloom-strength: 0.08;      /* Patlamayı alan kritik değer */
---bloom-radius: 0.4;
---bloom-threshold: 0.98;     /* Sadece %98 parlaklıktaki yerler parlar */
+--bloom-strength: 0.05;
+--bloom-radius: 0.35;
+--bloom-threshold: 0.8;
 
-/* TONE MAPPING (Arka planın %100 BEYAZ kalması için KAPALI) */
---tonemapping-enabled-desktop: no;
+/* TONE MAPPING (v4: ACES, exposure 0.75) */
+--tonemapping-enabled-desktop: yes;
 --tonemapping-enabled-mobile: no;
---tonemapping-exposure-desktop: 1.0;
+--tonemapping-exposure-desktop: 0.75;
 --tonemapping-exposure-mobile: 1.0;
 
-/* SHADOWS */
+/* SHADOWS (v4: PCF, bias -0.0005, normalBias 0.2) */
 --shadows-enabled-desktop: yes;
 --shadows-enabled-mobile: yes;
+--shadow-type: PCF;
+--shadow-bias: -0.0005;
+--shadow-normal-bias: 0.2;
 
 /* ANTI-ALIASING */
 --fxaa-enabled-desktop: yes;
 --fxaa-enabled-mobile: no;
 
-/* ANISOTROPIC FILTERING (Doku netliği) */
---anisotropy-enabled-desktop: yes;
+/* ANISOTROPIC FILTERING (v4'te yok, kapalı) */
+--anisotropy-enabled-desktop: no;
 --anisotropy-enabled-mobile: no;
 
-/* ENVIRONMENT MAP (Işığın homojen dağılması için artırıldı) */
+/* ENVIRONMENT MAP (v4: venice_sunset, intensity default 1.0) */
 --envmap-enabled-desktop: yes;
 --envmap-enabled-mobile: yes;
---envmap-intensity-desktop: 1.4; /* Sahneyi asıl aydınlatan ve yumuşatan bu */
+--envmap-intensity-desktop: 1.0;
 --envmap-intensity-mobile: 1.2;
 
-/* RECT AREA LIGHT (Stüdyo ışığı etkisi) */
---rectarealight-enabled-desktop: yes;
+/* RECT AREA LIGHT (v4'te yok, kapalı) */
+--rectarealight-enabled-desktop: no;
 --rectarealight-enabled-mobile: yes;
 --rectarealight-intensity: 2.8;
 
-/* LIGHTING INTENSITIES (Renk patlamasını engelleyen denge) */
---light-hemisphere-intensity: 0.8; /* Gölgelerin simsiyah olmasını engeller */
---light-sun-intensity: 1.0;        /* Objeyi yakmadan gölge düşürür */
---light-fill-intensity: 0.8;       /* Renkleri doyurmadan aydınlatır */
---light-rim-intensity: 0.4;
+/* LIGHTING INTENSITIES (v4 ile birebir aynı) */
+--light-hemisphere-intensity: 0.3;
+--light-sun-intensity: 3.5;
+--light-fill-intensity: 0.1;
+--light-rim-intensity: 0;
+--light-accent-intensity: 0.1;
 
-/* PBR MATERIAL SETTINGS (Orijinal materyale sadık kal) */
---pbr-envmap-intensity: 1.2;
+/* PBR MATERIAL SETTINGS (v4 default) */
+--pbr-envmap-intensity: 1.0;
 --pbr-roughness-boost: 0.0;
 --pbr-metalness-boost: 0.0;
 
-/* COLOR CORRECTION FILTERS (Renkleri düzelten son dokunuş) */
+/* COLOR CORRECTION FILTERS (v4'te filtre yok, hepsi nötr) */
 --filter-brightness: 1.0;
---filter-contrast: 1.0;           /* Doğal kontrast */
---filter-saturation: 0.75;        /* İŞTE ÇÖZÜM: Neonlaşan renkleri ehlileştirir */
+--filter-contrast: 1.0;
+--filter-saturation: 1.0;
 --filter-hue-rotate: 0;
 
 /* CAMERA 3-P */
 --cam3p-show-public: yes;
+
+/* HDRI PRESET (1=venice_sunset, 2=white_studio, 3=qwantani, 4=story_studio, 5=white_home, 6=studio_kominka) */
+--hdri-preset: 1;
 
 
 
@@ -1219,7 +1226,10 @@
             filterHueRotate: getParamNum('--filter-hue-rotate') || 0,
 
             // Camera 3-P
-            cam3pShowPublic: getParamBool('--cam3p-show-public')
+            cam3pShowPublic: getParamBool('--cam3p-show-public'),
+
+            // HDRI Preset
+            hdriPreset: getParamNum('--hdri-preset') || 1
         };
 
         // Runtime state for parameters (can be toggled)
@@ -1290,6 +1300,57 @@
         // Global light references for runtime adjustment
         let lightHemi, lightSun, lightFill, lightRim, lightAccent;
         let rectLight1, rectLight2;
+
+        // HDRI Presets: selectable via Shift+1..6
+        const hdriPresets = {
+            1: { name: 'Venice Sunset', url: 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr' },
+            2: { name: 'White Studio', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/white_studio_04_1k.hdr' },
+            3: { name: 'Qwantani Puresky', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/qwantani_mid_morning_puresky_1k.hdr' },
+            4: { name: 'Story Studio', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/story_studio_03_1k.hdr' },
+            5: { name: 'White Home Studio', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/white_home_studio_1k.hdr' },
+            6: { name: 'Studio Kominka', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/studio_kominka_02_1k.hdr' }
+        };
+        let currentHdriPreset = runtimeParams.hdriPreset || 1;
+
+        function loadHDRI(presetNum, pmremGen) {
+            const preset = hdriPresets[presetNum];
+            if (!preset) return;
+            currentHdriPreset = presetNum;
+            runtimeParams.hdriPreset = presetNum;
+
+            const isMobile = window.innerWidth <= 768;
+            const localPmrem = pmremGen || new THREE.PMREMGenerator(renderer);
+            if (!pmremGen) localPmrem.compileEquirectangularShader();
+
+            new RGBELoader().load(preset.url, (tex) => {
+                tex.mapping = THREE.EquirectangularReflectionMapping;
+
+                // Dispose old env map
+                if (globalEnvMap) globalEnvMap.dispose();
+
+                globalEnvMap = localPmrem.fromEquirectangular(tex).texture;
+
+                // Apply environment based on settings
+                const useEnvMap = isMobile ? runtimeParams.envmapEnabledMobile : runtimeParams.envmapEnabledDesktop;
+                if (useEnvMap && !isWireMode) {
+                    scene.environment = globalEnvMap;
+                }
+
+                // Update all materials with new env intensity
+                const envIntensity = isMobile ? runtimeParams.envmapIntensityMobile : runtimeParams.envmapIntensityDesktop;
+                scene.traverse(child => {
+                    if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
+                        child.material.envMapIntensity = envIntensity;
+                        child.material.needsUpdate = true;
+                    }
+                });
+
+                tex.dispose();
+                if (!pmremGen) localPmrem.dispose();
+
+                console.log(`HDRI switched to: ${presetNum} - ${preset.name}`);
+            });
+        }
         let loadedAssets = 0, totalAssets = 0;
         let currentHoveredObject = null, hoverLabel = null, hoverLabelArtist = null, currentSelectedObject = null;
         let originalCameraState = null, currentActiveVideos = [];
@@ -1496,47 +1557,12 @@
 
             window.addEventListener('keydown', handleKeyDown);
 
-            // === ENVIRONMENT MAP (Soft Studio HDRI for accurate PBR) ===
+            // === ENVIRONMENT MAP (HDRI Preset System) ===
             const pmrem = new THREE.PMREMGenerator(renderer);
             pmrem.compileEquirectangularShader();
 
-             //const hdrUrl = 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/white_studio_04_1k.hdr';
-
-             //const hdrUrl = 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/qwantani_mid_morning_puresky_2k.hdr';
-
-            //const hdrUrl = 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/qwantani_mid_morning_puresky_1k.hdr';
-
-           //const hdrUrl = 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/story_studio_03_1k.hdr';
-
-            //const hdrUrl = 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/white_home_studio_1k.hdr';
-
-            const hdrUrl = 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/studio_kominka_02_1k.hdr';
-
-            
-
-
-
-            new RGBELoader().load(hdrUrl, (tex) => {
-                tex.mapping = THREE.EquirectangularReflectionMapping;
-                globalEnvMap = pmrem.fromEquirectangular(tex).texture;
-
-                // Apply environment based on settings
-                const useEnvMap = isMobile ? runtimeParams.envmapEnabledMobile : runtimeParams.envmapEnabledDesktop;
-                if (useEnvMap) {
-                    scene.environment = globalEnvMap;
-                }
-
-                // Update all materials with new env intensity
-                const envIntensity = isMobile ? runtimeParams.envmapIntensityMobile : runtimeParams.envmapIntensityDesktop;
-                scene.traverse(child => {
-                    if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
-                        child.material.envMapIntensity = envIntensity;
-                        child.material.needsUpdate = true;
-                    }
-                });
-
-                tex.dispose(); pmrem.dispose();
-            });
+            // Load default HDRI
+            loadHDRI(currentHdriPreset, pmrem);
 
             // === LIGHTING RIG (PBR-optimized key/fill/rim/hemisphere) ===
             // RULE: Background must NEVER appear gray. Balanced, realistic lighting.
@@ -1868,14 +1894,55 @@
             }, 500);
         }
 
+        // Secondary hover system (when item is selected/panel open)
+        let secondaryHoveredObject = null;
+        let secondaryHoverLabel = null;
+
         function onMouseMove(e) {
             if (window.innerWidth <= 768) return; // No hover on mobile
-            if (document.getElementById('side-panel').classList.contains('open')) return;
             if (editorModeActive) return;
+
+            const panelOpen = document.getElementById('side-panel').classList.contains('open');
+
             mouse.x = (e.clientX/window.innerWidth)*2-1;
             mouse.y = -(e.clientY/window.innerHeight)*2+1;
             raycaster.setFromCamera(mouse, getActiveCamera());
 
+            if (panelOpen && currentSelectedObject) {
+                // === SECONDARY HOVER MODE: panel is open, selected item stays hovering ===
+                // Check what we're hovering over (not the selected item)
+                let hitObj = null;
+
+                const zoneHits = raycaster.intersectObjects(clickableZones, false);
+                if (zoneHits.length > 0) {
+                    const zone = zoneHits[0].object;
+                    const parentObj = zone.userData.parentObject;
+                    if (parentObj && parentObj.userData.modalContent && parentObj.userData.clickable && parentObj !== currentSelectedObject) {
+                        hitObj = parentObj;
+                    }
+                }
+
+                if (!hitObj) {
+                    const hits = raycaster.intersectObjects(clickableObjects, true);
+                    if (hits.length > 0) {
+                        let obj = hits[0].object;
+                        while(obj.parent && !obj.userData.modalContent) obj = obj.parent;
+                        if (obj.userData.modalContent && obj.userData.clickable && obj !== currentSelectedObject) {
+                            hitObj = obj;
+                        }
+                    }
+                }
+
+                if (hitObj && secondaryHoveredObject !== hitObj) {
+                    clearSecondaryHover();
+                    applySecondaryHover(hitObj);
+                } else if (!hitObj) {
+                    clearSecondaryHover();
+                }
+                return;
+            }
+
+            // === NORMAL HOVER MODE ===
             // First check clickable zones (invisible extended bounding boxes)
             const zoneHits = raycaster.intersectObjects(clickableZones, false);
             if (zoneHits.length > 0) {
@@ -1900,6 +1967,45 @@
                     clearHover();
                 }
             } else clearHover();
+        }
+
+        function applySecondaryHover(obj) {
+            secondaryHoveredObject = obj;
+            const halfLift = PARAMS.hoverLiftDistance * 0.5;
+            new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + halfLift }, PARAMS.hoverAnimationDuration).start();
+
+            // Only show title (name), no artist
+            const box = new THREE.Box3().setFromObject(obj);
+            const bboxTopLocal = box.max.y - obj.position.y;
+            obj.userData._bboxTopLocal = bboxTopLocal;
+
+            const maxW = PARAMS.hoverLabelFontBox;
+            const content = obj.userData.modalContent;
+            const rotX = PARAMS.hoverLabelRotationX * Math.PI / 180;
+            const rotY = PARAMS.hoverLabelRotationY * Math.PI / 180;
+            const rotZ = PARAMS.hoverLabelRotationZ * Math.PI / 180;
+
+            const nameText = content.hoverDisplayName || content.name || '';
+            if (nameText) {
+                secondaryHoverLabel = createHoverTextMesh(nameText, PARAMS.hoverLabelFontSize, maxW, {
+                    fontStyle: PARAMS.hoverLabelFontStyle,
+                    letterSpacing: PARAMS.hoverLabelLetterSpacing,
+                    color: PARAMS.hoverLabelColor,
+                    opacity: PARAMS.hoverLabelOpacity
+                });
+                const nameY = obj.position.y + bboxTopLocal + halfLift + PARAMS.hoverLabelOffsetY;
+                secondaryHoverLabel.position.set(obj.position.x, nameY, obj.position.z);
+                secondaryHoverLabel.rotation.set(rotX, rotY, rotZ);
+                scene.add(secondaryHoverLabel);
+            }
+        }
+
+        function clearSecondaryHover() {
+            if (secondaryHoveredObject) {
+                new TWEEN(secondaryHoveredObject.position).to({ y: secondaryHoveredObject.userData.originalPosition.y }, PARAMS.hoverAnimationDuration).start();
+                secondaryHoveredObject = null;
+            }
+            if (secondaryHoverLabel) { scene.remove(secondaryHoverLabel); secondaryHoverLabel = null; }
         }
 
         // Helper for Text Wrapping (shared by hover labels)
@@ -2099,7 +2205,24 @@
 
         function openPanel(content, obj) {
             if(currentSelectedObject === obj && document.getElementById('side-panel').classList.contains('open')) return;
-            clearHover();
+            // Clear any secondary hover
+            clearSecondaryHover();
+            // Clear hover labels but keep selected object lifted (desktop only)
+            if (currentHoveredObject && currentHoveredObject !== obj) {
+                // Lower the previously hovered object if it's different
+                new TWEEN(currentHoveredObject.position).to({ y: currentHoveredObject.userData.originalPosition.y }, PARAMS.hoverAnimationDuration).start();
+            }
+            // Remove labels only (don't lower the selected obj)
+            if(hoverLabel) { scene.remove(hoverLabel); hoverLabel=null; }
+            if(hoverLabelArtist) { scene.remove(hoverLabelArtist); hoverLabelArtist=null; }
+            currentHoveredObject = null;
+
+            // If on desktop, lift the selected object and keep it hovering
+            const isMobileNow = window.innerWidth <= 768;
+            if (!isMobileNow) {
+                // Ensure the selected object is at hover height
+                new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + PARAMS.hoverLiftDistance }, PARAMS.hoverAnimationDuration).start();
+            }
             currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); });
             currentActiveVideos = [];
             
@@ -2344,6 +2467,15 @@
             currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); v.remove(); });
             currentActiveVideos = [];
             document.getElementById('panel-media').innerHTML = "";
+
+            // Clear secondary hover
+            clearSecondaryHover();
+
+            // Lower the selected object back to original position (desktop)
+            if (currentSelectedObject && currentSelectedObject.userData.originalPosition) {
+                new TWEEN(currentSelectedObject.position).to({ y: currentSelectedObject.userData.originalPosition.y }, PARAMS.hoverAnimationDuration).start();
+            }
+
             if(originalCameraState) {
                 const activeCam = getActiveCamera();
                 const activeControls = currentCameraMode === 'persp' ? controls : controlsOrtho;
@@ -2434,6 +2566,13 @@
                     const nameY = baseY + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
                     hoverLabel.position.set(currentHoveredObject.position.x, nameY, currentHoveredObject.position.z);
                 }
+            }
+            // Update secondary hover label position
+            if(secondaryHoveredObject && secondaryHoverLabel) {
+                const bboxTop = secondaryHoveredObject.userData._bboxTopLocal || 0;
+                const halfLift = PARAMS.hoverLiftDistance * 0.5;
+                const nameY = secondaryHoveredObject.position.y + bboxTop + halfLift + PARAMS.hoverLabelOffsetY;
+                secondaryHoverLabel.position.set(secondaryHoveredObject.position.x, nameY, secondaryHoveredObject.position.z);
             }
             composer.render();
         }
@@ -3149,6 +3288,12 @@
                     <span class="params-slider-value">${runtimeParams.lightRimIntensity}</span>
                 </div>
 
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Accent</span>
+                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${runtimeParams.lightAccentIntensity}" onchange="updateSliderParam('lightAccentIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.lightAccentIntensity}</span>
+                </div>
+
                 <div class="params-section-title">PBR MATERIALS</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Roughness Boost</span>
@@ -3191,6 +3336,13 @@
                 <span class="params-label">Show in Public UI</span>
                 <span class="params-value ${runtimeParams.cam3pShowPublic ? 'on' : 'off'}">${runtimeParams.cam3pShowPublic ? 'YES' : 'NO'}</span>
                 <div class="params-toggle ${runtimeParams.cam3pShowPublic ? 'on' : ''}" onclick="toggleParam('cam3pShowPublic'); updateCam3pVisibility()"></div>
+
+                <div class="params-section-title">HDRI PRESET (Shift+1..6)</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Active: ${currentHdriPreset} - ${hdriPresets[currentHdriPreset]?.name || 'Unknown'}</span>
+                    <input type="range" class="params-slider" min="1" max="6" step="1" value="${currentHdriPreset}" onchange="switchHdriPreset(parseInt(this.value))">
+                    <span class="params-slider-value">${currentHdriPreset}</span>
+                </div>
             `;
         }
 
@@ -3247,6 +3399,13 @@
             span.replaceWith(input);
             input.focus();
             input.select();
+        };
+
+        window.switchHdriPreset = function(presetNum) {
+            if (hdriPresets && hdriPresets[presetNum]) {
+                loadHDRI(presetNum);
+                if (editorModeActive) buildParametersPanel();
+            }
         };
 
         window.updateCam3pVisibility = function() {
@@ -3441,7 +3600,8 @@
             output += `--light-hemisphere-intensity: ${runtimeParams.lightHemisphereIntensity};\n`;
             output += `--light-sun-intensity: ${runtimeParams.lightSunIntensity};\n`;
             output += `--light-fill-intensity: ${runtimeParams.lightFillIntensity};\n`;
-            output += `--light-rim-intensity: ${runtimeParams.lightRimIntensity};\n\n`;
+            output += `--light-rim-intensity: ${runtimeParams.lightRimIntensity};\n`;
+            output += `--light-accent-intensity: ${runtimeParams.lightAccentIntensity};\n\n`;
 
             output += "/* PBR MATERIAL SETTINGS */\n";
             output += `--pbr-envmap-intensity: ${runtimeParams.pbrEnvmapIntensity};\n`;
@@ -3455,7 +3615,10 @@
             output += `--filter-hue-rotate: ${runtimeParams.filterHueRotate};\n\n`;
 
             output += "/* CAMERA 3-P */\n";
-            output += `--cam3p-show-public: ${runtimeParams.cam3pShowPublic ? 'yes' : 'no'};\n`;
+            output += `--cam3p-show-public: ${runtimeParams.cam3pShowPublic ? 'yes' : 'no'};\n\n`;
+
+            output += "/* HDRI PRESET (1=venice_sunset, 2=white_studio, 3=qwantani, 4=story_studio, 5=white_home, 6=studio_kominka) */\n";
+            output += `--hdri-preset: ${runtimeParams.hdriPreset || currentHdriPreset};\n`;
 
             navigator.clipboard.writeText(output).then(() => {
                 alert('PARAMETERS COPIED TO CLIPBOARD!\n\nPaste this into your CSS :root section.');
@@ -3500,6 +3663,37 @@
                     <span class="params-slider-label">Cam 2 Z</span>
                     <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${PARAMS.cam2PosZ}" onchange="updateSceneParam('cam2PosZ', this.value)">
                     <span class="params-slider-value">${PARAMS.cam2PosZ}</span>
+                </div>
+
+                <div class="params-section-title">CAM 3-P (PERSPECTIVE)</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">FOV</span>
+                    <input type="range" class="params-slider" min="10" max="120" step="5" value="${PARAMS.cameraFov}" onchange="updateSceneParam('cameraFov', this.value); if(camera){camera.fov=parseFloat(this.value);camera.updateProjectionMatrix();}">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'cameraFov')">${PARAMS.cameraFov}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Cam 3-P X</span>
+                    <span class="params-slider-value" style="flex:1;text-align:left;">${camera ? Math.round(camera.position.x) : '---'}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Cam 3-P Y</span>
+                    <span class="params-slider-value" style="flex:1;text-align:left;">${camera ? Math.round(camera.position.y) : '---'}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Cam 3-P Z</span>
+                    <span class="params-slider-value" style="flex:1;text-align:left;">${camera ? Math.round(camera.position.z) : '---'}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Target X</span>
+                    <span class="params-slider-value" style="flex:1;text-align:left;">${controls ? Math.round(controls.target.x) : '---'}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Target Y</span>
+                    <span class="params-slider-value" style="flex:1;text-align:left;">${controls ? Math.round(controls.target.y) : '---'}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Target Z</span>
+                    <span class="params-slider-value" style="flex:1;text-align:left;">${controls ? Math.round(controls.target.z) : '---'}</span>
                 </div>
 
                 <div class="params-section-title">CAMERA SETTINGS</div>
@@ -3613,6 +3807,16 @@
             output += `--cam2-pos-y: ${PARAMS.cam2PosY};\n`;
             output += `--cam2-pos-z: ${PARAMS.cam2PosZ};\n\n`;
 
+            output += "/* CAM 3-P (PERSPECTIVE) */\n";
+            output += `--camera-fov: ${PARAMS.cameraFov};\n`;
+            if (camera) {
+                output += `/* Cam 3-P Position: X=${Math.round(camera.position.x)} Y=${Math.round(camera.position.y)} Z=${Math.round(camera.position.z)} */\n`;
+            }
+            if (controls) {
+                output += `/* Cam 3-P Target: X=${Math.round(controls.target.x)} Y=${Math.round(controls.target.y)} Z=${Math.round(controls.target.z)} */\n`;
+            }
+            output += '\n';
+
             output += "/* CAMERA SETTINGS */\n";
             output += `--ortho-frustum-size: ${PARAMS.orthoFrustumSize};\n`;
             output += `--camera-min-dist: ${PARAMS.cameraMinDist};\n`;
@@ -3697,6 +3901,17 @@
             if (e.shiftKey && (e.key === 'B' || e.key === 'b')) {
                 e.preventDefault();
                 toggleBoundingBoxes();
+                return;
+            }
+            // Shift + 1-6 for HDRI Preset Selection
+            if (e.shiftKey && e.key >= '1' && e.key <= '6') {
+                e.preventDefault();
+                const presetNum = parseInt(e.key);
+                if (hdriPresets && hdriPresets[presetNum]) {
+                    loadHDRI(presetNum);
+                    // Rebuild parameters panel if open
+                    if (editorModeActive) buildParametersPanel();
+                }
                 return;
             }
 
