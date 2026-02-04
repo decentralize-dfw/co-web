@@ -27,6 +27,11 @@
              --accent-color: #FF006A;
             --font-headers: 'Space Mono', monospace;
             --font-body: 'Space Mono', monospace;
+
+/* ============================================= */
+/* RENDER PARAMETERS - DESKTOP / MOBILE         */
+/* ============================================= */
+
 --ssao-enabled-desktop: no;
 --ssao-enabled-mobile: no;
 --ssao-kernel-radius: 8;
@@ -68,7 +73,6 @@
 --filter-contrast: 1.0;
 --filter-saturation: 1.0;
 --filter-hue-rotate: 0;
---cam3p-show-public: no;
 --hdri-preset: 1;
 --mobile-hover-label-font-size: 60px;
 --mobile-hover-label-opacity: 0.9;
@@ -85,6 +89,10 @@
             --cam2-pos-x: 5000;
             --cam2-pos-y: 5000;
             --cam2-pos-z: 5000;
+            --cam3-pos-x: 5000;
+            --cam3-pos-y: 5000;
+            --cam3-pos-z: 5000;
+            --cam3-show-public: no;
             --initial-camera-zoom: 3.0;
             --cam-lookat-x: 0;
             --cam-lookat-y: 0;
@@ -207,6 +215,19 @@
         }
         .icon-btn:hover { opacity: 0.7; }
         .icon-btn svg { width: 100%; height: 100%; fill: #000; }
+        .lock-btn {
+            width: 14px; height: 14px;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            padding: 2px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s;
+        }
+        .lock-btn:hover { background: rgba(0, 0, 0, 0.6); }
+        .lock-btn svg { width: 10px; height: 10px; fill: #fff; }
         #loader {
             position: fixed;
             top: 0; left: 0;
@@ -633,16 +654,6 @@
             background: rgba(0, 0, 0, 0.85); color: #fff; border-color: rgba(0, 0, 0, 0.85);
         }
         .transform-group, .camera-group { display: flex; gap: 4px; margin-left: 12px; }
-        #camera-params {
-            position: fixed; top: 140px; right: 20px; 
-            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);
-            border-radius: 8px; border: 1px solid rgba(0, 0, 0, 0.1);
-            padding: 8px 10px; z-index: 999; display: none;
-            font-family: var(--font-body); font-size: 8px;
-        }
-        #camera-params.open { display: block; }
-        .cam-param-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-        .cam-param-input { width: 50px; text-align: right; border: 1px solid rgba(0,0,0,0.1); }
         #mobile-labels-toggle {
             display: none;
             position: fixed;
@@ -706,9 +717,8 @@
     <div id="ui-container">
         <!-- ROW 1: VIEW CONTROLS -->
         <div class="ui-row">
-            <button class="icon-btn" id="btn-lock-icon" onclick="toggleCameraLock()" title="Lock/Unlock Camera">
+            <button class="lock-btn" id="btn-lock-icon" onclick="toggleCameraLock()" title="Lock/Unlock Camera">
                 <svg viewBox="0 0 24 24" id="lock-icon-svg">
-                    <!-- Default Unlocked -->
                     <path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z"/>
                 </svg>
             </button>
@@ -716,7 +726,7 @@
             <div class="toggle-group">
                 <button class="toggle-btn active" id="btn-cam1" onclick="switchCamera(1)">1</button>
                 <button class="toggle-btn" id="btn-cam2" onclick="switchCamera(2)">2</button>
-                <button class="toggle-btn" id="btn-cam3p" onclick="switchCamera('persp')" style="display:none">3-P</button>
+                <button class="toggle-btn" id="btn-cam3" onclick="switchCamera('persp')" style="display:none">3</button>
             </div>
         </div>
         <!-- ROW 2: GRAPHICS CONTROLS -->
@@ -783,25 +793,6 @@
                 <button class="editor-footer-btn" onclick="resetSceneParameters()">RESET</button>
                 <button class="editor-footer-btn print-btn" onclick="printSceneParameters()">PRINT</button>
             </div>
-        </div>
-    </div>
-    <!-- CAMERA PARAMETERS PANEL -->
-    <div id="camera-params">
-        <div class="cam-param-row">
-            <span>FOV</span>
-            <input type="number" class="cam-param-input" id="cam-fov" value="60" min="10" max="120" step="5" onchange="updateCameraFOV(this.value)">
-        </div>
-        <div class="cam-param-row">
-            <span>X</span>
-            <input type="number" class="cam-param-input" id="cam-pos-x" value="0" step="100" onchange="updateCameraPosition()">
-        </div>
-        <div class="cam-param-row">
-            <span>Y</span>
-            <input type="number" class="cam-param-input" id="cam-pos-y" value="200" step="100" onchange="updateCameraPosition()">
-        </div>
-        <div class="cam-param-row">
-            <span>Z</span>
-            <input type="number" class="cam-param-input" id="cam-pos-z" value="0" step="100" onchange="updateCameraPosition()">
         </div>
     </div>
     <!-- MOBILE LABELS TOGGLE -->
@@ -1000,7 +991,7 @@
             filterContrast: getParamNum('--filter-contrast') || 1.0,
             filterSaturation: getParamNum('--filter-saturation') || 1.0,
             filterHueRotate: getParamNum('--filter-hue-rotate') || 0,
-            cam3pShowPublic: getParamBool('--cam3p-show-public'),
+            cam3ShowPublic: getParamBool('--cam3-show-public'),
             hdriPreset: getParamNum('--hdri-preset') || 1
         };
         let runtimeParams = { ...RENDER_PARAMS };
@@ -1040,6 +1031,9 @@
             cam2PosX: getParamNum('--cam2-pos-x'),
             cam2PosY: getParamNum('--cam2-pos-y'),
             cam2PosZ: getParamNum('--cam2-pos-z'),
+            cam3PosX: getParamNum('--cam3-pos-x'),
+            cam3PosY: getParamNum('--cam3-pos-y'),
+            cam3PosZ: getParamNum('--cam3-pos-z'),
             camLookX: getParamNum('--cam-lookat-x'),
             camLookY: getParamNum('--cam-lookat-y'),
             camLookZ: getParamNum('--cam-lookat-z')
@@ -2010,17 +2004,14 @@
             const btnEditor = document.getElementById('btn-editor');
             const editorPanel = document.getElementById('editor-panel');
             const transformGroup = document.getElementById('transform-group');
-            const cameraParams = document.getElementById('camera-params');
-            const btnCam3p = document.getElementById('btn-cam3p');
+            const btnCam3 = document.getElementById('btn-cam3');
             if (editorModeActive) {
                 if(btnEditor) btnEditor.classList.add('active');
                 editorPanel.classList.add('open');
                 transformGroup.style.display = 'flex';
-                cameraParams.classList.add('open');
                 transformControls.visible = true;
                 transformControls.enabled = true;
-                if(btnCam3p) btnCam3p.style.display = 'inline-block'; // Show Cam 3-P in editor
-                updateCameraParamsDisplay();
+                if(btnCam3) btnCam3.style.display = 'inline-block';
                 if (!selectedEditorObject && clickableObjects.length > 0) {
                     for (let i = 0; i < clickableObjects.length; i++) {
                         const idx = clickableObjects[i].userData.sceneObjectIndex;
@@ -2034,12 +2025,11 @@
                 if(btnEditor) btnEditor.classList.remove('active');
                 editorPanel.classList.remove('open');
                 transformGroup.style.display = 'none';
-                cameraParams.classList.remove('open');
                 transformControls.visible = false;
                 transformControls.enabled = false;
                 transformControls.detach();
                 selectedEditorObject = null;
-                updateCam3pVisibility();
+                updateCam3Visibility();
                 if(currentCameraMode === 'persp') {
                     switchCamera(1);
                 }
@@ -2184,7 +2174,7 @@
             selectedEditorObject.userData.originalPosition = selectedEditorObject.position.clone();
         }
         window.switchCamera = function(mode) {
-            const btnCam3p = document.getElementById('btn-cam3p');
+            const btnCam3p = document.getElementById('btn-cam3');
             const btnCam1 = document.getElementById('btn-cam1');
             const btnCam2 = document.getElementById('btn-cam2');
             const btnLockIcon = document.getElementById('btn-lock-icon');
@@ -2458,10 +2448,6 @@
                     <input type="range" class="params-slider" min="-180" max="180" step="5" value="${runtimeParams.filterHueRotate}" onchange="updateSliderParam('filterHueRotate', this.value)" oninput="updateSliderDisplay(this)">
                     <span class="params-slider-value" onclick="makeEditable(this, 'filterHueRotate')">${runtimeParams.filterHueRotate}°</span>
                 </div>
-                <div class="params-section-title">CAMERA 3-P</div>
-                <span class="params-label">Show in Public UI</span>
-                <span class="params-value ${runtimeParams.cam3pShowPublic ? 'on' : 'off'}">${runtimeParams.cam3pShowPublic ? 'YES' : 'NO'}</span>
-                <div class="params-toggle ${runtimeParams.cam3pShowPublic ? 'on' : ''}" onclick="toggleParam('cam3pShowPublic'); updateCam3pVisibility()"></div>
                 <div class="params-section-title">HDRI PRESET (Shift+1..6)</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Active: ${currentHdriPreset} - ${hdriPresets[currentHdriPreset]?.name || 'Unknown'}</span>
@@ -2473,6 +2459,26 @@
         function buildSceneParametersPanel() {
             const grid = document.getElementById('scene-params-grid');
             grid.innerHTML = `
+                <div class="params-section-title">CAMERA POSITIONS</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Cam 1</span>
+                    <span class="params-slider-value">${PARAMS.cam1PosX}, ${PARAMS.cam1PosY}, ${PARAMS.cam1PosZ}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Cam 2</span>
+                    <span class="params-slider-value">${PARAMS.cam2PosX}, ${PARAMS.cam2PosY}, ${PARAMS.cam2PosZ}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Cam 3</span>
+                    <span class="params-slider-value">${PARAMS.cam3PosX}, ${PARAMS.cam3PosY}, ${PARAMS.cam3PosZ}</span>
+                </div>
+                <span class="params-label">Show Cam 3 Public</span>
+                <span class="params-value ${runtimeParams.cam3ShowPublic ? 'on' : 'off'}">${runtimeParams.cam3ShowPublic ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.cam3ShowPublic ? 'on' : ''}" onclick="toggleParam('cam3ShowPublic'); updateCam3Visibility(); buildSceneParametersPanel()"></div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Initial Zoom</span>
+                    <span class="params-slider-value">${PARAMS.initialCameraZoom}</span>
+                </div>
                 <div class="params-section-title">HOVER LABEL (Desktop)</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Font Size</span>
@@ -2485,19 +2491,6 @@
                 <div class="params-slider-row">
                     <span class="params-slider-label">Name Offset Y</span>
                     <span class="params-slider-value">${PARAMS.hoverLabelNameOffsetY}px</span>
-                </div>
-                <div class="params-section-title">CAMERA POSITIONS</div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 1 Pos</span>
-                    <span class="params-slider-value">${PARAMS.cam1PosX}, ${PARAMS.cam1PosY}, ${PARAMS.cam1PosZ}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 2 Pos</span>
-                    <span class="params-slider-value">${PARAMS.cam2PosX}, ${PARAMS.cam2PosY}, ${PARAMS.cam2PosZ}</span>
-                </div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">Initial Zoom</span>
-                    <span class="params-slider-value">${PARAMS.initialCameraZoom}</span>
                 </div>
                 <div class="params-section-title">PANEL SETTINGS</div>
                 <div class="params-slider-row">
@@ -2562,10 +2555,10 @@
                 if (editorModeActive) buildParametersPanel();
             }
         };
-        window.updateCam3pVisibility = function() {
-            const btnCam3p = document.getElementById('btn-cam3p');
+        window.updateCam3Visibility = function() {
+            const btnCam3p = document.getElementById('btn-cam3');
             if (btnCam3p) {
-                if (editorModeActive || runtimeParams.cam3pShowPublic) {
+                if (editorModeActive || runtimeParams.cam3ShowPublic) {
                     btnCam3p.style.display = 'inline-block';
                 } else {
                     btnCam3p.style.display = 'none';
@@ -2715,7 +2708,7 @@
             output += "\n";
             output += `--hdri-preset: ${currentHdriPreset};\n\n`;
             output += "\n";
-            output += `--cam3p-show-public: ${runtimeParams.cam3pShowPublic ? 'yes' : 'no'};\n`;
+            output += `--cam3-show-public: ${runtimeParams.cam3ShowPublic ? 'yes' : 'no'};\n`;
             navigator.clipboard.writeText(output).then(() => {
                 alert('RENDER PARAMETERS COPIED!\n\nPaste into your :root CSS section.');
             }).catch(err => {
