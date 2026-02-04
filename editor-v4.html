@@ -691,6 +691,7 @@
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
         import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
         import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+        import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
         import { TransformControls } from 'three/addons/controls/TransformControls.js';
         import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
 
@@ -940,21 +941,20 @@
             const isMobile = window.innerWidth <= 768; // Check for mobile
             
             renderer = new THREE.WebGLRenderer({
-                 antialias: true, // Keep antialias on for quality
+                 antialias: true,
                  alpha: true,
                  powerPreference: "high-performance",
                 precision: isMobile ? "mediump" : "highp",
                 logarithmicDepthBuffer: true
             });
-            // Mobile: cap pixel ratio at 1.5 for balance between quality and performance
             renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
-            
+
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 0.85;
-             renderer.shadowMap.enabled = true;
-             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMappingExposure = 1.0;
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
             renderer.setClearAlpha(0);
             renderer.setClearColor(0xffffff, 0);
@@ -1033,50 +1033,86 @@
 
             window.addEventListener('keydown', handleKeyDown);
 
+            // === ENVIRONMENT MAP (Studio-neutral HDRI for accurate PBR) ===
             const pmrem = new THREE.PMREMGenerator(renderer);
-            new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (tex) => {
+            pmrem.compileEquirectangularShader();
+            new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/royal_esplanade_1k.hdr', (tex) => {
                 tex.mapping = THREE.EquirectangularReflectionMapping;
                 globalEnvMap = pmrem.fromEquirectangular(tex).texture;
                 scene.environment = globalEnvMap;
                 tex.dispose(); pmrem.dispose();
             });
 
-            scene.add(new THREE.HemisphereLight(0xffffff, 0x000000, 0.3));
-            
-            const sun = new THREE.DirectionalLight(0xffffff, 3.5);
+            // === LIGHTING RIG (PBR-optimized key/fill/rim/hemisphere) ===
+
+            // Hemisphere: soft ambient with subtle ground bounce
+            const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4);
+            scene.add(hemi);
+
+            // Key light (sun) - main directional with shadows
+            const sun = new THREE.DirectionalLight(0xfff8f0, 3.0);
             sun.position.set(1200, 2400, 1200);
             sun.castShadow = true;
-            // Mobile: slightly smaller shadow map but not too low
-            const shadowSize = isMobile ? 1536 : 2048;
+            const shadowSize = isMobile ? 1536 : 4096;
             sun.shadow.mapSize.set(shadowSize, shadowSize);
             sun.shadow.camera.near = 0.5;
             sun.shadow.camera.far = 16000;
             sun.shadow.camera.left = -5500; sun.shadow.camera.right = 5500;
             sun.shadow.camera.top = 5500; sun.shadow.camera.bottom = -5500;
-            
-            sun.shadow.bias = -0.0005;
-             sun.shadow.normalBias = 0.2;
-             scene.add(sun);
+            sun.shadow.bias = -0.0003;
+            sun.shadow.normalBias = 0.15;
+            sun.shadow.radius = isMobile ? 1 : 2;
+            scene.add(sun);
 
-            const fill1 = new THREE.PointLight(0xffffff, 0.1, 10000);
-            fill1.position.set(3000, 1500, 3000);
+            // Fill light - opposite side, cooler tone, softer
+            const fill1 = new THREE.DirectionalLight(0xe8eeff, 0.8);
+            fill1.position.set(-2000, 1800, -1500);
             scene.add(fill1);
 
-            const fill2 = new THREE.PointLight(0xffffff, 0.1, 10000);
-            fill2.position.set(-3000, 1500, -3000);
-            scene.add(fill2);
+            // Rim light - back/top, catches metallic edges
+            const rim = new THREE.DirectionalLight(0xffffff, 0.6);
+            rim.position.set(-500, 3000, -2500);
+            scene.add(rim);
 
+            // Ground bounce fill - warm, from below-front
+            const bounce = new THREE.PointLight(0xffeedd, 0.15, 12000);
+            bounce.position.set(0, -200, 2000);
+            scene.add(bounce);
+
+            // Side accent - subtle catchlight for metallic surfaces
+            const accent = new THREE.PointLight(0xffffff, 0.1, 10000);
+            accent.position.set(3000, 1000, -2000);
+            scene.add(accent);
+
+            // === POST-PROCESSING PIPELINE ===
             composer = new EffectComposer(renderer);
-            const renderPass = new RenderPass(scene, camera); // Initially camera, update in animate
+            const renderPass = new RenderPass(scene, camera);
             renderPass.clearAlpha = 0;
             composer.addPass(renderPass);
 
-            bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.25, 0.35, 0.8);
-            if (isMobile) bloomPass.enabled = false; // Skip bloom on mobile for performance
+            // SSAO - Ambient occlusion for depth and contact shadows (desktop only)
+            if (!isMobile) {
+                ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
+                ssaoPass.kernelRadius = 24;
+                ssaoPass.minDistance = 0.001;
+                ssaoPass.maxDistance = 0.15;
+                ssaoPass.output = SSAOPass.OUTPUT.Default;
+                composer.addPass(ssaoPass);
+            }
+
+            // Bloom - subtle glow for specular highlights
+            bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(window.innerWidth, window.innerHeight),
+                0.15,  // strength - subtle
+                0.4,   // radius
+                0.85   // threshold - only bright specular highlights
+            );
+            if (isMobile) bloomPass.enabled = false;
             composer.addPass(bloomPass);
 
             composer.addPass(new OutputPass());
 
+            // FXAA anti-aliasing
             const fxaaPass = new ShaderPass(FXAAShader);
             const pr = isMobile ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio;
             fxaaPass.material.uniforms['resolution'].value.set(1/(window.innerWidth*pr), 1/(window.innerHeight*pr));
@@ -1146,32 +1182,30 @@
                 isWireMode = true;
                 btnLow.classList.add('active');
                 bloomPass.enabled = false;
+                if (ssaoPass) ssaoPass.enabled = false;
                 renderer.shadowMap.enabled = false;
                 renderer.toneMappingExposure = 1.0;
                 renderer.toneMapping = THREE.NoToneMapping;
-                
-                // Black Background updated color
+
                 scene.background = new THREE.Color(0xb6a5d0);
                 scene.environment = null;
-                
-                // Wireframe + Color
+
                 applyLowModeMaterials(true);
             }
             else if (level === 'default') {
                 isWireMode = false;
                 btnMid.classList.add('active');
                 bloomPass.enabled = true;
-                bloomPass.strength = 0.05;
+                bloomPass.strength = 0.15;
+                if (ssaoPass) ssaoPass.enabled = true;
                 renderer.shadowMap.enabled = true;
-                renderer.shadowMap.type = THREE.PCFShadowMap;
-                renderer.toneMappingExposure = 0.75;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                renderer.toneMappingExposure = 1.0;
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                
-                // Transparent Background (original behavior)
+
                 scene.background = null;
                 scene.environment = globalEnvMap;
-                
-                // Normal Materials
+
                 applyLowModeMaterials(false);
             }
         };
@@ -1243,6 +1277,24 @@
                             c.castShadow = true;
                             c.receiveShadow = true;
                             if(c.geometry.computeBoundsTree) c.geometry.computeBoundsTree();
+
+                            // === PBR Material Enhancement (desktop only) ===
+                            const mat = c.material;
+                            if (mat && mat.isMeshStandardMaterial) {
+                                // Boost environment reflections for metallics
+                                mat.envMapIntensity = 1.5;
+
+                                // Maximize texture quality
+                                const maxAniso = renderer.capabilities.getMaxAnisotropy();
+                                if (mat.map) { mat.map.anisotropy = maxAniso; }
+                                if (mat.normalMap) { mat.normalMap.anisotropy = maxAniso; }
+                                if (mat.roughnessMap) { mat.roughnessMap.anisotropy = maxAniso; }
+                                if (mat.metalnessMap) { mat.metalnessMap.anisotropy = maxAniso; }
+                                if (mat.aoMap) { mat.aoMap.anisotropy = maxAniso; }
+
+                                // Ensure proper needsUpdate
+                                mat.needsUpdate = true;
+                            }
                         }
                     });
 
@@ -1688,15 +1740,19 @@
 
             const renM = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renM.setPixelRatio(window.devicePixelRatio);
+            renM.outputColorSpace = THREE.SRGBColorSpace;
             renM.toneMapping = THREE.ACESFilmicToneMapping;
-            renM.toneMappingExposure = 1.3;
+            renM.toneMappingExposure = 1.1;
             container.appendChild(renM.domElement);
 
             const camM = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
-            sceneM.add(new THREE.HemisphereLight(0xffffff, 0xffffff, 1.2));
-            const dirLight = new THREE.DirectionalLight(0xffffff, 3.5);
-             dirLight.position.set(5, 10, 7);
-             sceneM.add(dirLight);
+            sceneM.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.5));
+            const dirLight = new THREE.DirectionalLight(0xfff8f0, 2.5);
+            dirLight.position.set(5, 10, 7);
+            sceneM.add(dirLight);
+            const fillM = new THREE.DirectionalLight(0xe8eeff, 0.6);
+            fillM.position.set(-5, 5, -5);
+            sceneM.add(fillM);
 
             const ctrlM = new OrbitControls(camM, renM.domElement);
              ctrlM.autoRotate = true; ctrlM.autoRotateSpeed = 2.5;
@@ -1710,7 +1766,16 @@
 
             loader.load(src, (gltf) => {
                 const model = gltf.scene;
-                model.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+                model.traverse(c => {
+                    if (c.isMesh) {
+                        c.castShadow = true;
+                        c.receiveShadow = true;
+                        if (c.material && c.material.isMeshStandardMaterial) {
+                            c.material.envMapIntensity = 1.5;
+                            c.material.needsUpdate = true;
+                        }
+                    }
+                });
                 sceneM.add(model);
                 const box = new THREE.Box3().setFromObject(model);
                 const center = box.getCenter(new THREE.Vector3());
@@ -1774,14 +1839,17 @@
 
         function onWindowResize() {
             const aspect = window.innerWidth / window.innerHeight;
-            
+
             camera.aspect = aspect;
             camera.updateProjectionMatrix();
-            
+
             updateOrthoFrustum();
-            
+
             renderer.setSize(window.innerWidth, window.innerHeight);
             composer.setSize(window.innerWidth, window.innerHeight);
+            if (ssaoPass) {
+                ssaoPass.setSize(window.innerWidth, window.innerHeight);
+            }
         }
 
         window.toggleCameraLock = function() {
@@ -1808,9 +1876,11 @@
             if (currentCameraMode === 'persp') {
                 controls.update();
                 composer.passes[0].camera = camera;
+                if (ssaoPass) ssaoPass.camera = camera;
             } else {
                 controlsOrtho.update();
                 composer.passes[0].camera = cameraOrtho;
+                if (ssaoPass) ssaoPass.camera = cameraOrtho;
             }
 
             if(currentHoveredObject) {
