@@ -33,23 +33,23 @@
             /* SSAO (Screen Space Ambient Occlusion) */
             --ssao-enabled-desktop: yes;
             --ssao-enabled-mobile: no;
-            --ssao-kernel-radius: 16;
+            --ssao-kernel-radius: 32;
             --ssao-min-distance: 0.0005;
             --ssao-max-distance: 0.15;
-            --ssao-intensity: 1.0;
+            --ssao-intensity: 2;
 
             /* BLOOM (Glow Effect) */
             --bloom-enabled-desktop: yes;
             --bloom-enabled-mobile: no;
-            --bloom-strength: 0.06;
+            --bloom-strength: 0.11;
             --bloom-radius: 0.4;
-            --bloom-threshold: 0.92;
+            --bloom-threshold: 0.91;
 
             /* TONE MAPPING */
-            --tonemapping-enabled-desktop: yes;
-            --tonemapping-enabled-mobile: yes;
+            --tonemapping-enabled-desktop: no;
+            --tonemapping-enabled-mobile: no;
             --tonemapping-type: ACES; /* ACES, Reinhard, Cineon, Linear */
-            --tonemapping-exposure-desktop: 1.3;
+            --tonemapping-exposure-desktop: 1.7;
             --tonemapping-exposure-mobile: 1.2;
 
             /* SHADOWS */
@@ -74,13 +74,13 @@
             /* ENVIRONMENT MAP */
             --envmap-enabled-desktop: yes;
             --envmap-enabled-mobile: yes;
-            --envmap-intensity-desktop: 1.3;
+            --envmap-intensity-desktop: 0.7;
             --envmap-intensity-mobile: 1.0;
 
             /* RECT AREA LIGHT (Soft Panel Lights) */
             --rectarealight-enabled-desktop: yes;
             --rectarealight-enabled-mobile: no;
-            --rectarealight-intensity: 2.0;
+            --rectarealight-intensity: 3.1;
             --rectarealight-width: 1000;
             --rectarealight-height: 1000;
 
@@ -88,25 +88,25 @@
             --colorspace-srgb: yes;
 
             /* LIGHTING INTENSITIES */
-            --light-hemisphere-intensity: 0.45;
-            --light-sun-intensity: 2.0;
-            --light-fill-intensity: 0.6;
+            --light-hemisphere-intensity: 0.6;
+            --light-sun-intensity: 2.8;
+            --light-fill-intensity: 1.1;
             --light-rim-intensity: 0.4;
             --light-accent-intensity: 0.1;
 
             /* PBR MATERIAL SETTINGS */
             --pbr-envmap-intensity: 1.2;
-            --pbr-roughness-boost: 0;
-            --pbr-metalness-boost: 0;
+            --pbr-roughness-boost: -0.15;
+            --pbr-metalness-boost: 0.05;
 
             /* COLOR CORRECTION FILTERS */
             --filter-brightness: 1.0;
             --filter-contrast: 1.0;
-            --filter-saturation: 1.0;
+            --filter-saturation: 0.7;
             --filter-hue-rotate: 0;
 
             /* CAMERA 3-P (Perspective) */
-            --cam3p-show-public: no;  /* yes = show in public UI, no = editor only */
+            --cam3p-show-public: yes;  /* yes = show in public UI, no = editor only */
 
             /* ============================================= */
 
@@ -1725,35 +1725,25 @@
                 scene.background = new THREE.Color(0xb6a5d0);
                 scene.environment = null;
 
+                // Reset color filters for wireframe mode
+                if (renderer.domElement) {
+                    renderer.domElement.style.filter = 'none';
+                }
+
                 applyLowModeMaterials(true);
             }
             else if (level === 'default') {
                 isWireMode = false;
                 btnMid.classList.add('active');
 
-                // Use runtime parameters for default mode
-                const useBloom = isMobile ? runtimeParams.bloomEnabledMobile : runtimeParams.bloomEnabledDesktop;
-                bloomPass.enabled = useBloom;
-                bloomPass.strength = runtimeParams.bloomStrength;
-                bloomPass.radius = runtimeParams.bloomRadius;
-                bloomPass.threshold = runtimeParams.bloomThreshold;
-
-                const useSSAO = isMobile ? runtimeParams.ssaoEnabledMobile : runtimeParams.ssaoEnabledDesktop;
-                if (ssaoPass) ssaoPass.enabled = useSSAO;
-
-                const useShadows = isMobile ? runtimeParams.shadowsEnabledMobile : runtimeParams.shadowsEnabledDesktop;
-                renderer.shadowMap.enabled = useShadows;
-                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-
-                const exposure = isMobile ? runtimeParams.tonemappingExposureMobile : runtimeParams.tonemappingExposureDesktop;
-                renderer.toneMappingExposure = exposure;
-                renderer.toneMapping = THREE.ACESFilmicToneMapping;
-
-                // White background, no gray!
+                // White background
                 scene.background = new THREE.Color(0xffffff);
                 scene.environment = globalEnvMap;
 
                 applyLowModeMaterials(false);
+
+                // Apply ALL runtime parameters from CSS
+                applyRuntimeParameters();
             }
         };
 
