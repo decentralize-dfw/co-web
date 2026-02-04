@@ -33,10 +33,10 @@
             /* SSAO (Screen Space Ambient Occlusion) */
             --ssao-enabled-desktop: yes;
             --ssao-enabled-mobile: no;
-            --ssao-kernel-radius: 8;
-            --ssao-min-distance: 0.001;
-            --ssao-max-distance: 0.05;
-            --ssao-intensity: 0.5;
+            --ssao-kernel-radius: 16;
+            --ssao-min-distance: 0.0005;
+            --ssao-max-distance: 0.15;
+            --ssao-intensity: 1.0;
 
             /* BLOOM (Glow Effect) */
             --bloom-enabled-desktop: yes;
@@ -98,6 +98,15 @@
             --pbr-envmap-intensity: 1.2;
             --pbr-roughness-boost: 0;
             --pbr-metalness-boost: 0;
+
+            /* COLOR CORRECTION FILTERS */
+            --filter-brightness: 1.0;
+            --filter-contrast: 1.0;
+            --filter-saturation: 1.0;
+            --filter-hue-rotate: 0;
+
+            /* CAMERA 3-P (Perspective) */
+            --cam3p-show-public: no;  /* yes = show in public UI, no = editor only */
 
             /* ============================================= */
 
@@ -714,10 +723,34 @@
         }
 
         .params-slider-value {
-            flex: 0 0 50px;
+            flex: 0 0 55px;
             text-align: right;
             font-size: 10px;
             color: rgba(0, 0, 0, 0.6);
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+
+        .params-slider-value:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+
+        .params-slider-input {
+            flex: 0 0 55px;
+            width: 55px;
+            text-align: right;
+            font-size: 10px;
+            font-family: var(--font-body);
+            border: 1px solid rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            padding: 2px 4px;
+            outline: none;
+        }
+
+        .params-slider-input:focus {
+            border-color: var(--accent-color);
         }
 
         /* Editor UI Elements */
@@ -823,7 +856,7 @@
             <div class="toggle-group">
                 <button class="toggle-btn active" id="btn-cam1" onclick="switchCamera(1)">1</button>
                 <button class="toggle-btn" id="btn-cam2" onclick="switchCamera(2)">2</button>
-                <button class="toggle-btn" id="btn-cam4p" onclick="switchCamera('persp')" style="display:none">4-P</button>
+                <button class="toggle-btn" id="btn-cam3p" onclick="switchCamera('persp')">3-P</button>
             </div>
         </div>
 
@@ -1191,7 +1224,16 @@
             // PBR
             pbrEnvmapIntensity: getParamNum('--pbr-envmap-intensity') || 1.2,
             pbrRoughnessBoost: getParamNum('--pbr-roughness-boost') || 0,
-            pbrMetalnessBoost: getParamNum('--pbr-metalness-boost') || 0
+            pbrMetalnessBoost: getParamNum('--pbr-metalness-boost') || 0,
+
+            // Color Correction Filters
+            filterBrightness: getParamNum('--filter-brightness') || 1.0,
+            filterContrast: getParamNum('--filter-contrast') || 1.0,
+            filterSaturation: getParamNum('--filter-saturation') || 1.0,
+            filterHueRotate: getParamNum('--filter-hue-rotate') || 0,
+
+            // Camera 3-P
+            cam3pShowPublic: getParamBool('--cam3p-show-public')
         };
 
         // Runtime state for parameters (can be toggled)
@@ -1389,7 +1431,7 @@
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.enablePan = false; // DISABLED
+            controls.enablePan = false; // Disabled by default, enabled in editor mode
             controls.enableRotate = true; // ENABLED
             controls.minDistance = PARAMS.cameraMinDist;
             controls.maxDistance = PARAMS.cameraMaxDist;
@@ -1399,11 +1441,24 @@
             controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controls.enabled = false; // Start in Ortho
 
+            // Touch controls: 1 finger = rotate, 2 finger = zoom/pan
+            controls.touches = {
+                ONE: THREE.TOUCH.ROTATE,
+                TWO: THREE.TOUCH.DOLLY_PAN
+            };
+
+            // Prevent camera from going below ground
+            controls.addEventListener('change', () => {
+                if (controls.target.y < 0) {
+                    controls.target.y = 0;
+                }
+            });
+
             // CONTROLS FOR ORTHO
             controlsOrtho = new OrbitControls(cameraOrtho, renderer.domElement);
             controlsOrtho.enableDamping = true;
             controlsOrtho.dampingFactor = 0.05;
-            controlsOrtho.enablePan = false; // DISABLED
+            controlsOrtho.enablePan = false; // Disabled by default, enabled in editor mode
             controlsOrtho.enableZoom = true;
             controlsOrtho.enableRotate = true; // ENABLED BY DEFAULT
             // Allow vertical rotation from top down to horizon, but not below
@@ -1411,6 +1466,24 @@
             controlsOrtho.maxPolarAngle = Math.PI / 2;
             controlsOrtho.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controlsOrtho.enabled = true; // Start in Ortho
+
+            // Touch controls: 1 finger = rotate, 2 finger = zoom/pan
+            // Pan will be enabled only in editor mode
+            controlsOrtho.touches = {
+                ONE: THREE.TOUCH.ROTATE,
+                TWO: THREE.TOUCH.DOLLY_PAN
+            };
+
+            // Prevent camera from going below ground (y < 0)
+            controlsOrtho.maxPolarAngle = Math.PI / 2;
+
+            // Limit pan to keep scene visible
+            controlsOrtho.addEventListener('change', () => {
+                // Clamp target Y to prevent going underground
+                if (controlsOrtho.target.y < 0) {
+                    controlsOrtho.target.y = 0;
+                }
+            });
 
             transformControls = new TransformControls(camera, renderer.domElement);
             transformControls.setMode('translate');
@@ -1576,6 +1649,15 @@
             buildScene(isMobile);
 
             applyLightingPreset('default');
+
+            // Setup Cam 3-P visibility based on parameter
+            const btnCam3p = document.getElementById('btn-cam3p');
+            if (btnCam3p) {
+                btnCam3p.style.display = runtimeParams.cam3pShowPublic ? 'inline-block' : 'none';
+            }
+
+            // Apply color filters
+            applyColorFilters();
 
             window.addEventListener('resize', onWindowResize);
             renderer.domElement.addEventListener('mousemove', onMouseMove);
@@ -2556,7 +2638,7 @@
             const editorPanel = document.getElementById('editor-panel');
             const transformGroup = document.getElementById('transform-group');
             const cameraParams = document.getElementById('camera-params');
-            const btnCam4p = document.getElementById('btn-cam4p');
+            const btnCam3p = document.getElementById('btn-cam3p');
 
             if (editorModeActive) {
                 if(btnEditor) btnEditor.classList.add('active');
@@ -2565,8 +2647,13 @@
                 cameraParams.classList.add('open');
                 transformControls.visible = true;
                 transformControls.enabled = true;
-                if(btnCam4p) btnCam4p.style.display = 'inline-block'; // Show Cam 4-P
-                
+                // Always show Cam 3-P in editor mode
+                if(btnCam3p) btnCam3p.style.display = 'inline-block';
+
+                // Enable pan in editor mode
+                controls.enablePan = true;
+                controlsOrtho.enablePan = true;
+
                 updateCameraParamsDisplay();
 
                 if (!selectedEditorObject && clickableObjects.length > 0) {
@@ -2587,10 +2674,18 @@
                 transformControls.enabled = false;
                 transformControls.detach();
                 selectedEditorObject = null;
-                if(btnCam4p) btnCam4p.style.display = 'none'; // Hide Cam 4-P
-                
-                // If currently in Cam 4-P, switch back to Cam 1
-                if(currentCameraMode === 'persp') {
+
+                // Hide Cam 3-P only if not set to show in public
+                if(btnCam3p && !runtimeParams.cam3pShowPublic) {
+                    btnCam3p.style.display = 'none';
+                }
+
+                // Disable pan in public mode
+                controls.enablePan = false;
+                controlsOrtho.enablePan = false;
+
+                // If currently in Cam 3-P and not public, switch back to Cam 1
+                if(currentCameraMode === 'persp' && !runtimeParams.cam3pShowPublic) {
                     switchCamera(1);
                 }
             }
@@ -2753,7 +2848,7 @@
         }
 
         window.switchCamera = function(mode) {
-            const btnCam4p = document.getElementById('btn-cam4p');
+            const btnCam4p = document.getElementById('btn-cam3p');
             const btnCam1 = document.getElementById('btn-cam1');
             const btnCam2 = document.getElementById('btn-cam2');
             const btnLockIcon = document.getElementById('btn-lock-icon');
@@ -2769,15 +2864,18 @@
             btnLockIcon.style.opacity = '0.5';
 
             if (mode === 'persp') {
-                // PERSPECTIVE CAMERA (Cam 4-P)
+                // PERSPECTIVE CAMERA (Cam 3-P)
                 currentCameraMode = 'persp';
                 if(btnCam4p) btnCam4p.classList.add('active');
-                
+
                 controlsOrtho.enabled = false;
                 controls.enabled = true;
                 controls.enableRotate = true; // Ensure rotate is on
-                
+
                 if (transformControls) transformControls.camera = camera;
+
+                // Update post-processing cameras
+                updatePostProcessingCamera(camera);
 
             } else {
                 // ORTHO CAMERAS (1, 2)
@@ -2787,9 +2885,12 @@
 
                 controls.enabled = false;
                 controlsOrtho.enabled = false; // Disable controls during animation
-                
+
                 if (transformControls) transformControls.camera = cameraOrtho;
                 updateOrthoFrustum();
+
+                // Update post-processing cameras
+                updatePostProcessingCamera(cameraOrtho);
 
                 let tx=0, ty=0, tz=0;
                 let targetUp = new THREE.Vector3(0, 1, 0); // Default up
@@ -2844,6 +2945,26 @@
                     .start();
             }
         };
+
+        function updatePostProcessingCamera(cam) {
+            // Update RenderPass camera
+            if (composer && composer.passes) {
+                composer.passes.forEach(pass => {
+                    if (pass.camera) {
+                        pass.camera = cam;
+                    }
+                    // SSAOPass has a special camera property
+                    if (pass.isSSAOPass) {
+                        pass.camera = cam;
+                        pass.beautyRenderTarget.setSize(window.innerWidth, window.innerHeight);
+                    }
+                });
+            }
+            // Direct update for ssaoPass
+            if (ssaoPass) {
+                ssaoPass.camera = cam;
+            }
+        }
 
         function getActiveCamera() { 
             return currentCameraMode === 'persp' ? camera : cameraOrtho; 
@@ -2989,14 +3110,14 @@
 
                 <div class="params-slider-row">
                     <span class="params-slider-label">Intensity Desktop</span>
-                    <input type="range" class="params-slider" min="0.5" max="3" step="0.1" value="${runtimeParams.envmapIntensityDesktop}" onchange="updateSliderParam('envmapIntensityDesktop', this.value)">
-                    <span class="params-slider-value">${runtimeParams.envmapIntensityDesktop}</span>
+                    <input type="range" class="params-slider" min="0" max="3" step="0.1" value="${runtimeParams.envmapIntensityDesktop}" onchange="updateSliderParam('envmapIntensityDesktop', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'envmapIntensityDesktop')">${runtimeParams.envmapIntensityDesktop}</span>
                 </div>
 
                 <div class="params-slider-row">
                     <span class="params-slider-label">Intensity Mobile</span>
-                    <input type="range" class="params-slider" min="0.5" max="2" step="0.1" value="${runtimeParams.envmapIntensityMobile}" onchange="updateSliderParam('envmapIntensityMobile', this.value)">
-                    <span class="params-slider-value">${runtimeParams.envmapIntensityMobile}</span>
+                    <input type="range" class="params-slider" min="0" max="2" step="0.1" value="${runtimeParams.envmapIntensityMobile}" onchange="updateSliderParam('envmapIntensityMobile', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'envmapIntensityMobile')">${runtimeParams.envmapIntensityMobile}</span>
                 </div>
 
                 <div class="params-section-title">RECT AREA LIGHT</div>
@@ -3041,22 +3162,46 @@
 
                 <div class="params-section-title">PBR MATERIALS</div>
                 <div class="params-slider-row">
-                    <span class="params-slider-label">EnvMap Intensity</span>
-                    <input type="range" class="params-slider" min="0.5" max="3" step="0.1" value="${runtimeParams.pbrEnvmapIntensity}" onchange="updateSliderParam('pbrEnvmapIntensity', this.value)">
-                    <span class="params-slider-value">${runtimeParams.pbrEnvmapIntensity}</span>
-                </div>
-
-                <div class="params-slider-row">
                     <span class="params-slider-label">Roughness Boost</span>
-                    <input type="range" class="params-slider" min="-0.5" max="0.5" step="0.05" value="${runtimeParams.pbrRoughnessBoost}" onchange="updateSliderParam('pbrRoughnessBoost', this.value)">
-                    <span class="params-slider-value">${runtimeParams.pbrRoughnessBoost}</span>
+                    <input type="range" class="params-slider" min="-0.5" max="0.5" step="0.05" value="${runtimeParams.pbrRoughnessBoost}" onchange="updateSliderParam('pbrRoughnessBoost', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'pbrRoughnessBoost')">${runtimeParams.pbrRoughnessBoost}</span>
                 </div>
 
                 <div class="params-slider-row">
                     <span class="params-slider-label">Metalness Boost</span>
-                    <input type="range" class="params-slider" min="-0.5" max="0.5" step="0.05" value="${runtimeParams.pbrMetalnessBoost}" onchange="updateSliderParam('pbrMetalnessBoost', this.value)">
-                    <span class="params-slider-value">${runtimeParams.pbrMetalnessBoost}</span>
+                    <input type="range" class="params-slider" min="-0.5" max="0.5" step="0.05" value="${runtimeParams.pbrMetalnessBoost}" onchange="updateSliderParam('pbrMetalnessBoost', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'pbrMetalnessBoost')">${runtimeParams.pbrMetalnessBoost}</span>
                 </div>
+
+                <div class="params-section-title">COLOR CORRECTION</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Brightness</span>
+                    <input type="range" class="params-slider" min="0.5" max="2" step="0.05" value="${runtimeParams.filterBrightness}" onchange="updateSliderParam('filterBrightness', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'filterBrightness')">${runtimeParams.filterBrightness}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Contrast</span>
+                    <input type="range" class="params-slider" min="0.5" max="2" step="0.05" value="${runtimeParams.filterContrast}" onchange="updateSliderParam('filterContrast', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'filterContrast')">${runtimeParams.filterContrast}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Saturation</span>
+                    <input type="range" class="params-slider" min="0" max="2" step="0.05" value="${runtimeParams.filterSaturation}" onchange="updateSliderParam('filterSaturation', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'filterSaturation')">${runtimeParams.filterSaturation}</span>
+                </div>
+
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Hue Rotate</span>
+                    <input type="range" class="params-slider" min="-180" max="180" step="5" value="${runtimeParams.filterHueRotate}" onchange="updateSliderParam('filterHueRotate', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'filterHueRotate')">${runtimeParams.filterHueRotate}°</span>
+                </div>
+
+                <div class="params-section-title">CAMERA 3-P</div>
+                <span class="params-label">Show in Public UI</span>
+                <span class="params-value ${runtimeParams.cam3pShowPublic ? 'on' : 'off'}">${runtimeParams.cam3pShowPublic ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.cam3pShowPublic ? 'on' : ''}" onclick="toggleParam('cam3pShowPublic'); updateCam3pVisibility()"></div>
             `;
         }
 
@@ -3072,7 +3217,58 @@
             // Update the value display next to slider
             const slider = event.target;
             const valueSpan = slider.parentElement.querySelector('.params-slider-value');
-            if (valueSpan) valueSpan.textContent = value;
+            if (valueSpan) {
+                valueSpan.textContent = paramName === 'filterHueRotate' ? value + '°' : value;
+            }
+        };
+
+        window.updateSliderDisplay = function(slider) {
+            const valueSpan = slider.parentElement.querySelector('.params-slider-value');
+            if (valueSpan) {
+                valueSpan.textContent = slider.value;
+            }
+        };
+
+        window.makeEditable = function(span, paramName) {
+            const currentValue = runtimeParams[paramName];
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'params-slider-input';
+            input.value = currentValue;
+            input.step = 'any';
+
+            const finishEdit = () => {
+                const newValue = parseFloat(input.value);
+                if (!isNaN(newValue)) {
+                    runtimeParams[paramName] = newValue;
+                    applyRuntimeParameters();
+                    // Update slider if exists
+                    const slider = span.parentElement.querySelector('.params-slider');
+                    if (slider) slider.value = newValue;
+                }
+                buildParametersPanel();
+            };
+
+            input.onblur = finishEdit;
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') finishEdit();
+                if (e.key === 'Escape') buildParametersPanel();
+            };
+
+            span.replaceWith(input);
+            input.focus();
+            input.select();
+        };
+
+        window.updateCam3pVisibility = function() {
+            const btnCam3p = document.getElementById('btn-cam3p');
+            if (btnCam3p) {
+                if (editorModeActive || runtimeParams.cam3pShowPublic) {
+                    btnCam3p.style.display = 'inline-block';
+                } else {
+                    btnCam3p.style.display = 'none';
+                }
+            }
         };
 
         function applyRuntimeParameters() {
@@ -3183,6 +3379,20 @@
                     }
                 });
             });
+
+            // ===== COLOR FILTERS =====
+            applyColorFilters();
+        }
+
+        function applyColorFilters() {
+            if (!renderer) return;
+            const canvas = renderer.domElement;
+            const brightness = runtimeParams.filterBrightness;
+            const contrast = runtimeParams.filterContrast;
+            const saturation = runtimeParams.filterSaturation;
+            const hueRotate = runtimeParams.filterHueRotate;
+
+            canvas.style.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturation}) hue-rotate(${hueRotate}deg)`;
         }
 
         window.resetParameters = function() {
@@ -3247,7 +3457,16 @@
             output += "/* PBR MATERIAL SETTINGS */\n";
             output += `--pbr-envmap-intensity: ${runtimeParams.pbrEnvmapIntensity};\n`;
             output += `--pbr-roughness-boost: ${runtimeParams.pbrRoughnessBoost};\n`;
-            output += `--pbr-metalness-boost: ${runtimeParams.pbrMetalnessBoost};\n`;
+            output += `--pbr-metalness-boost: ${runtimeParams.pbrMetalnessBoost};\n\n`;
+
+            output += "/* COLOR CORRECTION FILTERS */\n";
+            output += `--filter-brightness: ${runtimeParams.filterBrightness};\n`;
+            output += `--filter-contrast: ${runtimeParams.filterContrast};\n`;
+            output += `--filter-saturation: ${runtimeParams.filterSaturation};\n`;
+            output += `--filter-hue-rotate: ${runtimeParams.filterHueRotate};\n\n`;
+
+            output += "/* CAMERA 3-P */\n";
+            output += `--cam3p-show-public: ${runtimeParams.cam3pShowPublic ? 'yes' : 'no'};\n`;
 
             navigator.clipboard.writeText(output).then(() => {
                 alert('PARAMETERS COPIED TO CLIPBOARD!\n\nPaste this into your CSS :root section.');
