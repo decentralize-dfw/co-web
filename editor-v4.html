@@ -992,7 +992,22 @@
             filterSaturation: getParamNum('--filter-saturation') || 1.0,
             filterHueRotate: getParamNum('--filter-hue-rotate') || 0,
             cam3ShowPublic: getParamBool('--cam3-show-public'),
-            hdriPreset: getParamNum('--hdri-preset') || 1
+            hdriPreset: getParamNum('--hdri-preset') || 1,
+            cam1PosX: getParamNum('--cam1-pos-x'),
+            cam1PosY: getParamNum('--cam1-pos-y'),
+            cam1PosZ: getParamNum('--cam1-pos-z'),
+            cam2PosX: getParamNum('--cam2-pos-x'),
+            cam2PosY: getParamNum('--cam2-pos-y'),
+            cam2PosZ: getParamNum('--cam2-pos-z'),
+            cam3PosX: getParamNum('--cam3-pos-x'),
+            cam3PosY: getParamNum('--cam3-pos-y'),
+            cam3PosZ: getParamNum('--cam3-pos-z'),
+            initialCameraZoom: getParamNum('--initial-camera-zoom'),
+            hoverLabelFontSize: getParamNum('--hover-label-font-size'),
+            hoverLabelOffsetY: getParamNum('--hover-label-offset-y'),
+            hoverLabelNameOffsetY: getParamNum('--hover-label-name-offset-y'),
+            panelWidth: getParamNum('--panel-width') || 280,
+            panelTopOffset: getParamNum('--panel-top-offset') || 60
         };
         let runtimeParams = { ...RENDER_PARAMS };
         const PARAMS = {
@@ -2456,53 +2471,131 @@
                 </div>
             `;
         }
-        function buildSceneParametersPanel() {
+        window.buildSceneParametersPanel = function() {
             const grid = document.getElementById('scene-params-grid');
             grid.innerHTML = `
-                <div class="params-section-title">CAMERA POSITIONS</div>
+                <div class="params-section-title">CAMERA 1 POSITION</div>
                 <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 1</span>
-                    <span class="params-slider-value">${PARAMS.cam1PosX}, ${PARAMS.cam1PosY}, ${PARAMS.cam1PosZ}</span>
+                    <span class="params-slider-label">X</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam1PosX}" onchange="updateSceneSliderParam('cam1PosX', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam1PosX')">${runtimeParams.cam1PosX}</span>
                 </div>
                 <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 2</span>
-                    <span class="params-slider-value">${PARAMS.cam2PosX}, ${PARAMS.cam2PosY}, ${PARAMS.cam2PosZ}</span>
+                    <span class="params-slider-label">Y</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam1PosY}" onchange="updateSceneSliderParam('cam1PosY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam1PosY')">${runtimeParams.cam1PosY}</span>
                 </div>
                 <div class="params-slider-row">
-                    <span class="params-slider-label">Cam 3</span>
-                    <span class="params-slider-value">${PARAMS.cam3PosX}, ${PARAMS.cam3PosY}, ${PARAMS.cam3PosZ}</span>
+                    <span class="params-slider-label">Z</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam1PosZ}" onchange="updateSceneSliderParam('cam1PosZ', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam1PosZ')">${runtimeParams.cam1PosZ}</span>
+                </div>
+                <div class="params-section-title">CAMERA 2 POSITION</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">X</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam2PosX}" onchange="updateSceneSliderParam('cam2PosX', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam2PosX')">${runtimeParams.cam2PosX}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Y</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam2PosY}" onchange="updateSceneSliderParam('cam2PosY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam2PosY')">${runtimeParams.cam2PosY}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Z</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam2PosZ}" onchange="updateSceneSliderParam('cam2PosZ', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam2PosZ')">${runtimeParams.cam2PosZ}</span>
+                </div>
+                <div class="params-section-title">CAMERA 3 POSITION</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">X</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam3PosX}" onchange="updateSceneSliderParam('cam3PosX', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam3PosX')">${runtimeParams.cam3PosX}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Y</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam3PosY}" onchange="updateSceneSliderParam('cam3PosY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam3PosY')">${runtimeParams.cam3PosY}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Z</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam3PosZ}" onchange="updateSceneSliderParam('cam3PosZ', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam3PosZ')">${runtimeParams.cam3PosZ}</span>
                 </div>
                 <span class="params-label">Show Cam 3 Public</span>
                 <span class="params-value ${runtimeParams.cam3ShowPublic ? 'on' : 'off'}">${runtimeParams.cam3ShowPublic ? 'YES' : 'NO'}</span>
                 <div class="params-toggle ${runtimeParams.cam3ShowPublic ? 'on' : ''}" onclick="toggleParam('cam3ShowPublic'); updateCam3Visibility(); buildSceneParametersPanel()"></div>
+                <div class="params-section-title">CAMERA SETTINGS</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Initial Zoom</span>
-                    <span class="params-slider-value">${PARAMS.initialCameraZoom}</span>
+                    <input type="range" class="params-slider" min="100" max="10000" step="100" value="${runtimeParams.initialCameraZoom}" onchange="updateSceneSliderParam('initialCameraZoom', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'initialCameraZoom')">${runtimeParams.initialCameraZoom}</span>
                 </div>
                 <div class="params-section-title">HOVER LABEL (Desktop)</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Font Size</span>
-                    <span class="params-slider-value">${PARAMS.hoverLabelFontSize}px</span>
+                    <input type="range" class="params-slider" min="8" max="48" step="1" value="${runtimeParams.hoverLabelFontSize}" onchange="updateSceneSliderParam('hoverLabelFontSize', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelFontSize')">${runtimeParams.hoverLabelFontSize}px</span>
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Offset Y</span>
-                    <span class="params-slider-value">${PARAMS.hoverLabelOffsetY}px</span>
+                    <input type="range" class="params-slider" min="-200" max="200" step="5" value="${runtimeParams.hoverLabelOffsetY}" onchange="updateSceneSliderParam('hoverLabelOffsetY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelOffsetY')">${runtimeParams.hoverLabelOffsetY}px</span>
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Name Offset Y</span>
-                    <span class="params-slider-value">${PARAMS.hoverLabelNameOffsetY}px</span>
+                    <input type="range" class="params-slider" min="-200" max="200" step="5" value="${runtimeParams.hoverLabelNameOffsetY}" onchange="updateSceneSliderParam('hoverLabelNameOffsetY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelNameOffsetY')">${runtimeParams.hoverLabelNameOffsetY}px</span>
                 </div>
                 <div class="params-section-title">PANEL SETTINGS</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Panel Width</span>
-                    <span class="params-slider-value">${getParam('--panel-width')}</span>
+                    <input type="range" class="params-slider" min="200" max="500" step="10" value="${runtimeParams.panelWidth}" onchange="updateSceneSliderParam('panelWidth', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'panelWidth')">${runtimeParams.panelWidth}px</span>
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Panel Top Offset</span>
-                    <span class="params-slider-value">${getParam('--panel-top-offset')}</span>
+                    <input type="range" class="params-slider" min="0" max="200" step="5" value="${runtimeParams.panelTopOffset}" onchange="updateSceneSliderParam('panelTopOffset', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'panelTopOffset')">${runtimeParams.panelTopOffset}px</span>
                 </div>
             `;
         }
+        window.updateSceneSliderParam = function(paramName, value) {
+            runtimeParams[paramName] = parseFloat(value);
+            PARAMS[paramName] = parseFloat(value);
+            const slider = event.target;
+            const valueSpan = slider.parentElement.querySelector('.params-slider-value');
+            if (valueSpan) {
+                const suffix = ['panelWidth', 'panelTopOffset', 'hoverLabelFontSize', 'hoverLabelOffsetY', 'hoverLabelNameOffsetY'].includes(paramName) ? 'px' : '';
+                valueSpan.textContent = value + suffix;
+            }
+        };
+        window.makeSceneEditable = function(span, paramName) {
+            const currentValue = runtimeParams[paramName];
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'params-slider-input';
+            input.value = currentValue;
+            input.step = 'any';
+            const finishEdit = () => {
+                const newValue = parseFloat(input.value);
+                if (!isNaN(newValue)) {
+                    runtimeParams[paramName] = newValue;
+                    PARAMS[paramName] = newValue;
+                    const slider = span.parentElement.querySelector('.params-slider');
+                    if (slider) slider.value = newValue;
+                }
+                buildSceneParametersPanel();
+            };
+            input.onblur = finishEdit;
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') finishEdit();
+                if (e.key === 'Escape') buildSceneParametersPanel();
+            };
+            span.replaceWith(input);
+            input.focus();
+            input.select();
+        };
         window.toggleParam = function(paramName) {
             runtimeParams[paramName] = !runtimeParams[paramName];
             applyRuntimeParameters();
@@ -2718,13 +2811,24 @@
         };
         window.printSceneParameters = function() {
             let output = "\n";
-            output += `--hover-label-font-size: ${PARAMS.hoverLabelFontSize}px;\n`;
-            output += `--hover-label-offset-y: ${PARAMS.hoverLabelOffsetY}px;\n`;
-            output += `--cam1-pos-x: ${PARAMS.cam1PosX};\n`;
-            output += `--cam1-pos-y: ${PARAMS.cam1PosY};\n`;
-            output += `--cam1-pos-z: ${PARAMS.cam1PosZ};\n`;
+            output += `--cam1-pos-x: ${runtimeParams.cam1PosX};\n`;
+            output += `--cam1-pos-y: ${runtimeParams.cam1PosY};\n`;
+            output += `--cam1-pos-z: ${runtimeParams.cam1PosZ};\n`;
+            output += `--cam2-pos-x: ${runtimeParams.cam2PosX};\n`;
+            output += `--cam2-pos-y: ${runtimeParams.cam2PosY};\n`;
+            output += `--cam2-pos-z: ${runtimeParams.cam2PosZ};\n`;
+            output += `--cam3-pos-x: ${runtimeParams.cam3PosX};\n`;
+            output += `--cam3-pos-y: ${runtimeParams.cam3PosY};\n`;
+            output += `--cam3-pos-z: ${runtimeParams.cam3PosZ};\n`;
+            output += `--cam3-show-public: ${runtimeParams.cam3ShowPublic ? 'yes' : 'no'};\n`;
+            output += `--initial-camera-zoom: ${runtimeParams.initialCameraZoom};\n`;
+            output += `--hover-label-font-size: ${runtimeParams.hoverLabelFontSize}px;\n`;
+            output += `--hover-label-offset-y: ${runtimeParams.hoverLabelOffsetY}px;\n`;
+            output += `--hover-label-name-offset-y: ${runtimeParams.hoverLabelNameOffsetY}px;\n`;
+            output += `--panel-width: ${runtimeParams.panelWidth}px;\n`;
+            output += `--panel-top-offset: ${runtimeParams.panelTopOffset}px;\n`;
             navigator.clipboard.writeText(output).then(() => {
-                alert('SCENE PARAMETERS COPIED!');
+                alert('SCENE PARAMETERS COPIED!\n\nPaste into your :root CSS section.');
             }).catch(err => {
                 console.log(output);
                 alert('Copy failed. Check console for data.');
