@@ -2243,7 +2243,6 @@
             // Calculate target zoom: "Dividing initial zoom by factor"
             // For Ortho: initial 1.0 / 0.2 = 5.0 (Zoom In)
             // For Persp: initial 1.0 / 0.2 = 5.0 (Field of View Zoom equivalent)
-            const isMobileNow = window.innerWidth <= 768;
             const baseZoom = isMobileNow ? PARAMS.initialCameraZoomMobile : PARAMS.initialCameraZoom;
             const zoomFactor = isMobileNow ? PARAMS.selectionZoomFactorMobile : PARAMS.selectionZoomFactor;
             const targetZoom = baseZoom / zoomFactor;
