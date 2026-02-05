@@ -93,6 +93,7 @@
             --cam3-pos-y: 5000;
             --cam3-pos-z: 5000;
             --cam3-show-public: no;
+            --mobile-labels-show-public: no;
             --cam-mobile-pos-x: 5000;
             --cam-mobile-pos-y: 5000;
             --cam-mobile-pos-z: 5000;
@@ -920,7 +921,7 @@
             }
             .info-btn img { width: 12px; height: 12px; }
             #ui-container { display: none !important; }
-            #mobile-labels-toggle {
+            #mobile-labels-toggle.visible {
                 display: flex;
                 position: fixed;
                 bottom: 50px;
@@ -931,9 +932,11 @@
                 bottom: 12px;
                 gap: 10px;
                 z-index: 50;
+                justify-content: flex-start;
+                padding-left: 12px;
             }
             .footer-social svg { width: 14px; height: 14px; }
-            .footer-right { font-size: 6px; gap: 8px; right: 12px; }
+            .footer-right { font-size: 6px; gap: 8px; position: static; }
             :root {
                 --panel-media-padding-horizontal: 25%;
                 --panel-media-padding-top: 1rem;
@@ -1282,6 +1285,7 @@
             filterSaturation: getParamNum('--filter-saturation') || 1.0,
             filterHueRotate: getParamNum('--filter-hue-rotate') || 0,
             cam3ShowPublic: getParamBool('--cam3-show-public'),
+            mobileLabelsShowPublic: getParamBool('--mobile-labels-show-public'),
             hdriPreset: getParamNum('--hdri-preset') || 1,
             cam1PosX: getParamNum('--cam1-pos-x'),
             cam1PosY: getParamNum('--cam1-pos-y'),
@@ -1601,6 +1605,7 @@
                 }
             });
             const mobileLabelsCheckbox = document.getElementById('mobile-labels-cb');
+            const mobileLabelsToggle = document.getElementById('mobile-labels-toggle');
             if (mobileLabelsCheckbox) {
                 mobileLabelsCheckbox.addEventListener('change', (e) => {
                     if (e.target.checked) {
@@ -1609,6 +1614,9 @@
                         hideMobileLabels();
                     }
                 });
+            }
+            if (isMobile && PARAMS.mobileLabelsShowPublic && mobileLabelsToggle) {
+                mobileLabelsToggle.classList.add('visible');
             }
         }
         window.handlePresetSelection = function(level) { applyLightingPreset(level); };
@@ -2924,6 +2932,9 @@
                 <span class="params-label">Show Cam 3 Public</span>
                 <span class="params-value ${runtimeParams.cam3ShowPublic ? 'on' : 'off'}">${runtimeParams.cam3ShowPublic ? 'YES' : 'NO'}</span>
                 <div class="params-toggle ${runtimeParams.cam3ShowPublic ? 'on' : ''}" onclick="toggleParam('cam3ShowPublic'); updateCam3Visibility(); buildSceneParametersPanel()"></div>
+                <span class="params-label">Mobile Labels Public</span>
+                <span class="params-value ${runtimeParams.mobileLabelsShowPublic ? 'on' : 'off'}">${runtimeParams.mobileLabelsShowPublic ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.mobileLabelsShowPublic ? 'on' : ''}" onclick="toggleParam('mobileLabelsShowPublic'); buildSceneParametersPanel()"></div>
                 <div class="params-section-title">MOBILE CAMERA POSITION</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">X</span>
@@ -3289,6 +3300,7 @@
             output += `--cam3-pos-y: ${runtimeParams.cam3PosY};\n`;
             output += `--cam3-pos-z: ${runtimeParams.cam3PosZ};\n`;
             output += `--cam3-show-public: ${runtimeParams.cam3ShowPublic ? 'yes' : 'no'};\n`;
+            output += `--mobile-labels-show-public: ${runtimeParams.mobileLabelsShowPublic ? 'yes' : 'no'};\n`;
             output += `--cam-mobile-pos-x: ${runtimeParams.camMobilePosX};\n`;
             output += `--cam-mobile-pos-y: ${runtimeParams.camMobilePosY};\n`;
             output += `--cam-mobile-pos-z: ${runtimeParams.camMobilePosZ};\n`;
