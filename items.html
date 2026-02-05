@@ -501,11 +501,11 @@
             const cols = currentLang === 'tr' ? TR_COLUMNS : EN_COLUMNS;
 
             // Update header description based on language
-            if (sheetRows[0]) {
-                const headerIdx = cols.headerDesc;
-                if (sheetRows[0].c[headerIdx] && sheetRows[0].c[headerIdx].v) {
-                    document.getElementById('header-description').innerText = sheetRows[0].c[headerIdx].v;
-                }
+            // English: C1 (row 0, column C index 2), Turkish: C2 (row 1, column C index 2)
+            const headerRow = currentLang === 'tr' ? 1 : 0;
+            const headerCol = 2; // C kolonu
+            if (sheetRows[headerRow] && sheetRows[headerRow].c[headerCol] && sheetRows[headerRow].c[headerCol].v) {
+                document.getElementById('header-description').innerText = sheetRows[headerRow].c[headerCol].v;
             }
 
             artifacts = sheetRows.map(row => {
