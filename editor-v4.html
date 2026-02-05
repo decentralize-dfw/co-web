@@ -871,28 +871,28 @@
                         src: glbSrc,
                         width: 700,
                         position: {
-                            x: parseFloat(getVal(row, 27, 'number')), // AB
-                            y: parseFloat(getVal(row, 28, 'number')), // AC
-                            z: parseFloat(getVal(row, 29, 'number'))  // AD
+                            x: parseFloat(getVal(row, 27, 'number')),
+                            y: parseFloat(getVal(row, 28, 'number')),
+                            z: parseFloat(getVal(row, 29, 'number'))
                         },
                         rotation: {
-                            x: parseFloat(getVal(row, 30, 'number')), // AE
-                            y: parseFloat(getVal(row, 31, 'number')), // AF
-                            z: parseFloat(getVal(row, 32, 'number'))  // AG
+                            x: parseFloat(getVal(row, 30, 'number')),
+                            y: parseFloat(getVal(row, 31, 'number')),
+                            z: parseFloat(getVal(row, 32, 'number'))
                         },
-                        scale: parseFloat(getVal(row, 33, 'number')) || 400, // AH
+                        scale: parseFloat(getVal(row, 33, 'number')) || 400,
                         modalContent: {
-                            artist: getVal(row, 2),       // C
-                            name: getVal(row, 3),         // D
-                            hoverDisplayName: getVal(row, 37), // AL - hover label name
-                            price: getVal(row, 16),       // Q - price with currency
-                            dimensions: getVal(row, 15),  // P (Index 15)
-                            category: getVal(row, 5),     // F
-                            type: getVal(row, 6),         // G
-                            color: getVal(row, 7),        // H
-                            edition: getVal(row, 14),     // O (Index 14)
-                            description: getVal(row, 18), // S
-                            bio: getVal(row, 22),         // W
+                            artist: getVal(row, 2),
+                            name: getVal(row, 3),
+                            hoverDisplayName: getVal(row, 37),
+                            price: getVal(row, 16),
+                            dimensions: getVal(row, 15),
+                            category: getVal(row, 5),
+                            type: getVal(row, 6),
+                            color: getVal(row, 7),
+                            edition: getVal(row, 14),
+                            description: getVal(row, 18),
+                            bio: getVal(row, 22),
                             media: []
                         }
                     };
@@ -920,18 +920,18 @@
                 let envRot = { x: 0, y: 0, z: 0 };
                 let envScale = 400;
                 if (rows.length > 0 && rows[0]) {
-                    const envRow = rows[0]; // Read from First Row
+                    const envRow = rows[0];
                     envPos = {
-                        x: parseFloat(getVal(envRow, 27, 'number')), // AB1
-                        y: parseFloat(getVal(envRow, 28, 'number')), // AC1
-                        z: parseFloat(getVal(envRow, 29, 'number'))  // AD1
+                        x: parseFloat(getVal(envRow, 27, 'number')),
+                        y: parseFloat(getVal(envRow, 28, 'number')),
+                        z: parseFloat(getVal(envRow, 29, 'number'))
                     };
                     envRot = {
-                        x: parseFloat(getVal(envRow, 30, 'number')), // AE1
-                        y: parseFloat(getVal(envRow, 31, 'number')), // AF1
-                        z: parseFloat(getVal(envRow, 32, 'number'))  // AG1
+                        x: parseFloat(getVal(envRow, 30, 'number')),
+                        y: parseFloat(getVal(envRow, 31, 'number')),
+                        z: parseFloat(getVal(envRow, 32, 'number'))
                     };
-                    envScale = parseFloat(getVal(envRow, 33, 'number')) || 400; // AH1
+                    envScale = parseFloat(getVal(envRow, 33, 'number')) || 400;
                 }
                 sceneObjects.push({
                     type: 'model',
@@ -939,7 +939,7 @@
                     position: envPos,
                     rotation: envRot,
                     scale: envScale,
-                    clickable: false, // Not clickable in UI
+                    clickable: false,
                     modalContent: { name: "Environment", artist: "VEA", description: "Environment" }
                 });
             } catch (err) {
@@ -1109,11 +1109,12 @@
         let transformControls = null;
         let selectedEditorObject = null;
         let loadedObjectsMap = new Map();
-         let currentCameraMode = 'ortho'; // Start in Ortho (Cam 1 default)
+        let currentCameraMode = 'ortho';
+        let currentCameraIndex = 1;
         let savedCameraState = null;
         let currentTransformMode = 'translate';
         const lockedObjects = new Set(); 
-        let isCameraLocked = false; // Camera lock status
+        let isCameraLocked = false;
         let undoStack = [];
         let redoStack = [];
         const MAX_UNDO_STEPS = 50;
@@ -1133,9 +1134,9 @@
         startEngine();
         function init() {
             const container = document.getElementById('scene-container');
-            const isMobile = window.innerWidth <= 768; // Check for mobile
+            const isMobile = window.innerWidth <= 768;
             renderer = new THREE.WebGLRenderer({
-                 antialias: true, // Keep antialias on for quality
+                 antialias: true,
                  alpha: true,
                  powerPreference: "high-performance",
                 precision: isMobile ? "mediump" : "highp",
@@ -1153,7 +1154,7 @@
             container.appendChild(renderer.domElement);
             const aspect = window.innerWidth / window.innerHeight;
             camera = new THREE.PerspectiveCamera(PARAMS.cameraFov, aspect, 10, 100000);
-            camera.position.set(5000, 5000, 5000); // Default start for Persp if switched
+            camera.position.set(5000, 5000, 5000);
             cameraOrtho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100000);
             cameraOrtho.position.set(PARAMS.cam1PosX, PARAMS.cam1PosY, PARAMS.cam1PosZ);
             cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
@@ -1166,24 +1167,24 @@
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.enablePan = false; // DISABLED
-            controls.enableRotate = true; // ENABLED
+            controls.enablePan = false;
+            controls.enableRotate = true;
             controls.minDistance = PARAMS.cameraMinDist;
             controls.maxDistance = PARAMS.cameraMaxDist;
             controls.minPolarAngle = 0;
             controls.maxPolarAngle = Math.PI / 2;
             controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
-            controls.enabled = false; // Start in Ortho
+            controls.enabled = false;
             controlsOrtho = new OrbitControls(cameraOrtho, renderer.domElement);
             controlsOrtho.enableDamping = true;
             controlsOrtho.dampingFactor = 0.05;
-            controlsOrtho.enablePan = false; // DISABLED
+            controlsOrtho.enablePan = false;
             controlsOrtho.enableZoom = true;
-            controlsOrtho.enableRotate = true; // ENABLED BY DEFAULT
+            controlsOrtho.enableRotate = true;
             controlsOrtho.minPolarAngle = 0;
             controlsOrtho.maxPolarAngle = Math.PI / 2;
             controlsOrtho.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
-            controlsOrtho.enabled = true; // Start in Ortho
+            controlsOrtho.enabled = true;
             transformControls = new TransformControls(camera, renderer.domElement);
             transformControls.setMode('translate');
             transformControls.setSize(0.8);
@@ -1251,10 +1252,11 @@
             renderPass.clearAlpha = 0;
             composer.addPass(renderPass);
             const useSSAO = isMobile ? runtimeParams.ssaoEnabledMobile : runtimeParams.ssaoEnabledDesktop;
-            ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
+            ssaoPass = new SSAOPass(scene, cameraOrtho, window.innerWidth, window.innerHeight);
             ssaoPass.kernelRadius = runtimeParams.ssaoKernelRadius;
-            ssaoPass.minDistance = 0.001;
-            ssaoPass.maxDistance = 0.05;
+            ssaoPass.minDistance = 0.005;
+            ssaoPass.maxDistance = 0.1;
+            ssaoPass.output = 0;
             ssaoPass.enabled = useSSAO;
             composer.addPass(ssaoPass);
             const useBloom = isMobile ? runtimeParams.bloomEnabledMobile : runtimeParams.bloomEnabledDesktop;
@@ -1350,7 +1352,7 @@
                             let color = new THREE.Color(0x29174d);
                             child.material = new THREE.MeshBasicMaterial({
                                 color: color,
-                                wireframe: true, // WIREFRAME ON
+                                wireframe: true,
                                 transparent: origMat.transparent || false,
                                 opacity: origMat.opacity || 1,
                                 side: origMat.side || THREE.FrontSide
@@ -1407,6 +1409,7 @@
                         buildEditorPanel();
                         buildBoundingBoxes();
                         buildClickableZones();
+                        updateCam3Visibility();
                     }
                 }, undefined, (err) => {
                     console.error("Error loading model:", item.src, err);
@@ -1423,7 +1426,7 @@
             }, 500);
         }
         function onMouseMove(e) {
-            if (window.innerWidth <= 768) return; // No hover on mobile
+            if (window.innerWidth <= 768) return;
             if (document.getElementById('side-panel').classList.contains('open')) return;
             if (editorModeActive) return;
             mouse.x = (e.clientX/window.innerWidth)*2-1;
@@ -1588,7 +1591,7 @@
             if (editorModeActive) return;
             if (document.getElementById('side-panel').classList.contains('open')) return;
             const t = e.changedTouches[0];
-            if (Math.abs(t.clientX - touchSX) > 10 || Math.abs(t.clientY - touchSY) > 10) return; // Was a drag
+            if (Math.abs(t.clientX - touchSX) > 10 || Math.abs(t.clientY - touchSY) > 10) return;
             mouse.x = (t.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(t.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, getActiveCamera());
@@ -1612,7 +1615,7 @@
         }
         function formatEuroPrice(val) {
             const num = parseFloat(String(val).replace(/[^0-9.\-]/g, ''));
-            if (isNaN(num)) return val; // Return as-is if not parseable
+            if (isNaN(num)) return val;
             return '€' + num.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
         function openPanel(content, obj) {
@@ -1722,12 +1725,12 @@
                 carouselDiv.addEventListener('touchend', (e) => {
                     const touchEndX = e.changedTouches[0].clientX;
                     const diff = touchEndX - touchStartX;
-                    if (Math.abs(diff) > 50) { // Threshold
+                    if (Math.abs(diff) > 50) {
                         if (diff > 0 && currentImgIdx > 0) {
-                            currentImgIdx--; // Swipe Right -> Prev
+                            currentImgIdx--;
                             updateCarousel();
                         } else if (diff < 0 && currentImgIdx < images.length - 1) {
-                            currentImgIdx++; // Swipe Left -> Next
+                            currentImgIdx++;
                             updateCarousel();
                         }
                     }
@@ -1739,7 +1742,7 @@
                  item.className = 'panel-media-item';
                 let wrapper = document.createElement('div');
                 wrapper.className = 'media-wrapper';
-                wrapper.style.height = '300px'; // Give models fixed height
+                wrapper.style.height = '300px';
                 item.appendChild(wrapper);
                 mediaContainer.appendChild(item);
                 setTimeout(() => initModal3D(wrapper, m.src), 50);
@@ -1818,7 +1821,7 @@
             const box = new THREE.Box3();
             clickableObjects.forEach(o => box.expandByObject(o));
             const size = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z) * 1.5; // Add some padding
+            const maxDim = Math.max(size.x, size.y, size.z) * 1.5;
             cameraOrtho.left = -maxDim * aspect; 
             cameraOrtho.right = maxDim * aspect;
             cameraOrtho.top = maxDim; 
@@ -1853,9 +1856,11 @@
             if (currentCameraMode === 'persp') {
                 controls.update();
                 composer.passes[0].camera = camera;
+                if (ssaoPass) ssaoPass.camera = camera;
             } else {
                 controlsOrtho.update();
                 composer.passes[0].camera = cameraOrtho;
+                if (ssaoPass) ssaoPass.camera = cameraOrtho;
             }
             if(currentHoveredObject) {
                 const bboxTop = currentHoveredObject.userData._bboxTopLocal || 0;
@@ -1925,19 +1930,19 @@
                 const extendedHeight = size.y + liftExtra;
                 const extendedCenterY = center.y + liftExtra / 2;
                 const geometry = new THREE.BoxGeometry(
-                    Math.max(size.x, 50), // Minimum size to be clickable
+                    Math.max(size.x, 50),
                     extendedHeight,
                     Math.max(size.z, 50)
                 );
                 const material = new THREE.MeshBasicMaterial({
-                    visible: false, // Invisible but raycastable
+                    visible: false,
                     side: THREE.DoubleSide
                 });
                 const zoneMesh = new THREE.Mesh(geometry, material);
                 zoneMesh.position.set(center.x, extendedCenterY, center.z);
                 zoneMesh.userData.parentObject = obj;
                 zoneMesh.userData.isClickableZone = true;
-                zoneMesh.raycast = THREE.Mesh.prototype.raycast; // Ensure standard raycast
+                zoneMesh.raycast = THREE.Mesh.prototype.raycast;
                 scene.add(zoneMesh);
                 clickableZones.push(zoneMesh);
             });
@@ -1967,7 +1972,7 @@
             zone.position.set(center.x, center.y - lift / 2, center.z);
         }
         function showMobileLabels() {
-            hideMobileLabels(); // Clear existing first
+            hideMobileLabels();
             mobileLabelsVisible = true;
             const maxW = PARAMS.hoverLabelFontBox;
             const rotX = PARAMS.hoverLabelRotationX * Math.PI / 180;
@@ -2200,26 +2205,32 @@
             btnLockIcon.style.opacity = '0.5';
             if (mode === 'persp') {
                 currentCameraMode = 'persp';
+                currentCameraIndex = 3;
                 if(btnCam3p) btnCam3p.classList.add('active');
                 controlsOrtho.enabled = false;
                 controls.enabled = true;
-                controls.enableRotate = true; // Ensure rotate is on
+                controls.enableRotate = true;
                 if (transformControls) transformControls.camera = camera;
+                camera.position.set(runtimeParams.cam3PosX, runtimeParams.cam3PosY, runtimeParams.cam3PosZ);
+                camera.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                controls.update();
             } else {
                 currentCameraMode = 'ortho';
+                currentCameraIndex = mode;
                 if(mode === 1) btnCam1.classList.add('active');
                 if(mode === 2) btnCam2.classList.add('active');
                 controls.enabled = false;
-                controlsOrtho.enabled = false; // Disable controls during animation
+                controlsOrtho.enabled = false;
                 if (transformControls) transformControls.camera = cameraOrtho;
                 updateOrthoFrustum();
                 let tx=0, ty=0, tz=0;
-                let targetUp = new THREE.Vector3(0, 1, 0); // Default up
-                if(mode === 1) { 
-                    tx = PARAMS.cam1PosX; ty = PARAMS.cam1PosY; tz = PARAMS.cam1PosZ; 
+                let targetUp = new THREE.Vector3(0, 1, 0);
+                if(mode === 1) {
+                    tx = runtimeParams.cam1PosX; ty = runtimeParams.cam1PosY; tz = runtimeParams.cam1PosZ;
                 }
-                else if(mode === 2) { 
-                    tx = PARAMS.cam2PosX; ty = PARAMS.cam2PosY; tz = PARAMS.cam2PosZ; 
+                else if(mode === 2) {
+                    tx = runtimeParams.cam2PosX; ty = runtimeParams.cam2PosY; tz = runtimeParams.cam2PosZ;
                 }
                 const startPos = cameraOrtho.position.clone();
                 const startRot = cameraOrtho.quaternion.clone();
@@ -2233,7 +2244,7 @@
                 const animData = { t: 0 };
                 new TWEEN(animData)
                     .to({ t: 1 }, 2000)
-                    .easing(t => t) // Linear
+                    .easing(t => t)
                     .onUpdate(() => {
                         const k = animData.t;
                         cameraOrtho.position.lerpVectors(startPos, endPos, k);
@@ -2246,8 +2257,8 @@
                         cameraOrtho.lookAt(0,0,0);
                         controlsOrtho.target.set(0, 0, 0);
                         controlsOrtho.update();
-                        controlsOrtho.enabled = true; // Re-enable controls
-                        controlsOrtho.enableRotate = true; // Ensure rotation enabled
+                        controlsOrtho.enabled = true;
+                        controlsOrtho.enableRotate = true;
                     })
                     .start();
             }
@@ -2569,6 +2580,18 @@
                 const suffix = ['panelWidth', 'panelTopOffset', 'hoverLabelFontSize', 'hoverLabelOffsetY', 'hoverLabelNameOffsetY'].includes(paramName) ? 'px' : '';
                 valueSpan.textContent = value + suffix;
             }
+            if (paramName.startsWith('cam1') && currentCameraIndex === 1) {
+                cameraOrtho.position.set(runtimeParams.cam1PosX, runtimeParams.cam1PosY, runtimeParams.cam1PosZ);
+                cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+            } else if (paramName.startsWith('cam2') && currentCameraIndex === 2) {
+                cameraOrtho.position.set(runtimeParams.cam2PosX, runtimeParams.cam2PosY, runtimeParams.cam2PosZ);
+                cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+            } else if (paramName.startsWith('cam3') && currentCameraIndex === 3) {
+                camera.position.set(runtimeParams.cam3PosX, runtimeParams.cam3PosY, runtimeParams.cam3PosZ);
+                camera.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                controls.update();
+            }
         };
         window.makeSceneEditable = function(span, paramName) {
             const currentValue = runtimeParams[paramName];
@@ -2584,6 +2607,18 @@
                     PARAMS[paramName] = newValue;
                     const slider = span.parentElement.querySelector('.params-slider');
                     if (slider) slider.value = newValue;
+                    if (paramName.startsWith('cam1') && currentCameraIndex === 1) {
+                        cameraOrtho.position.set(runtimeParams.cam1PosX, runtimeParams.cam1PosY, runtimeParams.cam1PosZ);
+                        cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                    } else if (paramName.startsWith('cam2') && currentCameraIndex === 2) {
+                        cameraOrtho.position.set(runtimeParams.cam2PosX, runtimeParams.cam2PosY, runtimeParams.cam2PosZ);
+                        cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                    } else if (paramName.startsWith('cam3') && currentCameraIndex === 3) {
+                        camera.position.set(runtimeParams.cam3PosX, runtimeParams.cam3PosY, runtimeParams.cam3PosZ);
+                        camera.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                        controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                        controls.update();
+                    }
                 }
                 buildSceneParametersPanel();
             };
@@ -2682,6 +2717,8 @@
                 const useSSAO = isMobile ? runtimeParams.ssaoEnabledMobile : runtimeParams.ssaoEnabledDesktop;
                 ssaoPass.enabled = useSSAO;
                 ssaoPass.kernelRadius = runtimeParams.ssaoKernelRadius;
+                ssaoPass.minDistance = 0.001 * (1 / Math.max(0.1, runtimeParams.ssaoIntensity));
+                ssaoPass.maxDistance = 0.1 * runtimeParams.ssaoIntensity;
             }
             if (bloomPass) {
                 const useBloom = isMobile ? runtimeParams.bloomEnabledMobile : runtimeParams.bloomEnabledDesktop;
@@ -2713,6 +2750,8 @@
             const envIntensity = isMobile ? runtimeParams.envmapIntensityMobile : runtimeParams.envmapIntensityDesktop;
             const roughnessBoost = runtimeParams.pbrRoughnessBoost || 0;
             const metalnessBoost = runtimeParams.pbrMetalnessBoost || 0;
+            const useAnisotropy = isMobile ? runtimeParams.anisotropyEnabledMobile : runtimeParams.anisotropyEnabledDesktop;
+            const maxAniso = renderer ? renderer.capabilities.getMaxAnisotropy() : 1;
             clickableObjects.forEach(obj => {
                 obj.traverse(child => {
                     if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
@@ -2726,6 +2765,9 @@
                         }
                         mat.roughness = Math.max(0, Math.min(1, mat._originalRoughness + roughnessBoost));
                         mat.metalness = Math.max(0, Math.min(1, mat._originalMetalness + metalnessBoost));
+                        if (mat.map) mat.map.anisotropy = useAnisotropy ? maxAniso : 1;
+                        if (mat.normalMap) mat.normalMap.anisotropy = useAnisotropy ? maxAniso : 1;
+                        if (mat.roughnessMap) mat.roughnessMap.anisotropy = useAnisotropy ? maxAniso : 1;
                         mat.needsUpdate = true;
                     }
                 });
