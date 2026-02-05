@@ -93,7 +93,12 @@
             --cam3-pos-y: 5000;
             --cam3-pos-z: 5000;
             --cam3-show-public: no;
+            --cam-mobile-pos-x: 5000;
+            --cam-mobile-pos-y: 5000;
+            --cam-mobile-pos-z: 5000;
+            --cam-mobile-fov: 45;
             --initial-camera-zoom: 3.0;
+            --initial-camera-zoom-mobile: 2.0;
             --cam-lookat-x: 0;
             --cam-lookat-y: 0;
             --cam-lookat-z: 0;
@@ -141,7 +146,6 @@
              --zoom-in-animation-duration: 1.0s;
             --zoom-out-animation-duration: 1.2s;
             --app-height: 100vh;
-            --initial-camera-zoom-mobile: 2.0;
         }
         html, body {
             font-family: var(--font-body);
@@ -237,24 +241,181 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
-        .loader-text {
+        .loader-main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .loader-logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 15px;
+        }
+        .loader-title {
             font-family: var(--font-headers);
-            font-size: 1.5rem;
+            font-size: 14px;
             color: #000;
-            letter-spacing: 2px;
-            margin-bottom: 1rem;
+            letter-spacing: 3px;
+            margin-bottom: 25px;
             text-transform: uppercase;
         }
         .loader-bar-container {
-            width: 200px; height: 2px;
+            width: 100px; height: 1px;
             background: #eee;
             position: relative; overflow: hidden;
         }
         .loader-bar {
             height: 100%;
-            background: #000;
+            background: #999;
             width: 0%;
             transition: width 0.3s ease-out;
+        }
+        .loader-status {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
+        .loader-text {
+            font-family: var(--font-headers);
+            font-size: 7px;
+            color: #999;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        #info-buttons {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .info-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: var(--font-headers);
+            font-size: 9px;
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .info-btn:hover { background: rgba(255, 255, 255, 0.95); }
+        .info-btn.active { background: #29174d; color: #fff; }
+        .info-btn.active img { filter: invert(1); }
+        .info-btn img {
+            width: 14px;
+            height: 14px;
+            object-fit: contain;
+        }
+        #info-panel {
+            position: fixed;
+            left: var(--panel-right-offset);
+            top: var(--panel-top-offset);
+            width: var(--panel-width);
+            max-height: calc(100vh - var(--panel-top-offset) - var(--panel-bottom-offset));
+            background: rgba(255, 255, 255, var(--panel-bg-opacity));
+            backdrop-filter: blur(var(--panel-blur));
+            -webkit-backdrop-filter: blur(var(--panel-blur));
+            border-radius: var(--panel-border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+            transform: translateY(50px);
+            opacity: 0; visibility: hidden;
+            transition: transform var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1),
+                        opacity var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1),
+                        visibility var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: 100;
+            overflow-y: auto; overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+        }
+        #info-panel::-webkit-scrollbar { width: 10px; }
+        #info-panel::-webkit-scrollbar-track { background: transparent; margin: 2px 0; }
+        #info-panel::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            background-clip: padding-box;
+            border-left: 2px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 2px solid transparent;
+            border-bottom: 2px solid transparent;
+            border-radius: 10px;
+        }
+        #info-panel::-webkit-scrollbar-button { display: none !important; }
+        #info-panel.open {
+            transform: translateY(0);
+            opacity: 1; visibility: visible;
+        }
+        .info-panel-header {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .info-panel-header::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -20px;
+            height: 20px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.6), transparent);
+            pointer-events: none;
+        }
+        .info-panel-title {
+            font-family: var(--font-headers);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #000;
+        }
+        .info-panel-close {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.05);
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+        }
+        .info-panel-close:hover { background: rgba(0, 0, 0, 0.1); }
+        .info-panel-close svg { width: 12px; height: 12px; stroke: #000; stroke-width: 2; }
+        .info-panel-content {
+            padding: 1.5rem;
+        }
+        .info-panel-logo {
+            width: 100%;
+            max-width: 180px;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+        .info-panel-text {
+            font-family: var(--font-body);
+            font-size: 11px;
+            line-height: 1.7;
+            color: #333;
+            white-space: pre-wrap;
         }
         #side-panel {
             position: fixed;
@@ -278,13 +439,16 @@
             scrollbar-width: thin;
             scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
         }
-        #side-panel::-webkit-scrollbar { width: 8px; }
-        #side-panel::-webkit-scrollbar-track { background: transparent; }
+        #side-panel::-webkit-scrollbar { width: 10px; }
+        #side-panel::-webkit-scrollbar-track { background: transparent; margin: 2px 0; }
         #side-panel::-webkit-scrollbar-thumb {
             background: rgba(0, 0, 0, 0.15);
             background-clip: padding-box;
-            border-right: 5px solid transparent;
-             border-radius: 10px;
+            border-left: 5px solid transparent;
+            border-right: 2px solid transparent;
+            border-top: 2px solid transparent;
+            border-bottom: 2px solid transparent;
+            border-radius: 10px;
         }
         #side-panel::-webkit-scrollbar-button { display: none !important; }
         #side-panel.open {
@@ -657,39 +821,119 @@
         #mobile-labels-toggle {
             display: none;
             position: fixed;
-            bottom: 16px;
+            bottom: 70px;
             left: 16px;
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            padding: 6px 10px;
+            z-index: 60;
             font-family: var(--font-body);
             font-size: 9px;
             text-transform: uppercase;
-            cursor: pointer;
-            user-select: none;
+            pointer-events: none;
             align-items: center;
             gap: 4px;
         }
         #mobile-labels-toggle input {
             margin: 0;
-            width: 12px; height: 12px;
+            width: 14px; height: 14px;
             cursor: pointer;
+            pointer-events: auto;
         }
+        #mobile-labels-toggle span {
+            pointer-events: none;
+        }
+        #footer {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            z-index: 50;
+            padding: 0 20px;
+        }
+        .footer-social {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .footer-social a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .footer-social a:hover { opacity: 0.6; }
+        .footer-social svg { width: 16px; height: 16px; fill: #000; }
+        .footer-right {
+            position: absolute;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-family: var(--font-body);
+            font-size: 8px;
+            color: #666;
+        }
+        .footer-copyright {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .footer-terms {
+            color: #666;
+            text-decoration: underline;
+        }
+        .footer-terms:hover { color: #000; }
         @media (max-width: 768px) {
             #side-panel {
                 right: 5%; left: 5%; bottom: 0; top: auto;
-                width: 90%; 
-                height: 95dvh; max-height: 95dvh; 
-                border-radius: 24px 24px 0 0; 
+                width: 90%;
+                height: calc(100dvh - 60px); max-height: calc(100dvh - 60px);
+                border-radius: 24px 24px 0 0;
                 transform: translateY(100%);
+                z-index: 100;
             }
             #side-panel.open { transform: translateY(0); }
+            #info-panel {
+                right: 5%; left: 5%; bottom: 0; top: auto;
+                width: 90%;
+                height: calc(100dvh - 60px); max-height: calc(100dvh - 60px);
+                border-radius: 24px 24px 0 0;
+                transform: translateY(100%);
+                z-index: 100;
+            }
+            #info-panel.open { transform: translateY(0); }
+            #info-buttons {
+                top: 12px;
+                left: 50%;
+                transform: translateX(-50%);
+                flex-direction: row;
+                gap: 6px;
+                width: auto;
+                max-width: calc(100vw - 24px);
+            }
+            .info-btn {
+                padding: 8px 10px;
+                font-size: 7px;
+                flex-shrink: 0;
+            }
+            .info-btn img { width: 12px; height: 12px; }
             #ui-container { display: none !important; }
-            #mobile-labels-toggle { display: flex; }
+            #mobile-labels-toggle {
+                display: flex;
+                position: fixed;
+                bottom: 50px;
+                left: 12px;
+                z-index: 60;
+            }
+            #footer {
+                bottom: 12px;
+                gap: 10px;
+                z-index: 50;
+            }
+            .footer-social svg { width: 14px; height: 14px; }
+            .footer-right { font-size: 6px; gap: 8px; right: 12px; }
             :root {
                 --panel-media-padding-horizontal: 25%;
                 --panel-media-padding-top: 1rem;
@@ -710,8 +954,36 @@
 </head>
 <body>
     <div id="loader">
-        <div class="loader-text">Loading Data</div>
-        <div class="loader-bar-container"><div class="loader-bar"></div></div>
+        <div class="loader-main">
+            <img class="loader-logo" src="https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/logo-anim-fuls.gif" alt="Loading">
+            <div class="loader-title">CONTEMPORARY ARTIFACTS</div>
+            <div class="loader-bar-container"><div class="loader-bar"></div></div>
+        </div>
+        <div class="loader-status">
+            <div class="loader-text">Loading Data</div>
+        </div>
+    </div>
+    <!-- INFO BUTTONS (LEFT SIDE) -->
+    <div id="info-buttons">
+        <button class="info-btn" id="btn-status" onclick="toggleInfoPanel('status')">
+            <img src="https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/weblogo.png" alt="">
+            <span>STATUS CO</span>
+        </button>
+        <button class="info-btn" id="btn-about" onclick="toggleInfoPanel('about')">
+            <span>CONTEMPORARY ARTIFACTS</span>
+        </button>
+    </div>
+    <!-- INFO PANEL (LEFT SIDE) -->
+    <div id="info-panel">
+        <div class="info-panel-header">
+            <span class="info-panel-title" id="info-panel-title"></span>
+            <button class="info-panel-close" onclick="closeInfoPanel()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="info-panel-content" id="info-panel-content"></div>
     </div>
     <!-- UI CONTAINER (NEW STRUCTURE) -->
     <div id="ui-container">
@@ -727,6 +999,7 @@
                 <button class="toggle-btn active" id="btn-cam1" onclick="switchCamera(1)">1</button>
                 <button class="toggle-btn" id="btn-cam2" onclick="switchCamera(2)">2</button>
                 <button class="toggle-btn" id="btn-cam3" onclick="switchCamera('persp')" style="display:none">3</button>
+                <button class="toggle-btn" id="btn-cam-mobile" onclick="switchCamera('mobile')" style="display:none">M</button>
             </div>
         </div>
         <!-- ROW 2: GRAPHICS CONTROLS -->
@@ -796,10 +1069,25 @@
         </div>
     </div>
     <!-- MOBILE LABELS TOGGLE -->
-    <label id="mobile-labels-toggle">
-        <input type="checkbox" id="mobile-labels-cb"> Labels
-    </label>
+    <div id="mobile-labels-toggle">
+        <input type="checkbox" id="mobile-labels-cb"> <span>Labels</span>
+    </div>
     <div id="scene-container"></div>
+    <!-- FOOTER -->
+    <div id="footer">
+        <div class="footer-social">
+            <a href="mailto:info@status-co.com" target="_blank" title="Email">
+                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            </a>
+            <a href="https://instagram.com/status.co" target="_blank" title="Instagram">
+                <svg viewBox="0 0 24 24"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg>
+            </a>
+        </div>
+        <div class="footer-right">
+            <span class="footer-copyright">ALL RIGHTS RESERVED © STATUS CO 2026</span>
+            <a href="https://status-co.com/terms-conditions" target="_blank" class="footer-terms">TERMS AND CONDITIONS</a>
+        </div>
+    </div>
     <div id="side-panel">
         <button class="panel-close-btn" onclick="closePanel()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -863,6 +1151,8 @@
                     if (!cell || cell.v === null || cell.v === 'null') return type === 'number' ? 0 : "";
                     return cell.v;
                 };
+                if (rows[0]) infoTextAbout = getVal(rows[0], 2);
+                if (rows[2]) infoTextStatus = getVal(rows[2], 2);
                 rows.forEach((row, i) => {
                     const glbSrc = getVal(row, 10);
                     if (!glbSrc || typeof glbSrc !== 'string' || (!glbSrc.endsWith('.glb') && !glbSrc.endsWith('.gltf'))) return;
@@ -1002,7 +1292,12 @@
             cam3PosX: getParamNum('--cam3-pos-x'),
             cam3PosY: getParamNum('--cam3-pos-y'),
             cam3PosZ: getParamNum('--cam3-pos-z'),
+            camMobilePosX: getParamNum('--cam-mobile-pos-x'),
+            camMobilePosY: getParamNum('--cam-mobile-pos-y'),
+            camMobilePosZ: getParamNum('--cam-mobile-pos-z'),
+            camMobileFov: getParamNum('--cam-mobile-fov'),
             initialCameraZoom: getParamNum('--initial-camera-zoom'),
+            initialCameraZoomMobile: getParamNum('--initial-camera-zoom-mobile'),
             hoverLabelFontSize: getParamNum('--hover-label-font-size'),
             hoverLabelOffsetY: getParamNum('--hover-label-offset-y'),
             hoverLabelNameOffsetY: getParamNum('--hover-label-name-offset-y'),
@@ -1099,6 +1394,9 @@
         let originalCameraState = null, currentActiveVideos = [];
         let modalAnimationFrameId;
         let sceneObjects = [];
+        let infoTextAbout = '';
+        let infoTextStatus = '';
+        let currentInfoPanel = null;
          const clickableObjects = [];
         let boundingBoxHelpers = [];
         let boundingBoxesVisible = false;
@@ -1156,7 +1454,11 @@
             camera = new THREE.PerspectiveCamera(PARAMS.cameraFov, aspect, 10, 100000);
             camera.position.set(5000, 5000, 5000);
             cameraOrtho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100000);
-            cameraOrtho.position.set(PARAMS.cam1PosX, PARAMS.cam1PosY, PARAMS.cam1PosZ);
+            if (isMobile) {
+                cameraOrtho.position.set(PARAMS.camMobilePosX, PARAMS.camMobilePosY, PARAMS.camMobilePosZ);
+            } else {
+                cameraOrtho.position.set(PARAMS.cam1PosX, PARAMS.cam1PosY, PARAMS.cam1PosZ);
+            }
             cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             cameraOrtho.zoom = isMobile ? PARAMS.initialCameraZoomMobile : PARAMS.initialCameraZoom;
             scene = new THREE.Scene();
@@ -1815,6 +2117,45 @@
             if(modalAnimationFrameId) { cancelAnimationFrame(modalAnimationFrameId); modalAnimationFrameId = null; }
             document.getElementById('side-panel').classList.remove('open');
         }
+        window.toggleInfoPanel = function(panelType) {
+            const infoPanel = document.getElementById('info-panel');
+            const btnStatus = document.getElementById('btn-status');
+            const btnAbout = document.getElementById('btn-about');
+            const panelTitle = document.getElementById('info-panel-title');
+            if (currentInfoPanel === panelType && infoPanel.classList.contains('open')) {
+                closeInfoPanel();
+                return;
+            }
+            if (document.getElementById('side-panel').classList.contains('open')) {
+                closePanel();
+            }
+            currentInfoPanel = panelType;
+            btnStatus.classList.toggle('active', panelType === 'status');
+            btnAbout.classList.toggle('active', panelType === 'about');
+            const content = document.getElementById('info-panel-content');
+            if (panelType === 'status') {
+                panelTitle.textContent = 'STATUS CO';
+                content.innerHTML = `
+                    <img class="info-panel-logo" src="https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/logo_text.png" alt="Status Co">
+                    <div class="info-panel-text">${infoTextStatus}</div>
+                `;
+            } else {
+                panelTitle.textContent = 'CONTEMPORARY ARTIFACTS';
+                content.innerHTML = `
+                    <div class="info-panel-text">${infoTextAbout}</div>
+                `;
+            }
+            infoPanel.classList.add('open');
+        };
+        window.closeInfoPanel = function() {
+            const infoPanel = document.getElementById('info-panel');
+            const btnStatus = document.getElementById('btn-status');
+            const btnAbout = document.getElementById('btn-about');
+            infoPanel.classList.remove('open');
+            btnStatus.classList.remove('active');
+            btnAbout.classList.remove('active');
+            currentInfoPanel = null;
+        };
         function updateOrthoFrustum() {
             if (!cameraOrtho) return;
             const aspect = window.innerWidth / window.innerHeight;
@@ -2025,6 +2366,7 @@
             const editorPanel = document.getElementById('editor-panel');
             const transformGroup = document.getElementById('transform-group');
             const btnCam3 = document.getElementById('btn-cam3');
+            const btnCamMobile = document.getElementById('btn-cam-mobile');
             if (editorModeActive) {
                 if(btnEditor) btnEditor.classList.add('active');
                 editorPanel.classList.add('open');
@@ -2032,6 +2374,7 @@
                 transformControls.visible = true;
                 transformControls.enabled = true;
                 if(btnCam3) btnCam3.style.display = 'inline-block';
+                if(btnCamMobile) btnCamMobile.style.display = 'inline-block';
                 if (!selectedEditorObject && clickableObjects.length > 0) {
                     for (let i = 0; i < clickableObjects.length; i++) {
                         const idx = clickableObjects[i].userData.sceneObjectIndex;
@@ -2050,7 +2393,8 @@
                 transformControls.detach();
                 selectedEditorObject = null;
                 updateCam3Visibility();
-                if(currentCameraMode === 'persp') {
+                if(btnCamMobile) btnCamMobile.style.display = 'none';
+                if(currentCameraMode === 'persp' || currentCameraIndex === 'mobile') {
                     switchCamera(1);
                 }
             }
@@ -2197,13 +2541,57 @@
             const btnCam3p = document.getElementById('btn-cam3');
             const btnCam1 = document.getElementById('btn-cam1');
             const btnCam2 = document.getElementById('btn-cam2');
+            const btnCamMobile = document.getElementById('btn-cam-mobile');
             const btnLockIcon = document.getElementById('btn-lock-icon');
-            [btnCam3p, btnCam1, btnCam2].forEach(b => { if(b) b.classList.remove('active') });
+            [btnCam3p, btnCam1, btnCam2, btnCamMobile].forEach(b => { if(b) b.classList.remove('active') });
             isCameraLocked = false;
             const svgPath = btnLockIcon.querySelector('path');
             svgPath.setAttribute('d', 'M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z');
             btnLockIcon.style.opacity = '0.5';
-            if (mode === 'persp') {
+            if (mode === 'mobile') {
+                currentCameraMode = 'ortho';
+                currentCameraIndex = 'mobile';
+                if(btnCamMobile) btnCamMobile.classList.add('active');
+                controls.enabled = false;
+                controlsOrtho.enabled = false;
+                if (transformControls) transformControls.camera = cameraOrtho;
+                updateOrthoFrustum();
+                const tx = runtimeParams.camMobilePosX;
+                const ty = runtimeParams.camMobilePosY;
+                const tz = runtimeParams.camMobilePosZ;
+                const targetUp = new THREE.Vector3(0, 1, 0);
+                const startPos = cameraOrtho.position.clone();
+                const startRot = cameraOrtho.quaternion.clone();
+                const startUp = cameraOrtho.up.clone();
+                const endPos = new THREE.Vector3(tx, ty, tz);
+                const dummyCam = cameraOrtho.clone();
+                dummyCam.position.copy(endPos);
+                dummyCam.up.copy(targetUp);
+                dummyCam.lookAt(0, 0, 0);
+                const endRot = dummyCam.quaternion.clone();
+                cameraOrtho.zoom = runtimeParams.initialCameraZoomMobile;
+                cameraOrtho.updateProjectionMatrix();
+                const animData = { t: 0 };
+                new TWEEN(animData)
+                    .to({ t: 1 }, 2000)
+                    .easing(t => t)
+                    .onUpdate(() => {
+                        const k = animData.t;
+                        cameraOrtho.position.lerpVectors(startPos, endPos, k);
+                        cameraOrtho.up.lerpVectors(startUp, targetUp, k).normalize();
+                        cameraOrtho.quaternion.slerpQuaternions(startRot, endRot, k);
+                    })
+                    .onComplete(() => {
+                        cameraOrtho.position.copy(endPos);
+                        cameraOrtho.up.copy(targetUp);
+                        cameraOrtho.lookAt(0,0,0);
+                        controlsOrtho.target.set(0, 0, 0);
+                        controlsOrtho.update();
+                        controlsOrtho.enabled = true;
+                        controlsOrtho.enableRotate = true;
+                    })
+                    .start();
+            } else if (mode === 'persp') {
                 currentCameraMode = 'persp';
                 currentCameraIndex = 3;
                 if(btnCam3p) btnCam3p.classList.add('active');
@@ -2536,11 +2924,37 @@
                 <span class="params-label">Show Cam 3 Public</span>
                 <span class="params-value ${runtimeParams.cam3ShowPublic ? 'on' : 'off'}">${runtimeParams.cam3ShowPublic ? 'YES' : 'NO'}</span>
                 <div class="params-toggle ${runtimeParams.cam3ShowPublic ? 'on' : ''}" onclick="toggleParam('cam3ShowPublic'); updateCam3Visibility(); buildSceneParametersPanel()"></div>
+                <div class="params-section-title">MOBILE CAMERA POSITION</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">X</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.camMobilePosX}" onchange="updateSceneSliderParam('camMobilePosX', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'camMobilePosX')">${runtimeParams.camMobilePosX}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Y</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.camMobilePosY}" onchange="updateSceneSliderParam('camMobilePosY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'camMobilePosY')">${runtimeParams.camMobilePosY}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Z</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.camMobilePosZ}" onchange="updateSceneSliderParam('camMobilePosZ', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'camMobilePosZ')">${runtimeParams.camMobilePosZ}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Mobile FOV</span>
+                    <input type="range" class="params-slider" min="10" max="120" step="1" value="${runtimeParams.camMobileFov}" onchange="updateSceneSliderParam('camMobileFov', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'camMobileFov')">${runtimeParams.camMobileFov}</span>
+                </div>
                 <div class="params-section-title">CAMERA SETTINGS</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Initial Zoom</span>
-                    <input type="range" class="params-slider" min="100" max="10000" step="100" value="${runtimeParams.initialCameraZoom}" onchange="updateSceneSliderParam('initialCameraZoom', this.value)">
+                    <input type="range" class="params-slider" min="0.5" max="10" step="0.1" value="${runtimeParams.initialCameraZoom}" onchange="updateSceneSliderParam('initialCameraZoom', this.value)">
                     <span class="params-slider-value" onclick="makeSceneEditable(this, 'initialCameraZoom')">${runtimeParams.initialCameraZoom}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Initial Zoom Mobile</span>
+                    <input type="range" class="params-slider" min="0.5" max="10" step="0.1" value="${runtimeParams.initialCameraZoomMobile}" onchange="updateSceneSliderParam('initialCameraZoomMobile', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'initialCameraZoomMobile')">${runtimeParams.initialCameraZoomMobile}</span>
                 </div>
                 <div class="params-section-title">HOVER LABEL (Desktop)</div>
                 <div class="params-slider-row">
@@ -2591,6 +3005,12 @@
                 camera.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
                 controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
                 controls.update();
+            } else if (paramName.startsWith('camMobile') && currentCameraIndex === 'mobile') {
+                cameraOrtho.position.set(runtimeParams.camMobilePosX, runtimeParams.camMobilePosY, runtimeParams.camMobilePosZ);
+                cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+            } else if (paramName === 'initialCameraZoomMobile' && currentCameraIndex === 'mobile') {
+                cameraOrtho.zoom = runtimeParams.initialCameraZoomMobile;
+                cameraOrtho.updateProjectionMatrix();
             }
         };
         window.makeSceneEditable = function(span, paramName) {
@@ -2618,6 +3038,12 @@
                         camera.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
                         controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
                         controls.update();
+                    } else if (paramName.startsWith('camMobile') && currentCameraIndex === 'mobile') {
+                        cameraOrtho.position.set(runtimeParams.camMobilePosX, runtimeParams.camMobilePosY, runtimeParams.camMobilePosZ);
+                        cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                    } else if (paramName === 'initialCameraZoomMobile' && currentCameraIndex === 'mobile') {
+                        cameraOrtho.zoom = runtimeParams.initialCameraZoomMobile;
+                        cameraOrtho.updateProjectionMatrix();
                     }
                 }
                 buildSceneParametersPanel();
@@ -2863,7 +3289,12 @@
             output += `--cam3-pos-y: ${runtimeParams.cam3PosY};\n`;
             output += `--cam3-pos-z: ${runtimeParams.cam3PosZ};\n`;
             output += `--cam3-show-public: ${runtimeParams.cam3ShowPublic ? 'yes' : 'no'};\n`;
+            output += `--cam-mobile-pos-x: ${runtimeParams.camMobilePosX};\n`;
+            output += `--cam-mobile-pos-y: ${runtimeParams.camMobilePosY};\n`;
+            output += `--cam-mobile-pos-z: ${runtimeParams.camMobilePosZ};\n`;
+            output += `--cam-mobile-fov: ${runtimeParams.camMobileFov};\n`;
             output += `--initial-camera-zoom: ${runtimeParams.initialCameraZoom};\n`;
+            output += `--initial-camera-zoom-mobile: ${runtimeParams.initialCameraZoomMobile};\n`;
             output += `--hover-label-font-size: ${runtimeParams.hoverLabelFontSize}px;\n`;
             output += `--hover-label-offset-y: ${runtimeParams.hoverLabelOffsetY}px;\n`;
             output += `--hover-label-name-offset-y: ${runtimeParams.hoverLabelNameOffsetY}px;\n`;
