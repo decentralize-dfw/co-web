@@ -260,6 +260,175 @@
 
         .fade-out { opacity: 0; }
 
+        /* --- IMAGE CAROUSEL --- */
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .carousel-main-area {
+            position: relative;
+            width: 90%;
+            height: 85%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .carousel-image-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: pan-y pinch-zoom;
+        }
+
+        .carousel-image-wrapper img {
+            max-width: 80%;
+            max-height: 80%;
+            object-fit: contain;
+        }
+
+        /* Arrows - positioned at vertical center, on sides */
+        .carousel-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .carousel-arrow:hover {
+            background: #fff;
+            border-color: rgba(0,0,0,0.2);
+            color: rgba(0,0,0,0.8);
+        }
+
+        .carousel-arrow.prev { left: 0; }
+        .carousel-arrow.next { right: 0; }
+
+        .carousel-arrow svg {
+            width: 12px;
+            height: 12px;
+            stroke-width: 2;
+        }
+
+        .carousel-arrow.hidden {
+            display: none;
+        }
+
+        /* Mobile: arrows slightly inside */
+        @media (max-width: 1023px) {
+          .carousel-main-area {
+        width: 95%;
+        height: 82%; /* Biraz daha küçük - dot'lara yer açmak için */
+        margin-top: 10px; /* Üstten biraz aşağı kaydır */
+    }
+    .carousel-arrow {
+        /* OKLARIN DIŞ YUVARLAK BOYUTU */
+        width: 40px;   /* Burayı artırarak yuvarlağı büyütebilirsin (Eski: 26px) */
+        height: 40px;  /* Burayı artırarak yuvarlağı büyütebilirsin (Eski: 26px) */
+    }
+    .carousel-arrow.prev { 
+        left: 40px;    /* Sol okun kenardan uzaklığı (Artırırsan içe gelir) */
+    }
+    .carousel-arrow.next { 
+        right: 40px;   /* Sağ okun kenardan uzaklığı (Artırırsan içe gelir) */
+    }
+    .carousel-arrow svg {
+        /* OK SİMGESİNİN KENDİ BOYUTU */
+        width: 20px;   /* İçteki ok simgesini büyütür (Eski: 10px) */
+        height: 20px;  /* İçteki ok simgesini büyütür (Eski: 10px) */
+    }
+        }
+
+        /* Desktop thumbnails - below the main image (hidden on mobile) */
+        .carousel-thumbnails {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            width: 90%;
+        }
+
+        @media (min-width: 1024px) {
+            .carousel-thumbnails.show { display: flex; }
+        }
+
+        .carousel-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 2px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid transparent;
+            opacity: 0.4;
+            transition: all 0.2s ease;
+        }
+
+        .carousel-thumb:hover {
+            opacity: 0.7;
+        }
+
+        .carousel-thumb.active {
+            border-color: #000;
+            opacity: 1;
+        }
+
+        .carousel-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Mobile Carousel Dots */
+        .carousel-mobile-dots {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            width: 100%;
+        }
+
+        @media (max-width: 1023px) {
+            .carousel-mobile-dots.show { display: flex; }
+        }
+
+        .carousel-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 1px;
+            background-color: rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .carousel-dot:hover {
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .carousel-dot.active {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
         /* --- LANGUAGE TOGGLE BUTTON --- */
         .lang-toggle {
             position: fixed;
@@ -362,8 +531,20 @@
         </button>
         <div id="detail-modal">
             <div class="relative w-full lg:w-1/2 h-1/2 lg:h-full glass-panel flex items-center justify-center overflow-hidden border-b lg:border-b-0 lg:border-r border-gray-200/20">
-                <div class="image-container-scale">
-                    <img id="modal-image" src="" alt="" class="fit-image transition-opacity duration-300">
+                <div class="carousel-container">
+                    <div class="carousel-main-area">
+                        <button id="carousel-prev" class="carousel-arrow prev hidden" onclick="window.carouselPrev()">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                        <div id="carousel-image-wrapper" class="carousel-image-wrapper">
+                            <img id="modal-image" src="" alt="" class="fit-image transition-opacity duration-300">
+                        </div>
+                        <button id="carousel-next" class="carousel-arrow next hidden" onclick="window.carouselNext()">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                    </div>
+                    <div id="carousel-thumbnails" class="carousel-thumbnails"></div>
+                    <div id="carousel-mobile-dots" class="carousel-mobile-dots"></div>
                 </div>
             </div>
             <div id="modal-info-scroll" class="w-full lg:w-1/2 h-1/2 lg:h-full overflow-y-auto glass-panel">
@@ -384,6 +565,8 @@
         let currentLang = 'en'; // Default language is English
         let sheetRows = null; // Store raw sheet data for language switching
         let currentModalDropCode = null; // Track currently open modal item
+        let currentCarouselImages = []; // Array of images for current modal
+        let currentCarouselIndex = 0; // Current image index in carousel
 
         // Column indices for Turkish data (0-indexed)
         const TR_COLUMNS = {
@@ -394,7 +577,8 @@
             material: 42,       // AQ - MALZEME
             description: 20,    // U - UZUN ÜRÜN AÇIKLAMASI
             artistBio: 24,      // Y - UZUN SANATÇI BİYOGRAFİSİ
-            headerDesc: 3       // D - ANA INFORMATION YAZISI TÜRKÇE (C2 = D kolonu)
+            headerDesc: 3,      // D - ANA INFORMATION YAZISI TÜRKÇE
+            price: 43           // AR - FİYAT (TÜRKÇE)
         };
 
         // Column indices for English data (0-indexed)
@@ -406,7 +590,8 @@
             material: 8,        // I
             description: 18,    // S
             artistBio: 23,      // X
-            headerDesc: 2       // C
+            headerDesc: 2,      // C
+            price: 16           // Q - PRICE (ENGLISH)
         };
 
         // Labels for Turkish
@@ -533,6 +718,9 @@
                 const rawScale = (c[26] && c[26].v !== null) ? parseFloat(c[26].v) : 1;
                 const thumbScale = isNaN(rawScale) ? 1 : rawScale;
 
+                // Collect all images (filter out empty ones)
+                const allImages = [val(11), val(34), val(35), val(36)].filter(img => img !== "");
+
                 return {
                     dropCode: val(1),
                     artist: val(2),
@@ -542,10 +730,11 @@
                     color: val(cols.color),
                     material: val(cols.material),
                     imageLink: val(11),
+                    images: allImages, // Array of all available images
                     thumbnail: val(13),
                     edition: val(14),
                     dimensions: val(15),
-                    price: (c[16] && c[16].f) ? c[16].f : val(16),
+                    price: (c[cols.price] && c[cols.price].f) ? c[cols.price].f : val(cols.price),
                     website: val(17),
                     description: val(cols.description),
                     shortDesc: val(19),
@@ -679,7 +868,11 @@
             currentModalDropCode = dropCode; // Track current modal item for language switch
             const item = artifacts.find(a => a.dropCode === dropCode);
             const labels = getLabels();
-            document.getElementById('modal-image').src = item.imageLink;
+
+            // Setup carousel
+            currentCarouselImages = item.images && item.images.length > 0 ? item.images : [item.imageLink];
+            currentCarouselIndex = 0;
+            updateCarouselDisplay();
 
             document.getElementById('modal-info-scroll').scrollTop = 0;
             const modalEl = document.getElementById('detail-modal');
@@ -706,6 +899,109 @@
             document.getElementById('detail-modal-overlay').style.display = 'block';
             document.body.style.overflow = 'hidden';
         };
+
+        // Carousel functions
+        function updateCarouselDisplay() {
+            const modalImage = document.getElementById('modal-image');
+            const thumbsContainer = document.getElementById('carousel-thumbnails');
+            const mobileDotsContainer = document.getElementById('carousel-mobile-dots');
+            const prevBtn = document.getElementById('carousel-prev');
+            const nextBtn = document.getElementById('carousel-next');
+
+            const currentImage = currentCarouselImages[currentCarouselIndex];
+            const hasMultipleImages = currentCarouselImages.length > 1;
+            const isFirst = currentCarouselIndex === 0;
+            const isLast = currentCarouselIndex === currentCarouselImages.length - 1;
+
+            // Update image
+            if (modalImage) modalImage.src = currentImage;
+
+            // Show/hide arrows based on position (not circular)
+            if (prevBtn) {
+                prevBtn.classList.toggle('hidden', !hasMultipleImages || isFirst);
+            }
+            if (nextBtn) {
+                nextBtn.classList.toggle('hidden', !hasMultipleImages || isLast);
+            }
+
+            // Desktop thumbnails
+            if (hasMultipleImages) {
+                thumbsContainer.classList.add('show');
+                thumbsContainer.innerHTML = currentCarouselImages.map((img, idx) => `
+                    <div class="carousel-thumb ${idx === currentCarouselIndex ? 'active' : ''}" onclick="window.carouselGoTo(${idx})">
+                        <img src="${img}" alt="Thumbnail ${idx + 1}">
+                    </div>
+                `).join('');
+            } else {
+                thumbsContainer.classList.remove('show');
+                thumbsContainer.innerHTML = '';
+            }
+
+            // Mobile dots
+            if (hasMultipleImages) {
+                mobileDotsContainer.classList.add('show');
+                mobileDotsContainer.innerHTML = currentCarouselImages.map((img, idx) => `
+                    <div class="carousel-dot ${idx === currentCarouselIndex ? 'active' : ''}" onclick="window.carouselGoTo(${idx})"></div>
+                `).join('');
+            } else {
+                mobileDotsContainer.classList.remove('show');
+                mobileDotsContainer.innerHTML = '';
+            }
+        }
+
+        window.carouselNext = function() {
+            if (currentCarouselIndex < currentCarouselImages.length - 1) {
+                currentCarouselIndex++;
+                updateCarouselDisplay();
+            }
+        };
+
+        window.carouselPrev = function() {
+            if (currentCarouselIndex > 0) {
+                currentCarouselIndex--;
+                updateCarouselDisplay();
+            }
+        };
+
+        window.carouselGoTo = function(index) {
+            if (index < 0 || index >= currentCarouselImages.length) return;
+            currentCarouselIndex = index;
+            updateCarouselDisplay();
+        };
+
+        // Swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    // Swipe left -> next image
+                    window.carouselNext();
+                } else {
+                    // Swipe right -> prev image
+                    window.carouselPrev();
+                }
+            }
+        }
+
+        // Setup swipe listeners after DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageWrapper = document.getElementById('carousel-image-wrapper');
+            if (imageWrapper) {
+                imageWrapper.addEventListener('touchstart', (e) => {
+                    touchStartX = e.changedTouches[0].screenX;
+                }, { passive: true });
+
+                imageWrapper.addEventListener('touchend', (e) => {
+                    touchEndX = e.changedTouches[0].screenX;
+                    handleSwipe();
+                }, { passive: true });
+            }
+        });
 
         const closeBtn = document.getElementById('close-modal');
         closeBtn.onclick = () => {
