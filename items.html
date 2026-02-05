@@ -265,7 +265,7 @@
             position: fixed;
             top: 12px;
             right: 12px;
-            z-index: 9999;
+            z-index: 10001;
             font-family: 'Space Mono', monospace;
             font-size: 10px;
             font-weight: 700;
@@ -273,6 +273,7 @@
             padding: 6px 12px;
             background: #fff;
             border: 1px solid #000;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
         }
@@ -286,6 +287,7 @@
                 right: 20px;
                 font-size: 11px;
                 padding: 8px 16px;
+                border-radius: 8px;
             }
         }
     </style>
@@ -391,7 +393,7 @@
             material: 42,       // AQ - MALZEME
             description: 20,    // U - UZUN ÜRÜN AÇIKLAMASI
             artistBio: 24,      // Y - UZUN SANATÇI BİYOGRAFİSİ
-            headerDesc: 79      // CB - ANA INFORMATION YAZISI TÜRKÇE
+            headerDesc: 3       // D - ANA INFORMATION YAZISI TÜRKÇE (C2 = D kolonu)
         };
 
         // Column indices for English data (0-indexed)
@@ -405,6 +407,48 @@
             artistBio: 23,      // X
             headerDesc: 2       // C
         };
+
+        // Labels for Turkish
+        const TR_LABELS = {
+            image: 'Görsel',
+            studio: 'Stüdyo',
+            artwork: 'Eser',
+            product: 'Ürün',
+            dim: 'Boyut',
+            color: 'Renk',
+            description: 'Açıklama',
+            price: 'Fiyat',
+            category: 'Kategori',
+            productType: 'Ürün Tipi',
+            material: 'Malzeme',
+            edition: 'Edisyon',
+            dimension: 'Boyut (GxDxY)',
+            productDescription: 'Ürün Açıklaması',
+            about: 'Hakkında'
+        };
+
+        // Labels for English
+        const EN_LABELS = {
+            image: 'Image',
+            studio: 'Studio',
+            artwork: 'Artwork',
+            product: 'Product',
+            dim: 'Dim',
+            color: 'Color',
+            description: 'Description',
+            price: 'Price',
+            category: 'Category',
+            productType: 'Product Type',
+            material: 'Material',
+            edition: 'Edition',
+            dimension: 'Dimension (WxDxH)',
+            productDescription: 'Product Description',
+            about: 'About'
+        };
+
+        function getLabels() {
+            return currentLang === 'tr' ? TR_LABELS : EN_LABELS;
+        }
 
         window.toggleLanguage = function() {
             const btn = document.getElementById('lang-toggle');
@@ -538,6 +582,7 @@
 
         function renderContent() {
             const container = document.getElementById('main-container');
+            const labels = getLabels();
             if (currentView === 'grid') {
                 container.innerHTML = `<div class="dynamic-grid">${filteredArtifacts.map(renderGridItem).join('')}</div>`;
             } else {
@@ -546,14 +591,14 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 10%">Image</th>
-                                <th style="width: 15%">Studio</th>
-                                <th style="width: 15%">Artwork</th>
-                                <th style="width: 12%">Product</th>
-                                <th style="width: 12%">Dim</th>
-                                <th style="width: 12%">Color</th>
-                                <th class="hidden lg:table-cell" style="width: 25%">Description</th>
-                                <th style="width: 12%; text-align: left;">Price</th>
+                                <th style="width: 10%">${labels.image}</th>
+                                <th style="width: 15%">${labels.studio}</th>
+                                <th style="width: 15%">${labels.artwork}</th>
+                                <th style="width: 12%">${labels.product}</th>
+                                <th style="width: 12%">${labels.dim}</th>
+                                <th style="width: 12%">${labels.color}</th>
+                                <th class="hidden lg:table-cell" style="width: 25%">${labels.description}</th>
+                                <th style="width: 12%; text-align: left;">${labels.price}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -614,8 +659,9 @@
 
         window.openDetail = function(dropCode) {
             const item = artifacts.find(a => a.dropCode === dropCode);
+            const labels = getLabels();
             document.getElementById('modal-image').src = item.imageLink;
-            
+
             document.getElementById('modal-info-scroll').scrollTop = 0;
             const modalEl = document.getElementById('detail-modal');
             if (modalEl) modalEl.scrollTop = 0;
@@ -627,19 +673,19 @@
                     <h3 class="font-body text-[16pt] text-gray-400 italic font-light lowercase leading-tight">${item.artworkName}</h3>
                 </div>
                 <div class="grid grid-cols-2 gap-y-6 gap-x-8 border-y border-gray-200/50 py-8">
-                    ${item.category ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">Category</span><span class="font-body text-[8.5pt] italic">${item.category}</span></div>` : ''}
-                    ${item.productType ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">Product Type</span><span class="font-body text-[8.5pt] italic">${item.productType}</span></div>` : ''}
-                    ${item.color ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">Color</span><span class="font-body text-[8.5pt] italic">${item.color}</span></div>` : ''}
-                    ${item.material ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">Material</span><span class="font-body text-[8.5pt] italic">${item.material}</span></div>` : ''}
-                    ${item.edition ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">Edition</span><span class="font-body text-[8.5pt] italic">${item.edition}</span></div>` : ''}
-                    ${item.dimensions ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">Dimension (WxDxH)</span><span class="font-body text-[8.5pt] italic">${item.dimensions}</span></div>` : ''}
+                    ${item.category ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">${labels.category}</span><span class="font-body text-[8.5pt] italic">${item.category}</span></div>` : ''}
+                    ${item.productType ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">${labels.productType}</span><span class="font-body text-[8.5pt] italic">${item.productType}</span></div>` : ''}
+                    ${item.color ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">${labels.color}</span><span class="font-body text-[8.5pt] italic">${item.color}</span></div>` : ''}
+                    ${item.material ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">${labels.material}</span><span class="font-body text-[8.5pt] italic">${item.material}</span></div>` : ''}
+                    ${item.edition ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">${labels.edition}</span><span class="font-body text-[8.5pt] italic">${item.edition}</span></div>` : ''}
+                    ${item.dimensions ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">${labels.dimension}</span><span class="font-body text-[8.5pt] italic">${item.dimensions}</span></div>` : ''}
                 </div>
-                ${item.description ? `<div class="space-y-4"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-900">Product Description</h4><p class="font-body text-[8.5pt] text-gray-600 italic font-light text-justify" style="text-align-last: left;">${item.description}</p></div>` : ''}
-                ${item.artistBio ? `<div class="space-y-4 pt-4 border-t border-gray-200/50"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-400">About ${item.artist}</h4><p class="font-body text-[8pt] text-gray-400 italic tracking-tight font-light text-justify" style="text-align-last: left;">${item.artistBio}</p>${item.website ? `<a href="${item.website}" target="_blank" class="inline-block font-body text-[8px] text-gray-400 underline uppercase tracking-widest hover:text-black transition-colors">Website</a>` : ''}</div>` : ''}
+                ${item.description ? `<div class="space-y-4"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-900">${labels.productDescription}</h4><p class="font-body text-[8.5pt] text-gray-600 italic font-light text-justify" style="text-align-last: left;">${item.description}</p></div>` : ''}
+                ${item.artistBio ? `<div class="space-y-4 pt-4 border-t border-gray-200/50"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-400">${labels.about} ${item.artist}</h4><p class="font-body text-[8pt] text-gray-400 italic tracking-tight font-light text-justify" style="text-align-last: left;">${item.artistBio}</p>${item.website ? `<a href="${item.website}" target="_blank" class="inline-block font-body text-[8px] text-gray-400 underline uppercase tracking-widest hover:text-black transition-colors">Website</a>` : ''}</div>` : ''}
                 ${item.price ? `<div class="pt-8 border-t border-gray-200/50"><div class="font-body text-[10pt] tracking-tighter text-black italic">${item.price}</div></div>` : ''}
             `;
             document.getElementById('detail-modal-overlay').style.display = 'block';
-            document.body.style.overflow = 'hidden'; 
+            document.body.style.overflow = 'hidden';
         };
 
         const closeBtn = document.getElementById('close-modal');
