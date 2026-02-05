@@ -686,13 +686,13 @@
             if (modalEl) modalEl.scrollTop = 0;
 
             document.getElementById('modal-details').innerHTML = `
-                <div class="flex flex-col items-start mb-8">
-                    <div class="font-body text-[8px] uppercase tracking-[0.4em] text-gray-300 border-none mb-4">${item.dropCode}</div>
-                    <h2 class="font-header text-[18pt] font-bold uppercase leading-tight tracking-tighter mb-3">${item.artist}</h2>
-                    <h3 class="font-body text-[16pt] text-gray-400 italic font-light lowercase leading-tight mb-4">${item.artworkName}</h3>
+                <div class="flex flex-col items-start space-y-4 mb-10">
+                    <div class="font-body text-[8px] uppercase tracking-[0.4em] text-gray-300 border-none">${item.dropCode}</div>
+                    <h2 class="font-header text-[18pt] font-bold uppercase leading-tight tracking-tighter">${item.artist}</h2>
+                    <h3 class="font-body text-[16pt] text-gray-400 italic font-light lowercase leading-tight">${item.artworkName}</h3>
                     ${item.price ? `<div class="font-body text-[10pt] tracking-tighter text-black italic">${item.price}</div>` : ''}
                 </div>
-                <div class="grid grid-cols-2 gap-y-6 gap-x-8 border-y border-gray-200/50 py-8">
+                <div class="grid grid-cols-2 gap-y-6 gap-x-8 border-y border-gray-200/50 py-10">
                     ${item.category ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">${labels.category}</span><span class="font-body text-[8.5pt] italic">${item.category}</span></div>` : ''}
                     ${item.productType ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">${labels.productType}</span><span class="font-body text-[8.5pt] italic">${item.productType}</span></div>` : ''}
                     ${item.color ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">${labels.color}</span><span class="font-body text-[8.5pt] italic">${item.color}</span></div>` : ''}
@@ -700,8 +700,8 @@
                     ${item.edition ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">${labels.edition}</span><span class="font-body text-[8.5pt] italic">${item.edition}</span></div>` : ''}
                     ${item.dimensions ? `<div><span class="block font-header text-[8px] text-gray-400 uppercase tracking-widest mb-1">${labels.dimension}</span><span class="font-body text-[8.5pt] italic">${item.dimensions}</span></div>` : ''}
                 </div>
-                ${item.description ? `<div class="space-y-4"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-900">${labels.productDescription}</h4><p class="font-body text-[8.5pt] text-gray-600 italic font-light text-justify" style="text-align-last: left;">${item.description}</p></div>` : ''}
-                ${item.artistBio ? `<div class="space-y-4 pt-4 border-t border-gray-200/50"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-400">${labels.about} ${item.artist}</h4><p class="font-body text-[8pt] text-gray-400 italic tracking-tight font-light text-justify" style="text-align-last: left;">${item.artistBio}</p>${item.website ? `<a href="${item.website}" target="_blank" class="inline-block font-body text-[8px] text-gray-400 underline uppercase tracking-widest hover:text-black transition-colors">Website</a>` : ''}</div>` : ''}
+                ${item.description ? `<div class="space-y-4 mt-10"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-900">${labels.productDescription}</h4><p class="font-body text-[8.5pt] text-gray-600 italic font-light text-justify" style="text-align-last: left;">${item.description}</p></div>` : ''}
+                ${item.artistBio ? `<div class="space-y-4 mt-10 pt-10 border-t border-gray-200/50"><h4 class="font-header text-[9px] uppercase font-bold tracking-[0.2em] text-gray-400">${labels.about} ${item.artist}</h4><p class="font-body text-[8pt] text-gray-400 italic tracking-tight font-light text-justify" style="text-align-last: left;">${item.artistBio}</p>${item.website ? `<a href="${item.website}" target="_blank" class="inline-block font-body text-[8px] text-gray-400 underline uppercase tracking-widest hover:text-black transition-colors">Website</a>` : ''}</div>` : ''}
             `;
             document.getElementById('detail-modal-overlay').style.display = 'block';
             document.body.style.overflow = 'hidden';
