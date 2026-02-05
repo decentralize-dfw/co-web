@@ -260,6 +260,102 @@
 
         .fade-out { opacity: 0; }
 
+        /* --- IMAGE CAROUSEL --- */
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .carousel-image-wrapper {
+            width: 80%;
+            height: 80%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Mobile arrows - positioned between image and popup edge */
+        .carousel-arrows-mobile {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 16px;
+        }
+
+        @media (min-width: 1024px) {
+            .carousel-arrows-mobile { display: none; }
+        }
+
+        .carousel-arrow {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .carousel-arrow:hover {
+            background: #000;
+            color: #fff;
+            border-color: #000;
+        }
+
+        .carousel-arrow svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Desktop thumbnails - below the main image */
+        .carousel-thumbnails {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        @media (min-width: 1024px) {
+            .carousel-thumbnails { display: flex; }
+        }
+
+        .carousel-thumb {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            opacity: 0.5;
+            transition: all 0.2s ease;
+        }
+
+        .carousel-thumb:hover {
+            opacity: 0.8;
+        }
+
+        .carousel-thumb.active {
+            border-color: #000;
+            opacity: 1;
+        }
+
+        .carousel-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         /* --- LANGUAGE TOGGLE BUTTON --- */
         .lang-toggle {
             position: fixed;
@@ -362,8 +458,21 @@
         </button>
         <div id="detail-modal">
             <div class="relative w-full lg:w-1/2 h-1/2 lg:h-full glass-panel flex items-center justify-center overflow-hidden border-b lg:border-b-0 lg:border-r border-gray-200/20">
-                <div class="image-container-scale">
-                    <img id="modal-image" src="" alt="" class="fit-image transition-opacity duration-300">
+                <div class="carousel-container">
+                    <div class="carousel-image-wrapper">
+                        <img id="modal-image" src="" alt="" class="fit-image transition-opacity duration-300">
+                    </div>
+                    <!-- Mobile arrows (shown only when multiple images) -->
+                    <div id="carousel-arrows" class="carousel-arrows-mobile" style="display: none;">
+                        <button class="carousel-arrow" onclick="window.carouselPrev()">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                        <button class="carousel-arrow" onclick="window.carouselNext()">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                    </div>
+                    <!-- Desktop thumbnails (shown only when multiple images) -->
+                    <div id="carousel-thumbnails" class="carousel-thumbnails" style="display: none;"></div>
                 </div>
             </div>
             <div id="modal-info-scroll" class="w-full lg:w-1/2 h-1/2 lg:h-full overflow-y-auto glass-panel">
@@ -384,6 +493,8 @@
         let currentLang = 'en'; // Default language is English
         let sheetRows = null; // Store raw sheet data for language switching
         let currentModalDropCode = null; // Track currently open modal item
+        let currentCarouselImages = []; // Array of images for current modal
+        let currentCarouselIndex = 0; // Current image index in carousel
 
         // Column indices for Turkish data (0-indexed)
         const TR_COLUMNS = {
@@ -533,6 +644,9 @@
                 const rawScale = (c[26] && c[26].v !== null) ? parseFloat(c[26].v) : 1;
                 const thumbScale = isNaN(rawScale) ? 1 : rawScale;
 
+                // Collect all images (filter out empty ones)
+                const allImages = [val(11), val(34), val(35), val(36)].filter(img => img !== "");
+
                 return {
                     dropCode: val(1),
                     artist: val(2),
@@ -542,6 +656,7 @@
                     color: val(cols.color),
                     material: val(cols.material),
                     imageLink: val(11),
+                    images: allImages, // Array of all available images
                     thumbnail: val(13),
                     edition: val(14),
                     dimensions: val(15),
@@ -679,7 +794,11 @@
             currentModalDropCode = dropCode; // Track current modal item for language switch
             const item = artifacts.find(a => a.dropCode === dropCode);
             const labels = getLabels();
-            document.getElementById('modal-image').src = item.imageLink;
+
+            // Setup carousel
+            currentCarouselImages = item.images && item.images.length > 0 ? item.images : [item.imageLink];
+            currentCarouselIndex = 0;
+            updateCarouselDisplay();
 
             document.getElementById('modal-info-scroll').scrollTop = 0;
             const modalEl = document.getElementById('detail-modal');
@@ -705,6 +824,53 @@
             `;
             document.getElementById('detail-modal-overlay').style.display = 'block';
             document.body.style.overflow = 'hidden';
+        };
+
+        // Carousel functions
+        function updateCarouselDisplay() {
+            const modalImage = document.getElementById('modal-image');
+            const arrowsContainer = document.getElementById('carousel-arrows');
+            const thumbsContainer = document.getElementById('carousel-thumbnails');
+
+            // Update main image
+            modalImage.src = currentCarouselImages[currentCarouselIndex];
+
+            // Show/hide navigation based on image count
+            const hasMultipleImages = currentCarouselImages.length > 1;
+
+            // Mobile arrows
+            arrowsContainer.style.display = hasMultipleImages ? 'flex' : 'none';
+
+            // Desktop thumbnails
+            if (hasMultipleImages) {
+                thumbsContainer.style.display = 'flex';
+                thumbsContainer.innerHTML = currentCarouselImages.map((img, idx) => `
+                    <div class="carousel-thumb ${idx === currentCarouselIndex ? 'active' : ''}" onclick="window.carouselGoTo(${idx})">
+                        <img src="${img}" alt="Thumbnail ${idx + 1}">
+                    </div>
+                `).join('');
+            } else {
+                thumbsContainer.style.display = 'none';
+                thumbsContainer.innerHTML = '';
+            }
+        }
+
+        window.carouselNext = function() {
+            if (currentCarouselImages.length <= 1) return;
+            currentCarouselIndex = (currentCarouselIndex + 1) % currentCarouselImages.length;
+            updateCarouselDisplay();
+        };
+
+        window.carouselPrev = function() {
+            if (currentCarouselImages.length <= 1) return;
+            currentCarouselIndex = (currentCarouselIndex - 1 + currentCarouselImages.length) % currentCarouselImages.length;
+            updateCarouselDisplay();
+        };
+
+        window.carouselGoTo = function(index) {
+            if (index < 0 || index >= currentCarouselImages.length) return;
+            currentCarouselIndex = index;
+            updateCarouselDisplay();
         };
 
         const closeBtn = document.getElementById('close-modal');
