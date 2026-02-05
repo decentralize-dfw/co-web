@@ -237,24 +237,144 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
+        .loader-logo {
+            width: 120px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        .loader-title {
+            font-family: var(--font-headers);
+            font-size: 14px;
+            color: #000;
+            letter-spacing: 3px;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+        }
+        .loader-status {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+        }
         .loader-text {
             font-family: var(--font-headers);
-            font-size: 1.5rem;
-            color: #000;
-            letter-spacing: 2px;
-            margin-bottom: 1rem;
+            font-size: 7px;
+            color: #999;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
             text-transform: uppercase;
         }
         .loader-bar-container {
-            width: 200px; height: 2px;
+            width: 100px; height: 1px;
             background: #eee;
             position: relative; overflow: hidden;
+            margin: 0 auto;
         }
         .loader-bar {
             height: 100%;
-            background: #000;
+            background: #999;
             width: 0%;
             transition: width 0.3s ease-out;
+        }
+        #info-buttons {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .info-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: var(--font-headers);
+            font-size: 9px;
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+        .info-btn:hover { background: rgba(255, 255, 255, 0.95); }
+        .info-btn.active { background: #000; color: #fff; }
+        .info-btn img {
+            width: 14px;
+            height: 14px;
+            object-fit: contain;
+        }
+        #info-panel {
+            position: fixed;
+            left: var(--panel-right-offset);
+            top: var(--panel-top-offset);
+            width: var(--panel-width);
+            max-height: calc(100vh - var(--panel-top-offset) - var(--panel-bottom-offset));
+            background: rgba(255, 255, 255, var(--panel-bg-opacity));
+            backdrop-filter: blur(var(--panel-blur));
+            -webkit-backdrop-filter: blur(var(--panel-blur));
+            border-radius: var(--panel-border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+            transform: translateY(50px);
+            opacity: 0; visibility: hidden;
+            transition: transform var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1),
+                        opacity var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1),
+                        visibility var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: 100;
+            overflow-y: auto; overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+        }
+        #info-panel::-webkit-scrollbar { width: 8px; }
+        #info-panel::-webkit-scrollbar-track { background: transparent; }
+        #info-panel::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            background-clip: padding-box;
+            border-right: 5px solid transparent;
+            border-radius: 10px;
+        }
+        #info-panel::-webkit-scrollbar-button { display: none !important; }
+        #info-panel.open {
+            transform: translateY(0);
+            opacity: 1; visibility: visible;
+        }
+        .info-panel-close {
+            position: sticky;
+            top: 1rem;
+            margin-left: 1rem;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.05);
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+            z-index: 10;
+        }
+        .info-panel-close:hover { background: rgba(0, 0, 0, 0.1); }
+        .info-panel-close svg { width: 12px; height: 12px; stroke: #000; stroke-width: 2; }
+        .info-panel-content {
+            padding: 0 1.5rem 1.5rem 1.5rem;
+            margin-top: -20px;
+        }
+        .info-panel-logo {
+            width: 100%;
+            max-width: 180px;
+            margin-bottom: 1.5rem;
+        }
+        .info-panel-text {
+            font-family: var(--font-body);
+            font-size: 11px;
+            line-height: 1.7;
+            color: #333;
+            white-space: pre-wrap;
         }
         #side-panel {
             position: fixed;
@@ -682,12 +802,31 @@
         @media (max-width: 768px) {
             #side-panel {
                 right: 5%; left: 5%; bottom: 0; top: auto;
-                width: 90%; 
-                height: 95dvh; max-height: 95dvh; 
-                border-radius: 24px 24px 0 0; 
+                width: 90%;
+                height: 95dvh; max-height: 95dvh;
+                border-radius: 24px 24px 0 0;
                 transform: translateY(100%);
             }
             #side-panel.open { transform: translateY(0); }
+            #info-panel {
+                right: 5%; left: 5%; bottom: 0; top: auto;
+                width: 90%;
+                height: 95dvh; max-height: 95dvh;
+                border-radius: 24px 24px 0 0;
+                transform: translateY(100%);
+            }
+            #info-panel.open { transform: translateY(0); }
+            #info-buttons {
+                top: 12px;
+                left: 50%;
+                transform: translateX(-50%);
+                flex-direction: row;
+                gap: 8px;
+            }
+            .info-btn {
+                padding: 8px 12px;
+                font-size: 8px;
+            }
             #ui-container { display: none !important; }
             #mobile-labels-toggle { display: flex; }
             :root {
@@ -710,8 +849,31 @@
 </head>
 <body>
     <div id="loader">
-        <div class="loader-text">Loading Data</div>
-        <div class="loader-bar-container"><div class="loader-bar"></div></div>
+        <img class="loader-logo" src="https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/logo-anim-fuls.gif" alt="Loading">
+        <div class="loader-title">CONTEMPORARY ARTIFACTS</div>
+        <div class="loader-status">
+            <div class="loader-text">Loading Data</div>
+            <div class="loader-bar-container"><div class="loader-bar"></div></div>
+        </div>
+    </div>
+    <!-- INFO BUTTONS (LEFT SIDE) -->
+    <div id="info-buttons">
+        <button class="info-btn" id="btn-status" onclick="toggleInfoPanel('status')">
+            <img src="https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/weblogo.png" alt="">
+            <span>STATUS CO</span>
+        </button>
+        <button class="info-btn" id="btn-about" onclick="toggleInfoPanel('about')">
+            <span>CONTEMPORARY ARTIFACTS</span>
+        </button>
+    </div>
+    <!-- INFO PANEL (LEFT SIDE) -->
+    <div id="info-panel">
+        <button class="info-panel-close" onclick="closeInfoPanel()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="info-panel-content" id="info-panel-content"></div>
     </div>
     <!-- UI CONTAINER (NEW STRUCTURE) -->
     <div id="ui-container">
@@ -863,6 +1025,8 @@
                     if (!cell || cell.v === null || cell.v === 'null') return type === 'number' ? 0 : "";
                     return cell.v;
                 };
+                if (rows[0]) infoTextAbout = getVal(rows[0], 2);
+                if (rows[2]) infoTextStatus = getVal(rows[2], 2);
                 rows.forEach((row, i) => {
                     const glbSrc = getVal(row, 10);
                     if (!glbSrc || typeof glbSrc !== 'string' || (!glbSrc.endsWith('.glb') && !glbSrc.endsWith('.gltf'))) return;
@@ -1099,6 +1263,9 @@
         let originalCameraState = null, currentActiveVideos = [];
         let modalAnimationFrameId;
         let sceneObjects = [];
+        let infoTextAbout = '';
+        let infoTextStatus = '';
+        let currentInfoPanel = null;
          const clickableObjects = [];
         let boundingBoxHelpers = [];
         let boundingBoxesVisible = false;
@@ -1815,6 +1982,42 @@
             if(modalAnimationFrameId) { cancelAnimationFrame(modalAnimationFrameId); modalAnimationFrameId = null; }
             document.getElementById('side-panel').classList.remove('open');
         }
+        window.toggleInfoPanel = function(panelType) {
+            const infoPanel = document.getElementById('info-panel');
+            const btnStatus = document.getElementById('btn-status');
+            const btnAbout = document.getElementById('btn-about');
+            if (currentInfoPanel === panelType && infoPanel.classList.contains('open')) {
+                closeInfoPanel();
+                return;
+            }
+            if (document.getElementById('side-panel').classList.contains('open')) {
+                closePanel();
+            }
+            currentInfoPanel = panelType;
+            btnStatus.classList.toggle('active', panelType === 'status');
+            btnAbout.classList.toggle('active', panelType === 'about');
+            const content = document.getElementById('info-panel-content');
+            if (panelType === 'status') {
+                content.innerHTML = `
+                    <img class="info-panel-logo" src="https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/logo_text.png" alt="Status Co">
+                    <div class="info-panel-text">${infoTextStatus}</div>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div class="info-panel-text">${infoTextAbout}</div>
+                `;
+            }
+            infoPanel.classList.add('open');
+        };
+        window.closeInfoPanel = function() {
+            const infoPanel = document.getElementById('info-panel');
+            const btnStatus = document.getElementById('btn-status');
+            const btnAbout = document.getElementById('btn-about');
+            infoPanel.classList.remove('open');
+            btnStatus.classList.remove('active');
+            btnAbout.classList.remove('active');
+            currentInfoPanel = null;
+        };
         function updateOrthoFrustum() {
             if (!cameraOrtho) return;
             const aspect = window.innerWidth / window.innerHeight;
