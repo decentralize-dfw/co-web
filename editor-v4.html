@@ -289,6 +289,7 @@
         .info-btn {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             padding: 6px 10px;
             background: rgba(255, 255, 255, 0.85);
@@ -303,9 +304,11 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             transition: all 0.2s;
+            white-space: nowrap;
         }
         .info-btn:hover { background: rgba(255, 255, 255, 0.95); }
         .info-btn.active { background: #000; color: #fff; }
+        .info-btn.active img { filter: invert(1); }
         .info-btn img {
             width: 14px;
             height: 14px;
@@ -346,28 +349,45 @@
             transform: translateY(0);
             opacity: 1; visibility: visible;
         }
-        .info-panel-close {
+        .info-panel-header {
             position: sticky;
-            top: 1rem;
-            margin-left: 1rem;
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .info-panel-title {
+            font-family: var(--font-headers);
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #000;
+        }
+        .info-panel-close {
             width: 28px; height: 28px;
             border-radius: 50%;
             background: rgba(0, 0, 0, 0.05);
             border: none; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             transition: background 0.2s;
-            z-index: 10;
         }
         .info-panel-close:hover { background: rgba(0, 0, 0, 0.1); }
         .info-panel-close svg { width: 12px; height: 12px; stroke: #000; stroke-width: 2; }
         .info-panel-content {
-            padding: 0 1.5rem 1.5rem 1.5rem;
-            margin-top: -20px;
+            padding: 1.5rem;
         }
         .info-panel-logo {
             width: 100%;
             max-width: 180px;
             margin-bottom: 1.5rem;
+            display: block;
         }
         .info-panel-text {
             font-family: var(--font-body);
@@ -799,11 +819,67 @@
             width: 12px; height: 12px;
             cursor: pointer;
         }
+        #footer {
+            position: fixed;
+            bottom: 15px;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            z-index: 50;
+            padding: 0 20px;
+        }
+        .footer-social {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .footer-social a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+        }
+        .footer-social a:hover { background: rgba(255, 255, 255, 1); transform: scale(1.05); }
+        .footer-social svg { width: 14px; height: 14px; fill: #000; }
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .footer-logo svg { width: 20px; height: 20px; fill: #000; }
+        .footer-right {
+            position: absolute;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-family: var(--font-body);
+            font-size: 8px;
+            color: #666;
+        }
+        .footer-copyright {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .footer-terms {
+            color: #666;
+            text-decoration: underline;
+        }
+        .footer-terms:hover { color: #000; }
         @media (max-width: 768px) {
             #side-panel {
                 right: 5%; left: 5%; bottom: 0; top: auto;
                 width: 90%;
-                height: 95dvh; max-height: 95dvh;
+                height: calc(100dvh - 60px); max-height: calc(100dvh - 60px);
                 border-radius: 24px 24px 0 0;
                 transform: translateY(100%);
             }
@@ -811,7 +887,7 @@
             #info-panel {
                 right: 5%; left: 5%; bottom: 0; top: auto;
                 width: 90%;
-                height: 95dvh; max-height: 95dvh;
+                height: calc(100dvh - 60px); max-height: calc(100dvh - 60px);
                 border-radius: 24px 24px 0 0;
                 transform: translateY(100%);
             }
@@ -821,14 +897,23 @@
                 left: 50%;
                 transform: translateX(-50%);
                 flex-direction: row;
-                gap: 8px;
+                gap: 6px;
+                width: auto;
+                max-width: calc(100vw - 24px);
             }
             .info-btn {
-                padding: 8px 12px;
-                font-size: 8px;
+                padding: 8px 10px;
+                font-size: 7px;
+                flex-shrink: 0;
             }
+            .info-btn img { width: 12px; height: 12px; }
             #ui-container { display: none !important; }
             #mobile-labels-toggle { display: flex; }
+            #footer { bottom: 8px; gap: 10px; }
+            .footer-social a { width: 24px; height: 24px; }
+            .footer-social svg { width: 12px; height: 12px; }
+            .footer-logo svg { width: 16px; height: 16px; }
+            .footer-right { font-size: 6px; gap: 8px; right: 10px; }
             :root {
                 --panel-media-padding-horizontal: 25%;
                 --panel-media-padding-top: 1rem;
@@ -868,11 +953,14 @@
     </div>
     <!-- INFO PANEL (LEFT SIDE) -->
     <div id="info-panel">
-        <button class="info-panel-close" onclick="closeInfoPanel()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M18 6L6 18M6 6l12 12"/>
-            </svg>
-        </button>
+        <div class="info-panel-header">
+            <span class="info-panel-title" id="info-panel-title"></span>
+            <button class="info-panel-close" onclick="closeInfoPanel()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
         <div class="info-panel-content" id="info-panel-content"></div>
     </div>
     <!-- UI CONTAINER (NEW STRUCTURE) -->
@@ -962,6 +1050,24 @@
         <input type="checkbox" id="mobile-labels-cb"> Labels
     </label>
     <div id="scene-container"></div>
+    <!-- FOOTER -->
+    <div id="footer">
+        <div class="footer-social">
+            <a href="mailto:info@status-co.com" target="_blank" title="Email">
+                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+            </a>
+            <a href="https://instagram.com/status.co" target="_blank" title="Instagram">
+                <svg viewBox="0 0 24 24"><path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2m-.2 2A3.6 3.6 0 0 0 4 7.6v8.8C4 18.39 5.61 20 7.6 20h8.8a3.6 3.6 0 0 0 3.6-3.6V7.6C20 5.61 18.39 4 16.4 4H7.6m9.65 1.5a1.25 1.25 0 0 1 1.25 1.25A1.25 1.25 0 0 1 17.25 8 1.25 1.25 0 0 1 16 6.75a1.25 1.25 0 0 1 1.25-1.25M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3z"/></svg>
+            </a>
+        </div>
+        <div class="footer-logo">
+            <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="none" stroke="#000" stroke-width="4"/><text x="50" y="58" text-anchor="middle" font-family="Space Mono, monospace" font-size="24" fill="#000">CA</text></svg>
+        </div>
+        <div class="footer-right">
+            <span class="footer-copyright">© STATUS CO 2026</span>
+            <a href="https://status-co.com/terms-conditions" target="_blank" class="footer-terms">TERMS AND CONDITIONS</a>
+        </div>
+    </div>
     <div id="side-panel">
         <button class="panel-close-btn" onclick="closePanel()">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -1986,6 +2092,7 @@
             const infoPanel = document.getElementById('info-panel');
             const btnStatus = document.getElementById('btn-status');
             const btnAbout = document.getElementById('btn-about');
+            const panelTitle = document.getElementById('info-panel-title');
             if (currentInfoPanel === panelType && infoPanel.classList.contains('open')) {
                 closeInfoPanel();
                 return;
@@ -1998,11 +2105,13 @@
             btnAbout.classList.toggle('active', panelType === 'about');
             const content = document.getElementById('info-panel-content');
             if (panelType === 'status') {
+                panelTitle.textContent = 'STATUS CO';
                 content.innerHTML = `
                     <img class="info-panel-logo" src="https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/logo_text.png" alt="Status Co">
                     <div class="info-panel-text">${infoTextStatus}</div>
                 `;
             } else {
+                panelTitle.textContent = 'CONTEMPORARY ARTIFACTS';
                 content.innerHTML = `
                     <div class="info-panel-text">${infoTextAbout}</div>
                 `;
