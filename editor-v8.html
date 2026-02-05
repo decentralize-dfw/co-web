@@ -173,9 +173,14 @@
             z-index: 1000;
             display: flex;
             flex-direction: column;
-            align-items: stretch;
+            align-items: flex-end;
             gap: 3px;
             user-select: none;
+        }
+        .ui-top-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         .toggle-group {
             display: flex;
@@ -186,11 +191,6 @@
             display: flex;
             align-items: center;
             gap: 3px;
-        }
-        .ui-view-group .toggle-btn,
-        .ui-graphics-group .toggle-btn {
-            flex: 1;
-            text-align: center;
         }
         .toggle-btn {
             padding: 4px 8px;
@@ -208,9 +208,9 @@
             white-space: nowrap;
         }
         .toggle-btn.active {
-            background: rgba(0, 0, 0, 0.85);
+            background: #29174d;
             color: #fff;
-            border-color: rgba(0, 0, 0, 0.85);
+            border-color: #29174d;
         }
         .icon-btn {
             width: 24px; height: 24px;
@@ -510,25 +510,28 @@
             display: block;
             animation: fadeIn 0.4s ease;
         }
+        .carousel-nav-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1.5rem;
+            margin-bottom: 8px;
+        }
         .carousel-nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
             width: 32px; height: 32px;
             border-radius: 50%;
-            background: transparent;
-            border: 1px solid rgba(0,0,0,0.8);
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(4px);
+            border: none;
             display: none;
             align-items: center; justify-content: center;
             cursor: pointer;
             z-index: 10;
-            transition: all 0.2s;
-            opacity: 0.6;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
-        .carousel-nav-btn:hover { opacity: 1; border-width: 1.5px; }
-        .carousel-nav-btn svg { width: 14px; height: 14px; stroke: black; }
-        .nav-right { right: 0; }
-        .nav-left { left: 0; }
+        .carousel-nav-btn:hover { background: rgba(0, 0, 0, 0.05); }
+        .carousel-nav-btn svg { width: 12px; height: 12px; stroke: black; fill: none; }
         .carousel-dots {
             display: flex;
             justify-content: center;
@@ -609,7 +612,7 @@
         #editor-panel {
             position: fixed;
             left: 10px;
-            top: 140px; 
+            top: 140px;
             max-width: calc(100vw - 520px);
             max-height: calc(100vh - 160px);
             background: rgba(255, 255, 255, 0.95);
@@ -623,8 +626,32 @@
             display: none;
             scrollbar-width: thin;
             scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+            resize: both;
+            min-width: 200px;
+            min-height: 100px;
         }
-        #editor-panel.open { display: block; }
+        #editor-panel.open { display: flex; flex-direction: column; }
+        .editor-drag-handle {
+            cursor: move;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.06);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            font-family: var(--font-headers);
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: rgba(0, 0, 0, 0.5);
+            user-select: none;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .editor-drag-handle::before {
+            content: '⋮⋮';
+            margin-right: 6px;
+            letter-spacing: -1px;
+        }
         .editor-table {
             border-collapse: collapse;
             font-family: var(--font-body);
@@ -657,9 +684,13 @@
         .editor-table tr.selected td { border-color: rgba(0, 120, 255, 0.3); }
         .editor-table input {
             width: 40px; padding: 2px 3px; font-family: var(--font-body); font-size: 12px;
-            border: none; background: transparent; text-align: right;
+            border: 1px solid transparent; background: transparent; text-align: right;
+            color: #000;
+            -moz-appearance: textfield;
         }
-        .editor-table input:focus { outline: none; background: rgba(0, 120, 255, 0.1); }
+        .editor-table input::-webkit-inner-spin-button,
+        .editor-table input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .editor-table input:focus { outline: none; background: rgba(0, 120, 255, 0.15); border-color: rgba(0, 120, 255, 0.4); }
         .col-x { background: rgba(231, 76, 60, 0.1); }
         .col-y { background: rgba(39, 174, 96, 0.1); }
         .col-z { background: rgba(52, 152, 219, 0.1); }
@@ -712,9 +743,12 @@
         }
         .editor-tab-content {
             display: none;
+            overflow: auto;
         }
         .editor-tab-content.active {
             display: block;
+            flex: 1;
+            overflow: auto;
         }
         .params-grid {
             display: grid;
@@ -884,8 +918,8 @@
         }
         #marquee-bar .marquee-track {
             display: flex;
-            animation: marqueeScroll var(--marquee-speed) linear infinite;
             white-space: nowrap;
+            will-change: transform;
         }
         #marquee-bar .marquee-content {
             font-family: var(--font-headers);
@@ -1007,18 +1041,13 @@
             .panel-bio-text { font-size: 0.64rem; }
             .panel-meta-grid { font-size: 0.64rem; }
             .carousel-nav-btn {
-                width: 40px;
-                height: 40px;
-                background: rgba(255, 255, 255, 0.9);
-                border: 1px solid rgba(0, 0, 0, 0.1);
-                opacity: 1;
+                width: 36px;
+                height: 36px;
             }
             .carousel-nav-btn svg {
-                width: 20px;
-                height: 20px;
+                width: 16px;
+                height: 16px;
             }
-            .carousel-nav-btn.nav-left { left: 10px; }
-            .carousel-nav-btn.nav-right { right: 10px; }
             #editor-panel {
                 left: 0;
                 top: 0;
@@ -1172,23 +1201,22 @@
     </div>
     <!-- MARQUEE BAR -->
     <div id="marquee-bar">
-        <div class="marquee-track" id="marquee-track">
-            <span class="marquee-content" id="marquee-text"></span>
-            <span class="marquee-content" id="marquee-text-dup"></span>
-        </div>
+        <div class="marquee-track" id="marquee-track"></div>
     </div>
     <!-- UI CONTAINER (NEW STRUCTURE) -->
     <div id="ui-container">
-        <div class="toggle-group ui-view-group">
+        <div class="ui-top-row">
+            <div class="toggle-group ui-view-group">
+                <button class="toggle-btn active" id="btn-cam1" onclick="switchCamera(1)">VIEW 1</button>
+                <button class="toggle-btn" id="btn-cam2" onclick="switchCamera(2)">VIEW 2</button>
+                <button class="toggle-btn" id="btn-cam3" onclick="switchCamera('persp')" style="display:none">VIEW 3</button>
+                <button class="toggle-btn" id="btn-cam-mobile" onclick="switchCamera('mobile')" style="display:none">MOBILE</button>
+            </div>
             <button class="lock-btn" id="btn-lock-icon" onclick="toggleCameraLock()" title="Lock/Unlock Camera">
                 <svg viewBox="0 0 24 24" id="lock-icon-svg">
                     <path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z"/>
                 </svg>
             </button>
-            <button class="toggle-btn active" id="btn-cam1" onclick="switchCamera(1)">VIEW 1</button>
-            <button class="toggle-btn" id="btn-cam2" onclick="switchCamera(2)">VIEW 2</button>
-            <button class="toggle-btn" id="btn-cam3" onclick="switchCamera('persp')" style="display:none">VIEW 3</button>
-            <button class="toggle-btn" id="btn-cam-mobile" onclick="switchCamera('mobile')" style="display:none">MOBILE</button>
         </div>
         <div class="toggle-group ui-graphics-group">
             <button class="toggle-btn active" id="btn-mid" onclick="handlePresetSelection('default')">DEFAULT</button>
@@ -1203,6 +1231,7 @@
     </div>
     <!-- EDITOR PANEL (LEFT SIDE) - EXCEL STYLE -->
     <div id="editor-panel">
+        <div class="editor-drag-handle" id="editor-drag-handle">EDITOR</div>
         <!-- TABS -->
         <div class="editor-tabs">
             <button class="editor-tab active" data-tab="products" onclick="switchEditorTab('products')">Products</button>
@@ -1614,9 +1643,7 @@
             document.querySelector('.loader-text').innerText = "FETCHING DATA";
             await loadDataFromSheet();
             if (marqueeText) {
-                document.getElementById('marquee-text').textContent = marqueeText;
-                document.getElementById('marquee-text-dup').textContent = marqueeText;
-                positionMarquee();
+                initMarquee(marqueeText);
             }
             document.querySelector('.loader-text').innerText = "LOADING ASSETS";
             init(); animate();
@@ -2169,6 +2196,9 @@
             const images = content.media.filter(m => m.type === 'image');
             const models = content.media.filter(m => m.type === 'model');
             if (images.length > 0) {
+                let navWrapper = null;
+                let btnLeft = null;
+                let btnRight = null;
                 const carouselDiv = document.createElement('div');
                 carouselDiv.className = 'media-carousel-container';
                 let currentImgIdx = 0;
@@ -2185,10 +2215,8 @@
                     const imgElements = carouselDiv.querySelectorAll('.carousel-img');
                     if (imgElements[currentImgIdx]) imgElements[currentImgIdx].classList.add('active');
                     if(images.length > 1) {
-                        const btnL = carouselDiv.querySelector('.nav-left');
-                        const btnR = carouselDiv.querySelector('.nav-right');
-                        if(btnL) btnL.style.display = currentImgIdx > 0 ? 'flex' : 'none';
-                        if(btnR) btnR.style.display = currentImgIdx < images.length - 1 ? 'flex' : 'none';
+                        if(btnLeft) btnLeft.style.display = currentImgIdx > 0 ? 'flex' : 'none';
+                        if(btnRight) btnRight.style.display = currentImgIdx < images.length - 1 ? 'flex' : 'none';
                         if (dotsDiv) {
                             dotsDiv.querySelectorAll('.carousel-dot').forEach((dot, i) => {
                                 dot.classList.toggle('active', i === currentImgIdx);
@@ -2197,28 +2225,24 @@
                     }
                 };
                 if (images.length > 1) {
-                    const btnLeft = document.createElement('div');
+                    navWrapper = document.createElement('div');
+                    navWrapper.className = 'carousel-nav-wrapper';
+                    btnLeft = document.createElement('div');
                     btnLeft.className = 'carousel-nav-btn nav-left';
-                    btnLeft.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.5"><path d="M15 18l-6-6 6-6"/></svg>`;
+                    btnLeft.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
                     btnLeft.onclick = (e) => {
                         e.stopPropagation();
-                        if (currentImgIdx > 0) {
-                            currentImgIdx--;
-                            updateCarousel();
-                        }
+                        if (currentImgIdx > 0) { currentImgIdx--; updateCarousel(); }
                     };
-                    carouselDiv.appendChild(btnLeft);
-                    const btnRight = document.createElement('div');
+                    btnRight = document.createElement('div');
                     btnRight.className = 'carousel-nav-btn nav-right';
-                    btnRight.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.5"><path d="M9 18l6-6-6-6"/></svg>`;
+                    btnRight.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
                     btnRight.onclick = (e) => {
                         e.stopPropagation();
-                        if (currentImgIdx < images.length - 1) {
-                            currentImgIdx++;
-                            updateCarousel();
-                        }
+                        if (currentImgIdx < images.length - 1) { currentImgIdx++; updateCarousel(); }
                     };
-                    carouselDiv.appendChild(btnRight);
+                    navWrapper.appendChild(btnLeft);
+                    navWrapper.appendChild(btnRight);
                     dotsDiv = document.createElement('div');
                     dotsDiv.className = 'carousel-dots';
                     images.forEach((_, idx) => {
@@ -2250,6 +2274,7 @@
                         }
                     }
                 });
+                if (navWrapper) mediaContainer.appendChild(navWrapper);
                 mediaContainer.appendChild(carouselDiv);
                 if (dotsDiv) mediaContainer.appendChild(dotsDiv);
             }
@@ -2336,12 +2361,15 @@
             const btnStatus = document.getElementById('btn-status');
             const btnAbout = document.getElementById('btn-about');
             const panelTitle = document.getElementById('info-panel-title');
+            const isMobileNow = window.innerWidth <= 768;
             if (currentInfoPanel === panelType && infoPanel.classList.contains('open')) {
                 closeInfoPanel();
                 return;
             }
-            if (document.getElementById('side-panel').classList.contains('open')) {
-                closePanel();
+            if (isMobileNow) {
+                if (document.getElementById('side-panel').classList.contains('open')) {
+                    closePanel();
+                }
             }
             currentInfoPanel = panelType;
             btnStatus.classList.toggle('active', panelType === 'status');
@@ -2382,6 +2410,50 @@
             cameraOrtho.top = maxDim; 
             cameraOrtho.bottom = -maxDim;
             cameraOrtho.updateProjectionMatrix();
+        }
+        let marqueeAnimId = null;
+        function initMarquee(text) {
+            const track = document.getElementById('marquee-track');
+            if (!track || !text) return;
+            track.innerHTML = '';
+            const measure = document.createElement('span');
+            measure.className = 'marquee-content';
+            measure.textContent = text;
+            measure.style.visibility = 'hidden';
+            measure.style.position = 'absolute';
+            document.body.appendChild(measure);
+            const singleW = measure.offsetWidth;
+            document.body.removeChild(measure);
+            const copies = Math.ceil((window.innerWidth * 3) / Math.max(singleW, 1)) + 2;
+            for (let i = 0; i < copies; i++) {
+                const span = document.createElement('span');
+                span.className = 'marquee-content';
+                span.textContent = text;
+                track.appendChild(span);
+            }
+            positionMarquee();
+            startMarqueeAnimation();
+        }
+        function startMarqueeAnimation() {
+            if (marqueeAnimId) cancelAnimationFrame(marqueeAnimId);
+            const track = document.getElementById('marquee-track');
+            if (!track || !track.children.length) return;
+            const firstSpan = track.children[0];
+            let offset = 0;
+            const getSpeed = () => {
+                const s = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-speed')) || 20;
+                return 80 / s;
+            };
+            function tick() {
+                offset -= getSpeed();
+                const singleW = firstSpan.offsetWidth;
+                if (singleW > 0 && Math.abs(offset) >= singleW) {
+                    offset += singleW;
+                }
+                track.style.transform = `translateX(${offset}px)`;
+                marqueeAnimId = requestAnimationFrame(tick);
+            }
+            marqueeAnimId = requestAnimationFrame(tick);
         }
         function positionMarquee() {
             const bar = document.getElementById('marquee-bar');
@@ -2637,6 +2709,26 @@
             document.getElementById('btn-rotate').classList.toggle('active', mode === 'rotate');
             document.getElementById('btn-scale').classList.toggle('active', mode === 'scale');
         };
+        (function initEditorDrag() {
+            const panel = document.getElementById('editor-panel');
+            const handle = document.getElementById('editor-drag-handle');
+            if (!handle || !panel) return;
+            let isDragging = false, startX, startY, startLeft, startTop;
+            handle.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = panel.offsetLeft;
+                startTop = panel.offsetTop;
+                e.preventDefault();
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                panel.style.left = (startLeft + e.clientX - startX) + 'px';
+                panel.style.top = (startTop + e.clientY - startY) + 'px';
+            });
+            document.addEventListener('mouseup', () => { isDragging = false; });
+        })();
         function updateCameraParamsDisplay() {
             const activeCamera = getActiveCamera();
             document.getElementById('cam-pos-x').value = activeCamera.position.x.toFixed(0);
@@ -2693,9 +2785,15 @@
                 tbody.appendChild(tr);
             });
             tbody.querySelectorAll('input').forEach(input => {
-                input.addEventListener('focus', () => saveUndoState());
+                input.addEventListener('focus', (e) => {
+                    saveUndoState();
+                    e.target.select();
+                });
                 input.addEventListener('change', handleEditorInputChange);
                 input.addEventListener('input', handleEditorInputChange);
+                input.addEventListener('click', (e) => e.stopPropagation());
+                input.addEventListener('mousedown', (e) => e.stopPropagation());
+                input.addEventListener('keydown', (e) => e.stopPropagation());
             });
         }
         window.toggleLock = function(index, event) {
@@ -3587,6 +3685,23 @@
             redoStack = [];
         }
         function handleKeyDown(e) {
+            const tag = document.activeElement?.tagName;
+            const isEditing = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+            if (isEditing) {
+                if (e.key === 'Escape') { document.activeElement.blur(); return; }
+                if (e.key === 'Tab') {
+                    const inputs = Array.from(document.querySelectorAll('#editor-panel input:not([disabled])'));
+                    const idx = inputs.indexOf(document.activeElement);
+                    if (idx >= 0) {
+                        e.preventDefault();
+                        const next = e.shiftKey ? inputs[idx - 1] : inputs[idx + 1];
+                        if (next) { next.focus(); next.select(); }
+                    }
+                    return;
+                }
+                if (e.key === 'Enter') { document.activeElement.blur(); return; }
+                return;
+            }
             if (e.key === 'Escape') { closePanel(); return; }
             if (e.shiftKey && (e.key === 'E' || e.key === 'e')) {
                 e.preventDefault();
