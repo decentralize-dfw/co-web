@@ -96,6 +96,7 @@
             --cam-mobile-pos-x: 5000;
             --cam-mobile-pos-y: 5000;
             --cam-mobile-pos-z: 5000;
+            --cam-mobile-fov: 45;
             --initial-camera-zoom: 3.0;
             --initial-camera-zoom-mobile: 2.0;
             --cam-lookat-x: 0;
@@ -343,12 +344,15 @@
             scrollbar-width: thin;
             scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
         }
-        #info-panel::-webkit-scrollbar { width: 8px; }
-        #info-panel::-webkit-scrollbar-track { background: transparent; }
+        #info-panel::-webkit-scrollbar { width: 10px; }
+        #info-panel::-webkit-scrollbar-track { background: transparent; margin: 2px 0; }
         #info-panel::-webkit-scrollbar-thumb {
             background: rgba(0, 0, 0, 0.15);
             background-clip: padding-box;
+            border-left: 2px solid transparent;
             border-right: 5px solid transparent;
+            border-top: 2px solid transparent;
+            border-bottom: 2px solid transparent;
             border-radius: 10px;
         }
         #info-panel::-webkit-scrollbar-button { display: none !important; }
@@ -359,13 +363,25 @@
         .info-panel-header {
             position: sticky;
             top: 0;
-            background: transparent;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             padding: 1.5rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             z-index: 10;
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .info-panel-header::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -20px;
+            height: 20px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.6), transparent);
+            pointer-events: none;
         }
         .info-panel-title {
             font-family: var(--font-headers);
@@ -423,13 +439,16 @@
             scrollbar-width: thin;
             scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
         }
-        #side-panel::-webkit-scrollbar { width: 8px; }
-        #side-panel::-webkit-scrollbar-track { background: transparent; }
+        #side-panel::-webkit-scrollbar { width: 10px; }
+        #side-panel::-webkit-scrollbar-track { background: transparent; margin: 2px 0; }
         #side-panel::-webkit-scrollbar-thumb {
             background: rgba(0, 0, 0, 0.15);
             background-clip: padding-box;
-            border-right: 5px solid transparent;
-             border-radius: 10px;
+            border-left: 5px solid transparent;
+            border-right: 2px solid transparent;
+            border-top: 2px solid transparent;
+            border-bottom: 2px solid transparent;
+            border-radius: 10px;
         }
         #side-panel::-webkit-scrollbar-button { display: none !important; }
         #side-panel.open {
@@ -802,27 +821,24 @@
         #mobile-labels-toggle {
             display: none;
             position: fixed;
-            bottom: 16px;
+            bottom: 70px;
             left: 16px;
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            padding: 6px 10px;
+            z-index: 60;
             font-family: var(--font-body);
             font-size: 9px;
             text-transform: uppercase;
-            cursor: pointer;
-            user-select: none;
+            pointer-events: none;
             align-items: center;
             gap: 4px;
         }
         #mobile-labels-toggle input {
             margin: 0;
-            width: 12px; height: 12px;
+            width: 14px; height: 14px;
             cursor: pointer;
+            pointer-events: auto;
+        }
+        #mobile-labels-toggle span {
+            pointer-events: none;
         }
         #footer {
             position: fixed;
@@ -907,11 +923,9 @@
             #mobile-labels-toggle {
                 display: flex;
                 position: fixed;
-                top: 12px;
-                right: 12px;
-                background: transparent;
-                border: none;
-                z-index: 90;
+                bottom: 50px;
+                left: 12px;
+                z-index: 60;
             }
             #footer {
                 bottom: 12px;
@@ -985,7 +999,7 @@
                 <button class="toggle-btn active" id="btn-cam1" onclick="switchCamera(1)">1</button>
                 <button class="toggle-btn" id="btn-cam2" onclick="switchCamera(2)">2</button>
                 <button class="toggle-btn" id="btn-cam3" onclick="switchCamera('persp')" style="display:none">3</button>
-                <button class="toggle-btn" id="btn-cam-mobile" onclick="switchCamera('mobile')">M</button>
+                <button class="toggle-btn" id="btn-cam-mobile" onclick="switchCamera('mobile')" style="display:none">M</button>
             </div>
         </div>
         <!-- ROW 2: GRAPHICS CONTROLS -->
@@ -1055,9 +1069,9 @@
         </div>
     </div>
     <!-- MOBILE LABELS TOGGLE -->
-    <label id="mobile-labels-toggle">
-        <input type="checkbox" id="mobile-labels-cb"> Labels
-    </label>
+    <div id="mobile-labels-toggle">
+        <input type="checkbox" id="mobile-labels-cb"> <span>Labels</span>
+    </div>
     <div id="scene-container"></div>
     <!-- FOOTER -->
     <div id="footer">
@@ -1281,6 +1295,7 @@
             camMobilePosX: getParamNum('--cam-mobile-pos-x'),
             camMobilePosY: getParamNum('--cam-mobile-pos-y'),
             camMobilePosZ: getParamNum('--cam-mobile-pos-z'),
+            camMobileFov: getParamNum('--cam-mobile-fov'),
             initialCameraZoom: getParamNum('--initial-camera-zoom'),
             initialCameraZoomMobile: getParamNum('--initial-camera-zoom-mobile'),
             hoverLabelFontSize: getParamNum('--hover-label-font-size'),
@@ -2351,6 +2366,7 @@
             const editorPanel = document.getElementById('editor-panel');
             const transformGroup = document.getElementById('transform-group');
             const btnCam3 = document.getElementById('btn-cam3');
+            const btnCamMobile = document.getElementById('btn-cam-mobile');
             if (editorModeActive) {
                 if(btnEditor) btnEditor.classList.add('active');
                 editorPanel.classList.add('open');
@@ -2358,6 +2374,7 @@
                 transformControls.visible = true;
                 transformControls.enabled = true;
                 if(btnCam3) btnCam3.style.display = 'inline-block';
+                if(btnCamMobile) btnCamMobile.style.display = 'inline-block';
                 if (!selectedEditorObject && clickableObjects.length > 0) {
                     for (let i = 0; i < clickableObjects.length; i++) {
                         const idx = clickableObjects[i].userData.sceneObjectIndex;
@@ -2376,7 +2393,8 @@
                 transformControls.detach();
                 selectedEditorObject = null;
                 updateCam3Visibility();
-                if(currentCameraMode === 'persp') {
+                if(btnCamMobile) btnCamMobile.style.display = 'none';
+                if(currentCameraMode === 'persp' || currentCameraIndex === 'mobile') {
                     switchCamera(1);
                 }
             }
@@ -2922,6 +2940,11 @@
                     <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.camMobilePosZ}" onchange="updateSceneSliderParam('camMobilePosZ', this.value)">
                     <span class="params-slider-value" onclick="makeSceneEditable(this, 'camMobilePosZ')">${runtimeParams.camMobilePosZ}</span>
                 </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Mobile FOV</span>
+                    <input type="range" class="params-slider" min="10" max="120" step="1" value="${runtimeParams.camMobileFov}" onchange="updateSceneSliderParam('camMobileFov', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'camMobileFov')">${runtimeParams.camMobileFov}</span>
+                </div>
                 <div class="params-section-title">CAMERA SETTINGS</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Initial Zoom</span>
@@ -3269,6 +3292,7 @@
             output += `--cam-mobile-pos-x: ${runtimeParams.camMobilePosX};\n`;
             output += `--cam-mobile-pos-y: ${runtimeParams.camMobilePosY};\n`;
             output += `--cam-mobile-pos-z: ${runtimeParams.camMobilePosZ};\n`;
+            output += `--cam-mobile-fov: ${runtimeParams.camMobileFov};\n`;
             output += `--initial-camera-zoom: ${runtimeParams.initialCameraZoom};\n`;
             output += `--initial-camera-zoom-mobile: ${runtimeParams.initialCameraZoomMobile};\n`;
             output += `--hover-label-font-size: ${runtimeParams.hoverLabelFontSize}px;\n`;
