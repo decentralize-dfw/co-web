@@ -266,55 +266,74 @@
             width: 100%;
             height: 100%;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
             justify-content: center;
+            padding: 0 8px;
         }
 
         .carousel-image-wrapper {
-            width: 80%;
+            flex: 1;
             height: 80%;
             display: flex;
             align-items: center;
             justify-content: center;
+            touch-action: pan-y pinch-zoom;
         }
 
-        /* Mobile arrows - positioned between image and popup edge */
-        .carousel-arrows-mobile {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 20px;
-            margin-top: 16px;
-        }
-
-        @media (min-width: 1024px) {
-            .carousel-arrows-mobile { display: none; }
-        }
-
+        /* Arrows - both sides of image */
         .carousel-arrow {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
             border-radius: 50%;
-            background: #fff;
-            border: 1px solid #e5e7eb;
+            background: transparent;
+            border: 1px solid rgba(0,0,0,0.15);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: rgba(0,0,0,0.4);
+            margin: 0 4px;
         }
 
         .carousel-arrow:hover {
-            background: #000;
-            color: #fff;
-            border-color: #000;
+            background: rgba(0,0,0,0.05);
+            border-color: rgba(0,0,0,0.3);
+            color: rgba(0,0,0,0.7);
         }
 
         .carousel-arrow svg {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
+            stroke-width: 1.5;
+        }
+
+        .carousel-arrow.hidden {
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        @media (min-width: 1024px) {
+            .carousel-container {
+                flex-direction: column;
+                padding: 0;
+            }
+            .carousel-inner {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                flex: 1;
+            }
+            .carousel-arrow {
+                width: 28px;
+                height: 28px;
+                min-width: 28px;
+                margin: 0 12px;
+            }
         }
 
         /* Desktop thumbnails - below the main image */
@@ -322,27 +341,28 @@
             display: none;
             justify-content: center;
             align-items: center;
-            gap: 8px;
-            margin-top: 16px;
+            gap: 6px;
+            margin-top: 12px;
+            padding-bottom: 8px;
         }
 
         @media (min-width: 1024px) {
-            .carousel-thumbnails { display: flex; }
+            .carousel-thumbnails.show { display: flex; }
         }
 
         .carousel-thumb {
-            width: 40px;
-            height: 40px;
-            border-radius: 4px;
+            width: 24px;
+            height: 24px;
+            border-radius: 3px;
             overflow: hidden;
             cursor: pointer;
-            border: 2px solid transparent;
-            opacity: 0.5;
+            border: 1.5px solid transparent;
+            opacity: 0.4;
             transition: all 0.2s ease;
         }
 
         .carousel-thumb:hover {
-            opacity: 0.8;
+            opacity: 0.7;
         }
 
         .carousel-thumb.active {
@@ -459,20 +479,30 @@
         <div id="detail-modal">
             <div class="relative w-full lg:w-1/2 h-1/2 lg:h-full glass-panel flex items-center justify-center overflow-hidden border-b lg:border-b-0 lg:border-r border-gray-200/20">
                 <div class="carousel-container">
-                    <div class="carousel-image-wrapper">
+                    <!-- Desktop wrapper for horizontal layout -->
+                    <div class="carousel-inner hidden lg:flex">
+                        <button id="carousel-prev-desktop" class="carousel-arrow hidden" onclick="window.carouselPrev()">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
+                        <div class="carousel-image-wrapper">
+                            <img id="modal-image-desktop" src="" alt="" class="fit-image transition-opacity duration-300">
+                        </div>
+                        <button id="carousel-next-desktop" class="carousel-arrow hidden" onclick="window.carouselNext()">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                    </div>
+                    <!-- Mobile layout: arrows on sides -->
+                    <button id="carousel-prev-mobile" class="carousel-arrow hidden lg:hidden" onclick="window.carouselPrev()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <div id="carousel-image-mobile" class="carousel-image-wrapper lg:hidden">
                         <img id="modal-image" src="" alt="" class="fit-image transition-opacity duration-300">
                     </div>
-                    <!-- Mobile arrows (shown only when multiple images) -->
-                    <div id="carousel-arrows" class="carousel-arrows-mobile" style="display: none;">
-                        <button class="carousel-arrow" onclick="window.carouselPrev()">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                        </button>
-                        <button class="carousel-arrow" onclick="window.carouselNext()">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        </button>
-                    </div>
-                    <!-- Desktop thumbnails (shown only when multiple images) -->
-                    <div id="carousel-thumbnails" class="carousel-thumbnails" style="display: none;"></div>
+                    <button id="carousel-next-mobile" class="carousel-arrow hidden lg:hidden" onclick="window.carouselNext()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                    <!-- Desktop thumbnails -->
+                    <div id="carousel-thumbnails" class="carousel-thumbnails"></div>
                 </div>
             </div>
             <div id="modal-info-scroll" class="w-full lg:w-1/2 h-1/2 lg:h-full overflow-y-auto glass-panel">
@@ -828,43 +858,67 @@
 
         // Carousel functions
         function updateCarouselDisplay() {
-            const modalImage = document.getElementById('modal-image');
-            const arrowsContainer = document.getElementById('carousel-arrows');
+            const modalImageMobile = document.getElementById('modal-image');
+            const modalImageDesktop = document.getElementById('modal-image-desktop');
             const thumbsContainer = document.getElementById('carousel-thumbnails');
 
-            // Update main image
-            modalImage.src = currentCarouselImages[currentCarouselIndex];
+            // Arrow buttons
+            const prevMobile = document.getElementById('carousel-prev-mobile');
+            const nextMobile = document.getElementById('carousel-next-mobile');
+            const prevDesktop = document.getElementById('carousel-prev-desktop');
+            const nextDesktop = document.getElementById('carousel-next-desktop');
 
-            // Show/hide navigation based on image count
+            const currentImage = currentCarouselImages[currentCarouselIndex];
             const hasMultipleImages = currentCarouselImages.length > 1;
+            const isFirst = currentCarouselIndex === 0;
+            const isLast = currentCarouselIndex === currentCarouselImages.length - 1;
 
-            // Mobile arrows
-            arrowsContainer.style.display = hasMultipleImages ? 'flex' : 'none';
+            // Update images
+            if (modalImageMobile) modalImageMobile.src = currentImage;
+            if (modalImageDesktop) modalImageDesktop.src = currentImage;
+
+            // Mobile arrows: show/hide based on position (not circular)
+            if (prevMobile) {
+                prevMobile.classList.toggle('hidden', !hasMultipleImages || isFirst);
+            }
+            if (nextMobile) {
+                nextMobile.classList.toggle('hidden', !hasMultipleImages || isLast);
+            }
+
+            // Desktop arrows: show/hide based on position (not circular)
+            if (prevDesktop) {
+                prevDesktop.classList.toggle('hidden', !hasMultipleImages || isFirst);
+            }
+            if (nextDesktop) {
+                nextDesktop.classList.toggle('hidden', !hasMultipleImages || isLast);
+            }
 
             // Desktop thumbnails
             if (hasMultipleImages) {
-                thumbsContainer.style.display = 'flex';
+                thumbsContainer.classList.add('show');
                 thumbsContainer.innerHTML = currentCarouselImages.map((img, idx) => `
                     <div class="carousel-thumb ${idx === currentCarouselIndex ? 'active' : ''}" onclick="window.carouselGoTo(${idx})">
                         <img src="${img}" alt="Thumbnail ${idx + 1}">
                     </div>
                 `).join('');
             } else {
-                thumbsContainer.style.display = 'none';
+                thumbsContainer.classList.remove('show');
                 thumbsContainer.innerHTML = '';
             }
         }
 
         window.carouselNext = function() {
-            if (currentCarouselImages.length <= 1) return;
-            currentCarouselIndex = (currentCarouselIndex + 1) % currentCarouselImages.length;
-            updateCarouselDisplay();
+            if (currentCarouselIndex < currentCarouselImages.length - 1) {
+                currentCarouselIndex++;
+                updateCarouselDisplay();
+            }
         };
 
         window.carouselPrev = function() {
-            if (currentCarouselImages.length <= 1) return;
-            currentCarouselIndex = (currentCarouselIndex - 1 + currentCarouselImages.length) % currentCarouselImages.length;
-            updateCarouselDisplay();
+            if (currentCarouselIndex > 0) {
+                currentCarouselIndex--;
+                updateCarouselDisplay();
+            }
         };
 
         window.carouselGoTo = function(index) {
@@ -872,6 +926,40 @@
             currentCarouselIndex = index;
             updateCarouselDisplay();
         };
+
+        // Swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    // Swipe left -> next image
+                    window.carouselNext();
+                } else {
+                    // Swipe right -> prev image
+                    window.carouselPrev();
+                }
+            }
+        }
+
+        // Setup swipe listeners after DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileImageWrapper = document.getElementById('carousel-image-mobile');
+            if (mobileImageWrapper) {
+                mobileImageWrapper.addEventListener('touchstart', (e) => {
+                    touchStartX = e.changedTouches[0].screenX;
+                }, { passive: true });
+
+                mobileImageWrapper.addEventListener('touchend', (e) => {
+                    touchEndX = e.changedTouches[0].screenX;
+                    handleSwipe();
+                }, { passive: true });
+            }
+        });
 
         const closeBtn = document.getElementById('close-modal');
         closeBtn.onclick = () => {
