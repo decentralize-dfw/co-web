@@ -1,0 +1,2943 @@
+<!--
+    Developed by Virtually Ever After (VEA) — https://virtuallyeverafter.xyz/
+    A Luxembourg-based creative studio crafting immersive 3D environments and spatial experiences.
+    All products are modeled in 3D with vendor authorization. This interface is designed for Status Co.
+    VEA transforms static spaces into interactive, story-driven digital worlds using Three.js, WebXR, and AI.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>VEA | ARCHITECTURAL VISUALIZATION ENGINE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/meshoptimizer@0.19.0/meshopt_decoder.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Capriola&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Telegrama Render';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+            font-display: block;
+        }
+        :root {
+            --ui-color: #000000;
+            --bg-color: #ffffff;
+             --accent-color: #FF006A;
+            --font-headers: 'Space Mono', monospace;
+            --font-body: 'Space Mono', monospace;
+
+/* ============================================= */
+/* RENDER PARAMETERS - DESKTOP / MOBILE         */
+/* ============================================= */
+
+--ssao-enabled-desktop: no;
+--ssao-enabled-mobile: no;
+--ssao-kernel-radius: 8;
+--ssao-intensity: 0.5;
+--bloom-enabled-desktop: yes;
+--bloom-enabled-mobile: no;
+--bloom-strength: 0.05;
+--bloom-radius: 0.35;
+--bloom-threshold: 0.8;
+--tonemapping-enabled-desktop: yes;
+--tonemapping-enabled-mobile: no;
+--tonemapping-exposure-desktop: 0.75;
+--tonemapping-exposure-mobile: 1.0;
+--shadows-enabled-desktop: yes;
+--shadows-enabled-mobile: yes;
+--shadow-type: PCF;
+--shadow-bias: -0.0005;
+--shadow-normal-bias: 0.2;
+--fxaa-enabled-desktop: yes;
+--fxaa-enabled-mobile: no;
+--anisotropy-enabled-desktop: no;
+--anisotropy-enabled-mobile: no;
+--envmap-enabled-desktop: yes;
+--envmap-enabled-mobile: yes;
+--envmap-intensity-desktop: 1.0;
+--envmap-intensity-mobile: 1.0;
+--rectarealight-enabled-desktop: no;
+--rectarealight-enabled-mobile: no;
+--rectarealight-intensity: 2.0;
+--light-hemisphere-intensity: 0.3;
+--light-sun-intensity: 3.5;
+--light-fill-intensity: 0.1;
+--light-rim-intensity: 0;
+--light-accent-intensity: 0.1;
+--pbr-envmap-intensity: 1.0;
+--pbr-roughness-boost: 0.0;
+--pbr-metalness-boost: 0.0;
+--filter-brightness: 1.0;
+--filter-contrast: 1.0;
+--filter-saturation: 1.0;
+--filter-hue-rotate: 0;
+--hdri-preset: 1;
+--mobile-hover-label-font-size: 60px;
+--mobile-hover-label-opacity: 0.9;
+--mobile-hover-label-offset-y: 40px;
+--mobile-hover-label-name-offset-y: 80px;
+--mobile-hover-label-rotation-x: 0deg;
+--mobile-hover-label-rotation-y: 90deg;
+--mobile-hover-label-rotation-z: 0deg;
+--mobile-hover-artist-font-size: 35px;
+--mobile-hover-artist-opacity: 0.7;
+            --cam1-pos-x: 5000;
+            --cam1-pos-y: 5000;
+            --cam1-pos-z: -5000;
+            --cam2-pos-x: 5000;
+            --cam2-pos-y: 5000;
+            --cam2-pos-z: 5000;
+            --cam3-pos-x: 5000;
+            --cam3-pos-y: 5000;
+            --cam3-pos-z: 5000;
+            --cam3-show-public: no;
+            --initial-camera-zoom: 3.0;
+            --cam-lookat-x: 0;
+            --cam-lookat-y: 0;
+            --cam-lookat-z: 0;
+            --camera-fov: 45;
+             --camera-min-distance: 100;
+            --camera-max-distance: 45000;
+            --enable-pan: no; 
+             --hover-lift-distance: 100px;
+            --hover-animation-duration: 0.3s;
+            --hover-label-font-size: 60px;
+            --hover-label-font-style: bold;
+            --hover-label-letter-spacing: 0;
+            --hover-label-color: #000000;
+            --hover-label-opacity: 1.0;
+            --hover-artist-font-size: 40px;
+            --hover-artist-font-style: normal;
+            --hover-artist-letter-spacing: 2;
+            --hover-artist-color: #333333;
+            --hover-artist-opacity: 1;
+            --hover-label-font-box: 1000px;
+            --hover-label-rotation-x: 0deg;
+            --hover-label-rotation-y: 90deg;
+            --hover-label-rotation-z: 0deg;
+            --hover-label-offset-y: 100px;
+            --hover-label-name-offset-y: 70px;
+            --show-price: yes;
+            --panel-width: 480px;
+            --panel-right-offset: 20px;
+            --panel-top-offset: 120px; 
+            --panel-bottom-offset: 20px;
+            --panel-border-radius: 24px;
+            --panel-bg-opacity: 0.4;
+             --panel-blur: 8px;
+             --panel-animation-duration: 0.8s;
+            --panel-media-padding-horizontal: 10%;
+            --panel-media-padding-top: 2rem;
+            --panel-media-spacing: 20px;
+            --panel-title-font-size: 2rem;
+            --panel-meta-font-size: 0.9rem;
+            --panel-desc-font-size: 0.95rem;
+            --panel-text-spacing: 1.5rem;
+            --panel-content-padding: 2rem;
+            --selection-zoom-factor: 0.2;
+            --selection-zoom-factor-mobile: 0.3;
+             --zoom-in-animation-duration: 1.0s;
+            --zoom-out-animation-duration: 1.2s;
+            --app-height: 100vh;
+            --initial-camera-zoom-mobile: 2.0;
+        }
+        html, body {
+            font-family: var(--font-body);
+            background-color: var(--bg-color);
+            color: var(--ui-color);
+            margin: 0; padding: 0;
+            overflow: hidden;
+            width: 100vw; height: 100vh;
+            touch-action: none;
+        }
+        #scene-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            background: #ffffff;
+         }
+        #ui-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            user-select: none;
+        }
+        .ui-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .ui-label {
+            font-family: var(--font-headers);
+            font-size: 10px;
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .toggle-group {
+            display: flex;
+            gap: 6px;
+        }
+        .toggle-btn {
+            padding: 6px 12px;
+            font-family: var(--font-headers);
+            font-size: 9px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #000;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+        }
+        .toggle-btn.active {
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            border-color: rgba(0, 0, 0, 0.85);
+        }
+        .icon-btn {
+            width: 24px; height: 24px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            padding: 0;
+            transition: opacity 0.2s;
+        }
+        .icon-btn:hover { opacity: 0.7; }
+        .icon-btn svg { width: 100%; height: 100%; fill: #000; }
+        .lock-btn {
+            width: 14px; height: 14px;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            padding: 2px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s;
+        }
+        .lock-btn:hover { background: rgba(0, 0, 0, 0.6); }
+        .lock-btn svg { width: 10px; height: 10px; fill: #fff; }
+        #loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: white;
+            z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .loader-text {
+            font-family: var(--font-headers);
+            font-size: 1.5rem;
+            color: #000;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+        }
+        .loader-bar-container {
+            width: 200px; height: 2px;
+            background: #eee;
+            position: relative; overflow: hidden;
+        }
+        .loader-bar {
+            height: 100%;
+            background: #000;
+            width: 0%;
+            transition: width 0.3s ease-out;
+        }
+        #side-panel {
+            position: fixed;
+            right: var(--panel-right-offset);
+            top: var(--panel-top-offset);
+            width: var(--panel-width);
+            max-height: calc(100vh - var(--panel-top-offset) - var(--panel-bottom-offset));
+            background: rgba(255, 255, 255, var(--panel-bg-opacity));
+            backdrop-filter: blur(var(--panel-blur));
+            -webkit-backdrop-filter: blur(var(--panel-blur));
+            border-radius: var(--panel-border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+            transform: translateY(50px);
+            opacity: 0; visibility: hidden;
+            transition: transform var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1),
+                        opacity var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1),
+                        visibility var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: 100;
+            overflow-y: auto; overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+        }
+        #side-panel::-webkit-scrollbar { width: 8px; }
+        #side-panel::-webkit-scrollbar-track { background: transparent; }
+        #side-panel::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            background-clip: padding-box;
+            border-right: 5px solid transparent;
+             border-radius: 10px;
+        }
+        #side-panel::-webkit-scrollbar-button { display: none !important; }
+        #side-panel.open {
+            transform: translateY(0);
+            opacity: 1; visibility: visible;
+        }
+        .panel-close-btn {
+            position: sticky;
+            top: 1.5rem;
+             margin-left: auto;
+            margin-right: 1.5rem;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(4px);
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 50;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .panel-close-btn:hover { background: rgba(0, 0, 0, 0.05); transform: rotate(90deg); }
+        .panel-media-section {
+            padding: 0 var(--panel-media-padding-horizontal) var(--panel-media-spacing);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .media-carousel-container {
+            width: 100%;
+            aspect-ratio: 1;
+            position: relative;
+            background: transparent; 
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: var(--panel-media-spacing);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .carousel-img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain;
+            display: none;
+            user-select: none;
+        }
+        .carousel-img.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+        .carousel-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1px solid rgba(0,0,0,0.8);
+            display: none; 
+            align-items: center; justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.2s;
+            opacity: 0.6;
+        }
+        .carousel-nav-btn:hover { opacity: 1; border-width: 1.5px; }
+        .carousel-nav-btn svg { width: 14px; height: 14px; stroke: black; }
+        .nav-right { right: 0; } 
+        .nav-left { left: 0; } 
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .panel-text-section { padding: var(--panel-content-padding); padding-top: 0; }
+        .panel-artist {
+            font-family: 'Capriola', sans-serif;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        .panel-title {
+            font-family: var(--font-headers);
+            font-size: var(--panel-title-font-size);
+            line-height: 1.1; text-transform: uppercase;
+            margin-bottom: var(--panel-text-spacing); color: #000;
+        }
+        .panel-meta-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 8px 16px;
+            margin-bottom: var(--panel-text-spacing);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 1rem;
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+        .meta-label { opacity: 0.5; }
+        .meta-value { font-weight: bold; }
+        .panel-desc-header {
+            font-family: var(--font-headers);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #000;
+        }
+        .panel-bio-header {
+            font-family: 'Capriola', sans-serif;
+            font-size: 0.9rem; 
+            text-transform: uppercase;
+            margin-top: 2rem;
+            margin-bottom: 0.5rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 1rem;
+            color: rgba(0,0,0,0.7); 
+        }
+        .panel-description {
+            font-family: var(--font-body);
+            font-size: var(--panel-desc-font-size);
+            line-height: 1.7; white-space: pre-line; color: black;
+            margin-bottom: 1rem;
+        }
+        .panel-bio-text {
+            font-family: var(--font-body);
+            font-size: 0.8rem; 
+            line-height: 1.6;
+            color: rgba(0,0,0,0.7); 
+        }
+        #editor-panel {
+            position: fixed;
+            left: 10px;
+            top: 140px; 
+            max-width: calc(100vw - 520px);
+            max-height: calc(100vh - 160px);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+            overflow: auto;
+            display: none;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+        }
+        #editor-panel.open { display: block; }
+        .editor-table {
+            border-collapse: collapse;
+            font-family: var(--font-body);
+            font-size: 12px;
+        }
+        .editor-table th {
+            background: rgba(0, 0, 0, 0.08);
+            padding: 4px 6px;
+            text-align: center;
+            font-weight: normal;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            position: sticky; top: 0; z-index: 10;
+            white-space: nowrap;
+        }
+        .editor-table th.name-col { text-align: left; min-width: 100px; max-width: 120px; }
+        .editor-table td {
+            padding: 2px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .editor-table td.name-cell {
+            text-align: left; padding: 2px 6px; font-size: 10px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;
+            cursor: pointer;
+        }
+        .editor-table tr:hover { background: rgba(0, 0, 0, 0.03); }
+        .editor-table tr.selected { background: rgba(0, 120, 255, 0.1); }
+        .editor-table tr.selected td { border-color: rgba(0, 120, 255, 0.3); }
+        .editor-table input {
+            width: 40px; padding: 2px 3px; font-family: var(--font-body); font-size: 12px;
+            border: none; background: transparent; text-align: right;
+        }
+        .editor-table input:focus { outline: none; background: rgba(0, 120, 255, 0.1); }
+        .col-x { background: rgba(231, 76, 60, 0.1); }
+        .col-y { background: rgba(39, 174, 96, 0.1); }
+        .col-z { background: rgba(52, 152, 219, 0.1); }
+        .col-s { background: rgba(155, 89, 182, 0.1); }
+        .editor-footer {
+            padding: 6px; border-top: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.95);
+            position: sticky; bottom: 0; display: flex; gap: 6px;
+        }
+        .editor-footer-btn {
+            padding: 4px 10px; font-family: var(--font-headers); font-size: 12px;
+            cursor: pointer; text-transform: uppercase;
+            background: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 4px; transition: all 0.2s;
+        }
+        .editor-footer-btn:hover { background: rgba(0, 0, 0, 0.1); }
+        .editor-footer-btn.print-btn {
+            background: rgba(0, 0, 0, 0.85); color: #fff; border-color: rgba(0, 0, 0, 0.85);
+        }
+        .editor-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.98);
+            z-index: 20;
+        }
+        .editor-tab {
+            flex: 1;
+            padding: 8px 12px;
+            font-family: var(--font-headers);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: rgba(0, 0, 0, 0.5);
+            transition: all 0.2s;
+            border-bottom: 2px solid transparent;
+        }
+        .editor-tab:hover {
+            color: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.03);
+        }
+        .editor-tab.active {
+            color: #000;
+            border-bottom-color: #000;
+            font-weight: bold;
+        }
+        .editor-tab-content {
+            display: none;
+        }
+        .editor-tab-content.active {
+            display: block;
+        }
+        .params-grid {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 4px 8px;
+            padding: 8px;
+            font-family: var(--font-body);
+            font-size: 11px;
+        }
+        .params-section-title {
+            grid-column: 1 / -1;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 10px;
+            letter-spacing: 0.5px;
+            padding: 8px 0 4px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            margin-top: 8px;
+            color: rgba(0, 0, 0, 0.7);
+        }
+        .params-section-title:first-child {
+            margin-top: 0;
+        }
+        .params-label {
+            padding: 4px 0;
+            color: rgba(0, 0, 0, 0.7);
+        }
+        .params-value {
+            text-align: center;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.03);
+            border-radius: 4px;
+            min-width: 50px;
+        }
+        .params-value.on {
+            background: rgba(39, 174, 96, 0.15);
+            color: #27ae60;
+        }
+        .params-value.off {
+            background: rgba(231, 76, 60, 0.15);
+            color: #e74c3c;
+        }
+        .params-toggle {
+            width: 36px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.2s;
+        }
+        .params-toggle.on {
+            background: rgba(39, 174, 96, 0.8);
+        }
+        .params-toggle::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .params-toggle.on::after {
+            left: 18px;
+        }
+        .params-slider-row {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
+        }
+        .params-slider-label {
+            flex: 0 0 120px;
+            color: rgba(0, 0, 0, 0.7);
+        }
+        .params-slider {
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 2px;
+            outline: none;
+        }
+        .params-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #000;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .params-slider-value {
+            flex: 0 0 55px;
+            text-align: right;
+            font-size: 10px;
+            color: rgba(0, 0, 0, 0.6);
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+        .params-slider-value:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+        .params-slider-input {
+            flex: 0 0 55px;
+            width: 55px;
+            text-align: right;
+            font-size: 10px;
+            font-family: var(--font-body);
+            border: 1px solid rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            padding: 2px 4px;
+            outline: none;
+        }
+        .params-slider-input:focus {
+            border-color: var(--accent-color);
+        }
+        .editor-btn, .camera-btn, .transform-btn {
+            padding: 6px 12px; font-family: var(--font-headers); font-size: 9px;
+            cursor: pointer; text-transform: uppercase; transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 0, 0, 0.05); border-radius: 12px;
+        }
+        .editor-btn.active, .camera-btn.active, .transform-btn.active {
+            background: rgba(0, 0, 0, 0.85); color: #fff; border-color: rgba(0, 0, 0, 0.85);
+        }
+        .transform-group, .camera-group { display: flex; gap: 4px; margin-left: 12px; }
+        #mobile-labels-toggle {
+            display: none;
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-family: var(--font-body);
+            font-size: 9px;
+            text-transform: uppercase;
+            cursor: pointer;
+            user-select: none;
+            align-items: center;
+            gap: 4px;
+        }
+        #mobile-labels-toggle input {
+            margin: 0;
+            width: 12px; height: 12px;
+            cursor: pointer;
+        }
+        @media (max-width: 768px) {
+            #side-panel {
+                right: 5%; left: 5%; bottom: 0; top: auto;
+                width: 90%; 
+                height: 95dvh; max-height: 95dvh; 
+                border-radius: 24px 24px 0 0; 
+                transform: translateY(100%);
+            }
+            #side-panel.open { transform: translateY(0); }
+            #ui-container { display: none !important; }
+            #mobile-labels-toggle { display: flex; }
+            :root {
+                --panel-media-padding-horizontal: 25%;
+                --panel-media-padding-top: 1rem;
+                --panel-media-spacing: 30px;
+                --panel-content-padding: 1.5rem;
+                --panel-title-font-size: 1.6rem;
+            }
+            .panel-artist { font-size: 0.8rem; }
+            .panel-desc-header { font-size: 0.72rem; }
+            .panel-bio-header { font-size: 0.72rem; }
+            .panel-description { font-size: 0.76rem; }
+            .panel-bio-text { font-size: 0.64rem; }
+            .panel-meta-grid { font-size: 0.64rem; }
+            .carousel-nav-btn.nav-left { left: -17%; }
+            .carousel-nav-btn.nav-right { right: -17%; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loader">
+        <div class="loader-text">Loading Data</div>
+        <div class="loader-bar-container"><div class="loader-bar"></div></div>
+    </div>
+    <!-- UI CONTAINER (NEW STRUCTURE) -->
+    <div id="ui-container">
+        <!-- ROW 1: VIEW CONTROLS -->
+        <div class="ui-row">
+            <button class="lock-btn" id="btn-lock-icon" onclick="toggleCameraLock()" title="Lock/Unlock Camera">
+                <svg viewBox="0 0 24 24" id="lock-icon-svg">
+                    <path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z"/>
+                </svg>
+            </button>
+            <span class="ui-label">VIEW</span>
+            <div class="toggle-group">
+                <button class="toggle-btn active" id="btn-cam1" onclick="switchCamera(1)">1</button>
+                <button class="toggle-btn" id="btn-cam2" onclick="switchCamera(2)">2</button>
+                <button class="toggle-btn" id="btn-cam3" onclick="switchCamera('persp')" style="display:none">3</button>
+            </div>
+        </div>
+        <!-- ROW 2: GRAPHICS CONTROLS -->
+        <div class="ui-row">
+            <span class="ui-label">GRAPHICS</span>
+            <div class="toggle-group">
+                <button class="toggle-btn active" id="btn-mid" onclick="handlePresetSelection('default')">DEFAULT</button>
+                <button class="toggle-btn" id="btn-low" onclick="handlePresetSelection('low')">WIRE</button>
+            </div>
+        </div>
+        <!-- Editor Transform Tools (Hidden initially) -->
+        <div class="transform-group" id="transform-group" style="display: none; margin-top: 8px;">
+            <button class="transform-btn active" id="btn-translate" onclick="setTransformMode('translate')">T</button>
+            <button class="transform-btn" id="btn-rotate" onclick="setTransformMode('rotate')">R</button>
+            <button class="transform-btn" id="btn-scale" onclick="setTransformMode('scale')">S</button>
+        </div>
+    </div>
+    <!-- EDITOR PANEL (LEFT SIDE) - EXCEL STYLE -->
+    <div id="editor-panel">
+        <!-- TABS -->
+        <div class="editor-tabs">
+            <button class="editor-tab active" data-tab="products" onclick="switchEditorTab('products')">Products</button>
+            <button class="editor-tab" data-tab="parameters" onclick="switchEditorTab('parameters')">Render</button>
+            <button class="editor-tab" data-tab="scene" onclick="switchEditorTab('scene')">Scene</button>
+        </div>
+        <!-- PRODUCTS TAB -->
+        <div class="editor-tab-content active" id="tab-products">
+            <table class="editor-table">
+                <thead>
+                    <tr>
+                        <th style="width:20px;"></th>
+                        <th class="name-col">NAME</th>
+                        <th class="col-x">X</th>
+                        <th class="col-y">Y</th>
+                        <th class="col-z">Z</th>
+                        <th class="col-x">RX</th>
+                        <th class="col-y">RY</th>
+                        <th class="col-z">RZ</th>
+                        <th class="col-s">S</th>
+                    </tr>
+                </thead>
+                <tbody id="editor-table-body"></tbody>
+            </table>
+            <div class="editor-footer">
+                <button class="editor-footer-btn print-btn" onclick="printEditorData()">PRINT</button>
+            </div>
+        </div>
+        <!-- PARAMETERS TAB -->
+        <div class="editor-tab-content" id="tab-parameters">
+            <div class="params-grid" id="params-grid">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            <div class="editor-footer">
+                <button class="editor-footer-btn" onclick="resetParameters()">RESET</button>
+                <button class="editor-footer-btn print-btn" onclick="printParameters()">PRINT</button>
+            </div>
+        </div>
+        <!-- SCENE TAB -->
+        <div class="editor-tab-content" id="tab-scene">
+            <div class="params-grid" id="scene-params-grid">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            <div class="editor-footer">
+                <button class="editor-footer-btn" onclick="resetSceneParameters()">RESET</button>
+                <button class="editor-footer-btn print-btn" onclick="printSceneParameters()">PRINT</button>
+            </div>
+        </div>
+    </div>
+    <!-- MOBILE LABELS TOGGLE -->
+    <label id="mobile-labels-toggle">
+        <input type="checkbox" id="mobile-labels-cb"> Labels
+    </label>
+    <div id="scene-container"></div>
+    <div id="side-panel">
+        <button class="panel-close-btn" onclick="closePanel()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="#000"/>
+            </svg>
+        </button>
+        <div class="panel-media-section" id="panel-media"></div>
+        <div class="panel-text-section">
+            <div class="panel-artist" id="panel-artist"></div>
+            <div class="panel-title" id="panel-title"></div>
+            <div class="panel-meta-grid" id="panel-meta-grid">
+                <!-- Dynamic Content -->
+            </div>
+            <div class="panel-desc-header">Product Description</div>
+            <div class="panel-description" id="panel-desc"></div>
+            <div class="panel-bio-header" id="panel-bio-header"></div>
+            <div class="panel-bio-text" id="panel-bio"></div>
+            <div id="panel-links"></div>
+        </div>
+    </div>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+                "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.6.8/build/index.module.js"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+        import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+        import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
+        import { TransformControls } from 'three/addons/controls/TransformControls.js';
+        import { RectAreaLightHelper } from 'three/addons/helpers/RectAreaLightHelper.js';
+        import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+        import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+        THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+        THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+        THREE.Mesh.prototype.raycast = acceleratedRaycast;
+        async function loadDataFromSheet() {
+            const SHEET_ID = '1NjQC4XOzizmreaxMwL3J7OSey-aopUw7RVVrM0g5hG0';
+            const BASE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=0&t=${Date.now()}`;
+            try {
+                const response = await fetch(BASE_URL);
+                const text = await response.text();
+                const json = JSON.parse(text.substr(47).slice(0, -2));
+                const rows = json.table.rows;
+                sceneObjects = [];
+                const getVal = (row, idx, type = 'string') => {
+                    const cell = row.c[idx];
+                    if (!cell || cell.v === null || cell.v === 'null') return type === 'number' ? 0 : "";
+                    return cell.v;
+                };
+                rows.forEach((row, i) => {
+                    const glbSrc = getVal(row, 10);
+                    if (!glbSrc || typeof glbSrc !== 'string' || (!glbSrc.endsWith('.glb') && !glbSrc.endsWith('.gltf'))) return;
+                    const obj = {
+                        type: 'model',
+                        src: glbSrc,
+                        width: 700,
+                        position: {
+                            x: parseFloat(getVal(row, 27, 'number')),
+                            y: parseFloat(getVal(row, 28, 'number')),
+                            z: parseFloat(getVal(row, 29, 'number'))
+                        },
+                        rotation: {
+                            x: parseFloat(getVal(row, 30, 'number')),
+                            y: parseFloat(getVal(row, 31, 'number')),
+                            z: parseFloat(getVal(row, 32, 'number'))
+                        },
+                        scale: parseFloat(getVal(row, 33, 'number')) || 400,
+                        modalContent: {
+                            artist: getVal(row, 2),
+                            name: getVal(row, 3),
+                            hoverDisplayName: getVal(row, 37),
+                            price: getVal(row, 16),
+                            dimensions: getVal(row, 15),
+                            category: getVal(row, 5),
+                            type: getVal(row, 6),
+                            color: getVal(row, 7),
+                            edition: getVal(row, 14),
+                            description: getVal(row, 18),
+                            bio: getVal(row, 22),
+                            media: []
+                        }
+                    };
+                    const mainImg = getVal(row, 11);
+                    if (mainImg && mainImg.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+                        obj.modalContent.media.push({ type: "image", src: mainImg });
+                    }
+                    const extraImgs = [34, 35, 36];
+                    extraImgs.forEach(idx => {
+                        const link = getVal(row, idx);
+                        if (link && link.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+                            obj.modalContent.media.push({ type: "image", src: link });
+                        }
+                    });
+                    if (obj.modalContent.media.length === 0) {
+                        obj.modalContent.media.push({ type: "model", src: glbSrc });
+                    }
+                    sceneObjects.push(obj);
+                });
+                let envGlb = 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/exhbt22-opt.glb';
+                 if (rows[0] && rows[0].c[9] && rows[0].c[9].v) {
+                    envGlb = rows[0].c[9].v;
+                }
+                let envPos = { x: 0, y: -560, z: 0 };
+                let envRot = { x: 0, y: 0, z: 0 };
+                let envScale = 400;
+                if (rows.length > 0 && rows[0]) {
+                    const envRow = rows[0];
+                    envPos = {
+                        x: parseFloat(getVal(envRow, 27, 'number')),
+                        y: parseFloat(getVal(envRow, 28, 'number')),
+                        z: parseFloat(getVal(envRow, 29, 'number'))
+                    };
+                    envRot = {
+                        x: parseFloat(getVal(envRow, 30, 'number')),
+                        y: parseFloat(getVal(envRow, 31, 'number')),
+                        z: parseFloat(getVal(envRow, 32, 'number'))
+                    };
+                    envScale = parseFloat(getVal(envRow, 33, 'number')) || 400;
+                }
+                sceneObjects.push({
+                    type: 'model',
+                    src: envGlb,
+                    position: envPos,
+                    rotation: envRot,
+                    scale: envScale,
+                    clickable: false,
+                    modalContent: { name: "Environment", artist: "VEA", description: "Environment" }
+                });
+            } catch (err) {
+                console.error("GVIZ Data Load Error:", err);
+            }
+        }
+        const getParam = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        const getParamNum = (name) => parseFloat(getParam(name));
+        const getParamBool = (name) => getParam(name).toLowerCase() === 'yes';
+        const RENDER_PARAMS = {
+            ssaoEnabledDesktop: getParamBool('--ssao-enabled-desktop'),
+            ssaoEnabledMobile: getParamBool('--ssao-enabled-mobile'),
+            ssaoKernelRadius: getParamNum('--ssao-kernel-radius') || 8,
+            ssaoIntensity: getParamNum('--ssao-intensity') || 0.5,
+            bloomEnabledDesktop: getParamBool('--bloom-enabled-desktop'),
+            bloomEnabledMobile: getParamBool('--bloom-enabled-mobile'),
+            bloomStrength: getParamNum('--bloom-strength') || 0.05,
+            bloomRadius: getParamNum('--bloom-radius') || 0.35,
+            bloomThreshold: getParamNum('--bloom-threshold') || 0.8,
+            tonemappingEnabledDesktop: getParamBool('--tonemapping-enabled-desktop'),
+            tonemappingEnabledMobile: getParamBool('--tonemapping-enabled-mobile'),
+            tonemappingExposureDesktop: getParamNum('--tonemapping-exposure-desktop') || 0.75,
+            tonemappingExposureMobile: getParamNum('--tonemapping-exposure-mobile') || 1.0,
+            shadowsEnabledDesktop: getParamBool('--shadows-enabled-desktop'),
+            shadowsEnabledMobile: getParamBool('--shadows-enabled-mobile'),
+            shadowType: getParam('--shadow-type') || 'PCF',
+            shadowBias: getParamNum('--shadow-bias') || -0.0005,
+            shadowNormalBias: getParamNum('--shadow-normal-bias') || 0.2,
+            fxaaEnabledDesktop: getParamBool('--fxaa-enabled-desktop'),
+            fxaaEnabledMobile: getParamBool('--fxaa-enabled-mobile'),
+            anisotropyEnabledDesktop: getParamBool('--anisotropy-enabled-desktop'),
+            anisotropyEnabledMobile: getParamBool('--anisotropy-enabled-mobile'),
+            envmapEnabledDesktop: getParamBool('--envmap-enabled-desktop'),
+            envmapEnabledMobile: getParamBool('--envmap-enabled-mobile'),
+            envmapIntensityDesktop: getParamNum('--envmap-intensity-desktop') || 1.0,
+            envmapIntensityMobile: getParamNum('--envmap-intensity-mobile') || 1.0,
+            rectarealightEnabledDesktop: getParamBool('--rectarealight-enabled-desktop'),
+            rectarealightEnabledMobile: getParamBool('--rectarealight-enabled-mobile'),
+            rectarealightIntensity: getParamNum('--rectarealight-intensity') || 2.0,
+            lightHemisphereIntensity: getParamNum('--light-hemisphere-intensity') || 0.3,
+            lightSunIntensity: getParamNum('--light-sun-intensity') || 3.5,
+            lightFillIntensity: getParamNum('--light-fill-intensity') || 0.1,
+            lightRimIntensity: getParamNum('--light-rim-intensity') || 0,
+            lightAccentIntensity: getParamNum('--light-accent-intensity') || 0.1,
+            pbrEnvmapIntensity: getParamNum('--pbr-envmap-intensity') || 1.0,
+            pbrRoughnessBoost: getParamNum('--pbr-roughness-boost') || 0,
+            pbrMetalnessBoost: getParamNum('--pbr-metalness-boost') || 0,
+            filterBrightness: getParamNum('--filter-brightness') || 1.0,
+            filterContrast: getParamNum('--filter-contrast') || 1.0,
+            filterSaturation: getParamNum('--filter-saturation') || 1.0,
+            filterHueRotate: getParamNum('--filter-hue-rotate') || 0,
+            cam3ShowPublic: getParamBool('--cam3-show-public'),
+            hdriPreset: getParamNum('--hdri-preset') || 1,
+            cam1PosX: getParamNum('--cam1-pos-x'),
+            cam1PosY: getParamNum('--cam1-pos-y'),
+            cam1PosZ: getParamNum('--cam1-pos-z'),
+            cam2PosX: getParamNum('--cam2-pos-x'),
+            cam2PosY: getParamNum('--cam2-pos-y'),
+            cam2PosZ: getParamNum('--cam2-pos-z'),
+            cam3PosX: getParamNum('--cam3-pos-x'),
+            cam3PosY: getParamNum('--cam3-pos-y'),
+            cam3PosZ: getParamNum('--cam3-pos-z'),
+            initialCameraZoom: getParamNum('--initial-camera-zoom'),
+            hoverLabelFontSize: getParamNum('--hover-label-font-size'),
+            hoverLabelOffsetY: getParamNum('--hover-label-offset-y'),
+            hoverLabelNameOffsetY: getParamNum('--hover-label-name-offset-y'),
+            panelWidth: getParamNum('--panel-width') || 280,
+            panelTopOffset: getParamNum('--panel-top-offset') || 60
+        };
+        let runtimeParams = { ...RENDER_PARAMS };
+        const PARAMS = {
+            hoverLiftDistance: getParamNum('--hover-lift-distance'),
+            hoverAnimationDuration: parseFloat(getParam('--hover-animation-duration')) * 1000,
+            hoverLabelFontSize: getParamNum('--hover-label-font-size'),
+            hoverLabelFontStyle: getParam('--hover-label-font-style') || 'bold',
+            hoverLabelLetterSpacing: getParamNum('--hover-label-letter-spacing'),
+            hoverLabelColor: getParam('--hover-label-color') || '#000000',
+            hoverLabelOpacity: parseFloat(getParam('--hover-label-opacity')) || 1.0,
+            hoverArtistFontSize: getParamNum('--hover-artist-font-size'),
+            hoverArtistFontStyle: getParam('--hover-artist-font-style') || 'normal',
+            hoverArtistLetterSpacing: getParamNum('--hover-artist-letter-spacing'),
+            hoverArtistColor: getParam('--hover-artist-color') || '#333333',
+            hoverArtistOpacity: parseFloat(getParam('--hover-artist-opacity')) || 0.8,
+            hoverLabelFontBox: getParamNum('--hover-label-font-box'),
+            hoverLabelRotationX: parseFloat(getParam('--hover-label-rotation-x')),
+            hoverLabelRotationY: parseFloat(getParam('--hover-label-rotation-y')),
+            hoverLabelRotationZ: parseFloat(getParam('--hover-label-rotation-z')),
+            hoverLabelOffsetY: getParamNum('--hover-label-offset-y'),
+            hoverLabelNameOffsetY: getParamNum('--hover-label-name-offset-y'),
+            showPrice: getParam('--show-price') === 'yes',
+            selectionZoomFactor: getParamNum('--selection-zoom-factor'),
+            selectionZoomFactorMobile: getParamNum('--selection-zoom-factor-mobile'),
+            zoomInAnimationDuration: parseFloat(getParam('--zoom-in-animation-duration')) * 1000,
+            zoomOutAnimationDuration: parseFloat(getParam('--zoom-out-animation-duration')) * 1000,
+            initialCameraZoom: getParamNum('--initial-camera-zoom'),
+            initialCameraZoomMobile: getParamNum('--initial-camera-zoom-mobile'),
+            cameraFov: getParamNum('--camera-fov'),
+            cameraMinDist: getParamNum('--camera-min-distance'),
+            cameraMaxDist: getParamNum('--camera-max-distance'),
+            enablePan: getParam('--enable-pan') === 'yes',
+            cam1PosX: getParamNum('--cam1-pos-x'),
+            cam1PosY: getParamNum('--cam1-pos-y'),
+            cam1PosZ: getParamNum('--cam1-pos-z'),
+            cam2PosX: getParamNum('--cam2-pos-x'),
+            cam2PosY: getParamNum('--cam2-pos-y'),
+            cam2PosZ: getParamNum('--cam2-pos-z'),
+            cam3PosX: getParamNum('--cam3-pos-x'),
+            cam3PosY: getParamNum('--cam3-pos-y'),
+            cam3PosZ: getParamNum('--cam3-pos-z'),
+            camLookX: getParamNum('--cam-lookat-x'),
+            camLookY: getParamNum('--cam-lookat-y'),
+            camLookZ: getParamNum('--cam-lookat-z')
+        };
+        let camera, cameraOrtho, scene, renderer, controls, controlsOrtho, raycaster, mouse, composer, globalEnvMap;
+        let bloomPass, ssaoPass, fxaaPass;
+        let lightHemi, lightSun, lightFill, lightRim, lightAccent;
+        let rectLight1, rectLight2;
+        const hdriPresets = {
+            1: { name: 'Venice Sunset', url: 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr' },
+            2: { name: 'White Studio', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/white_studio_04_1k.hdr' },
+            3: { name: 'Qwantani Puresky', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/qwantani_mid_morning_puresky_1k.hdr' },
+            4: { name: 'Story Studio', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/story_studio_03_1k.hdr' },
+            5: { name: 'White Home Studio', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/white_home_studio_1k.hdr' },
+            6: { name: 'Studio Kominka', url: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/studio_kominka_02_1k.hdr' }
+        };
+        let currentHdriPreset = runtimeParams.hdriPreset || 1;
+        function loadHDRI(presetNum, pmremGen) {
+            const preset = hdriPresets[presetNum];
+            if (!preset) return;
+            currentHdriPreset = presetNum;
+            runtimeParams.hdriPreset = presetNum;
+            const isMobile = window.innerWidth <= 768;
+            const localPmrem = pmremGen || new THREE.PMREMGenerator(renderer);
+            if (!pmremGen) localPmrem.compileEquirectangularShader();
+            new RGBELoader().load(preset.url, (tex) => {
+                tex.mapping = THREE.EquirectangularReflectionMapping;
+                if (globalEnvMap) globalEnvMap.dispose();
+                globalEnvMap = localPmrem.fromEquirectangular(tex).texture;
+                const useEnvMap = isMobile ? runtimeParams.envmapEnabledMobile : runtimeParams.envmapEnabledDesktop;
+                if (useEnvMap && !isWireMode) {
+                    scene.environment = globalEnvMap;
+                }
+                const envIntensity = isMobile ? runtimeParams.envmapIntensityMobile : runtimeParams.envmapIntensityDesktop;
+                scene.traverse(child => {
+                    if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
+                        child.material.envMapIntensity = envIntensity;
+                        child.material.needsUpdate = true;
+                    }
+                });
+                tex.dispose();
+                if (!pmremGen) localPmrem.dispose();
+                console.log(`HDRI switched to: ${presetNum} - ${preset.name}`);
+            });
+        }
+        let loadedAssets = 0, totalAssets = 0;
+        let currentHoveredObject = null, hoverLabel = null, hoverLabelArtist = null, currentSelectedObject = null;
+        let originalCameraState = null, currentActiveVideos = [];
+        let modalAnimationFrameId;
+        let sceneObjects = [];
+         const clickableObjects = [];
+        let boundingBoxHelpers = [];
+        let boundingBoxesVisible = false;
+        let mobileLabelsVisible = false;
+        let mobileStaticLabels = [];
+        const clickableZones = [];
+        let editorModeActive = false;
+        let transformControls = null;
+        let selectedEditorObject = null;
+        let loadedObjectsMap = new Map();
+        let currentCameraMode = 'ortho';
+        let currentCameraIndex = 1;
+        let savedCameraState = null;
+        let currentTransformMode = 'translate';
+        const lockedObjects = new Set(); 
+        let isCameraLocked = false;
+        let undoStack = [];
+        let redoStack = [];
+        const MAX_UNDO_STEPS = 50;
+        let originalMaterials = new Map();
+        let isWireMode = false;
+        async function startEngine() {
+            try {
+                const font = new FontFace('Telegrama Render', 'url(https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf)');
+                await font.load();
+                document.fonts.add(font);
+            } catch (err) { console.log('Font load error', err); }
+            document.querySelector('.loader-text').innerText = "FETCHING DATA";
+            await loadDataFromSheet();
+            document.querySelector('.loader-text').innerText = "LOADING ASSETS";
+            init(); animate();
+        }
+        startEngine();
+        function init() {
+            const container = document.getElementById('scene-container');
+            const isMobile = window.innerWidth <= 768;
+            renderer = new THREE.WebGLRenderer({
+                 antialias: true,
+                 alpha: true,
+                 powerPreference: "high-performance",
+                precision: isMobile ? "mediump" : "highp",
+                logarithmicDepthBuffer: true
+            });
+            renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 0.85;
+             renderer.shadowMap.enabled = true;
+             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.setClearAlpha(0);
+            renderer.setClearColor(0xffffff, 0);
+            container.appendChild(renderer.domElement);
+            const aspect = window.innerWidth / window.innerHeight;
+            camera = new THREE.PerspectiveCamera(PARAMS.cameraFov, aspect, 10, 100000);
+            camera.position.set(5000, 5000, 5000);
+            cameraOrtho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100000);
+            cameraOrtho.position.set(PARAMS.cam1PosX, PARAMS.cam1PosY, PARAMS.cam1PosZ);
+            cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+            cameraOrtho.zoom = isMobile ? PARAMS.initialCameraZoomMobile : PARAMS.initialCameraZoom;
+            scene = new THREE.Scene();
+            scene.background = null;
+            setTimeout(() => {
+                if (transformControls) scene.add(transformControls);
+            }, 100); 
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enablePan = false;
+            controls.enableRotate = true;
+            controls.minDistance = PARAMS.cameraMinDist;
+            controls.maxDistance = PARAMS.cameraMaxDist;
+            controls.minPolarAngle = 0;
+            controls.maxPolarAngle = Math.PI / 2;
+            controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+            controls.enabled = false;
+            controlsOrtho = new OrbitControls(cameraOrtho, renderer.domElement);
+            controlsOrtho.enableDamping = true;
+            controlsOrtho.dampingFactor = 0.05;
+            controlsOrtho.enablePan = false;
+            controlsOrtho.enableZoom = true;
+            controlsOrtho.enableRotate = true;
+            controlsOrtho.minPolarAngle = 0;
+            controlsOrtho.maxPolarAngle = Math.PI / 2;
+            controlsOrtho.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+            controlsOrtho.enabled = true;
+            transformControls = new TransformControls(camera, renderer.domElement);
+            transformControls.setMode('translate');
+            transformControls.setSize(0.8);
+            transformControls.visible = false;
+            transformControls.enabled = false;
+            transformControls.addEventListener('dragging-changed', (event) => {
+                const activeControls = currentCameraMode === 'persp' ? controls : controlsOrtho;
+                activeControls.enabled = !event.value;
+            });
+            transformControls.addEventListener('change', () => {
+                if (selectedEditorObject && editorModeActive) {
+                    updateEditorPanelValues();
+                }
+            });
+            transformControls.addEventListener('mouseDown', () => {
+                if (selectedEditorObject && editorModeActive) {
+                    saveUndoState();
+                }
+            });
+            window.addEventListener('keydown', handleKeyDown);
+            const pmrem = new THREE.PMREMGenerator(renderer);
+            new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (tex) => {
+                tex.mapping = THREE.EquirectangularReflectionMapping;
+                globalEnvMap = pmrem.fromEquirectangular(tex).texture;
+                scene.environment = globalEnvMap;
+                tex.dispose(); pmrem.dispose();
+            });
+            RectAreaLightUniformsLib.init();
+            lightHemi = new THREE.HemisphereLight(0xffffff, 0x000000, runtimeParams.lightHemisphereIntensity);
+            scene.add(lightHemi);
+            lightSun = new THREE.DirectionalLight(0xffffff, runtimeParams.lightSunIntensity);
+            lightSun.position.set(1200, 2400, 1200);
+            lightSun.castShadow = isMobile ? runtimeParams.shadowsEnabledMobile : runtimeParams.shadowsEnabledDesktop;
+            const shadowSize = isMobile ? 1536 : 2048;
+            lightSun.shadow.mapSize.set(shadowSize, shadowSize);
+            lightSun.shadow.camera.near = 0.5;
+            lightSun.shadow.camera.far = 16000;
+            lightSun.shadow.camera.left = -5500; lightSun.shadow.camera.right = 5500;
+            lightSun.shadow.camera.top = 5500; lightSun.shadow.camera.bottom = -5500;
+            lightSun.shadow.bias = runtimeParams.shadowBias;
+            lightSun.shadow.normalBias = runtimeParams.shadowNormalBias;
+            scene.add(lightSun);
+            lightFill = new THREE.PointLight(0xffffff, runtimeParams.lightFillIntensity, 10000);
+            lightFill.position.set(3000, 1500, 3000);
+            scene.add(lightFill);
+            lightRim = new THREE.PointLight(0xffffff, runtimeParams.lightRimIntensity, 10000);
+            lightRim.position.set(-3000, 1500, -3000);
+            scene.add(lightRim);
+            lightAccent = new THREE.PointLight(0xffffff, runtimeParams.lightAccentIntensity, 8000);
+            lightAccent.position.set(0, 2000, -2000);
+            scene.add(lightAccent);
+            const useRectAreaLight = isMobile ? runtimeParams.rectarealightEnabledMobile : runtimeParams.rectarealightEnabledDesktop;
+            rectLight1 = new THREE.RectAreaLight(0xffffff, runtimeParams.rectarealightIntensity, 1000, 1000);
+            rectLight1.position.set(0, 3000, 3000);
+            rectLight1.lookAt(0, 0, 0);
+            rectLight1.visible = useRectAreaLight;
+            scene.add(rectLight1);
+            rectLight2 = new THREE.RectAreaLight(0xffffff, runtimeParams.rectarealightIntensity * 0.6, 800, 800);
+            rectLight2.position.set(-2000, 2000, -2000);
+            rectLight2.lookAt(0, 0, 0);
+            rectLight2.visible = useRectAreaLight;
+            scene.add(rectLight2);
+            composer = new EffectComposer(renderer);
+            const renderPass = new RenderPass(scene, camera);
+            renderPass.clearAlpha = 0;
+            composer.addPass(renderPass);
+            const useSSAO = isMobile ? runtimeParams.ssaoEnabledMobile : runtimeParams.ssaoEnabledDesktop;
+            ssaoPass = new SSAOPass(scene, cameraOrtho, window.innerWidth, window.innerHeight);
+            ssaoPass.kernelRadius = runtimeParams.ssaoKernelRadius;
+            ssaoPass.minDistance = 0.005;
+            ssaoPass.maxDistance = 0.1;
+            ssaoPass.output = 0;
+            ssaoPass.enabled = useSSAO;
+            composer.addPass(ssaoPass);
+            const useBloom = isMobile ? runtimeParams.bloomEnabledMobile : runtimeParams.bloomEnabledDesktop;
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), runtimeParams.bloomStrength, runtimeParams.bloomRadius, runtimeParams.bloomThreshold);
+            bloomPass.enabled = useBloom;
+            composer.addPass(bloomPass);
+            composer.addPass(new OutputPass());
+            const useFXAA = isMobile ? runtimeParams.fxaaEnabledMobile : runtimeParams.fxaaEnabledDesktop;
+            fxaaPass = new ShaderPass(FXAAShader);
+            const pr = isMobile ? Math.min(window.devicePixelRatio, 1.5) : window.devicePixelRatio;
+            fxaaPass.material.uniforms['resolution'].value.set(1/(window.innerWidth*pr), 1/(window.innerHeight*pr));
+            fxaaPass.enabled = useFXAA;
+            composer.addPass(fxaaPass);
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+            buildScene(isMobile);
+            applyLightingPreset('default');
+            window.addEventListener('resize', onWindowResize);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mousedown', onPointerDown);
+            renderer.domElement.addEventListener('mouseup', onPointerUp);
+            renderer.domElement.addEventListener('click', handleEditorClick);
+            renderer.domElement.addEventListener('touchstart', onTouchStart, {passive: true});
+            renderer.domElement.addEventListener('touchend', onTouchEnd);
+            const sidePanel = document.getElementById('side-panel');
+            let touchStartY = 0;
+            sidePanel.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+            }, {passive: true});
+            sidePanel.addEventListener('touchmove', (e) => {
+                const touchY = e.touches[0].clientY;
+                const diffY = touchY - touchStartY;
+                if (diffY > 0 && sidePanel.scrollTop <= 0) {
+                }
+            }, {passive: true});
+            sidePanel.addEventListener('touchend', (e) => {
+                const touchEndY = e.changedTouches[0].clientY;
+                if (touchEndY - touchStartY > 100 && sidePanel.scrollTop <= 0) {
+                    closePanel();
+                }
+            });
+            const mobileLabelsCheckbox = document.getElementById('mobile-labels-cb');
+            if (mobileLabelsCheckbox) {
+                mobileLabelsCheckbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        showMobileLabels();
+                    } else {
+                        hideMobileLabels();
+                    }
+                });
+            }
+        }
+        window.handlePresetSelection = function(level) { applyLightingPreset(level); };
+        window.applyLightingPreset = function(level) {
+            if (!bloomPass || !renderer) return;
+            const btnLow = document.getElementById('btn-low');
+            const btnMid = document.getElementById('btn-mid');
+            [btnLow, btnMid].forEach(b => b?.classList.remove('active'));
+            if (level === 'low') {
+                isWireMode = true;
+                btnLow.classList.add('active');
+                bloomPass.enabled = false;
+                renderer.shadowMap.enabled = false;
+                renderer.toneMappingExposure = 1.0;
+                renderer.toneMapping = THREE.NoToneMapping;
+                scene.background = new THREE.Color(0xb6a5d0);
+                scene.environment = null;
+                applyLowModeMaterials(true);
+            }
+            else if (level === 'default') {
+                isWireMode = false;
+                btnMid.classList.add('active');
+                bloomPass.enabled = true;
+                bloomPass.strength = 0.05;
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFShadowMap;
+                renderer.toneMappingExposure = 0.75;
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                scene.background = null;
+                scene.environment = globalEnvMap;
+                applyLowModeMaterials(false);
+            }
+        };
+        function applyLowModeMaterials(enableLow) {
+            clickableObjects.forEach(obj => {
+                obj.traverse(child => {
+                    if (child.isMesh && child.material) {
+                        if (enableLow) {
+                            if (!originalMaterials.has(child.uuid)) {
+                                originalMaterials.set(child.uuid, child.material);
+                            }
+                            const origMat = originalMaterials.get(child.uuid);
+                            let color = new THREE.Color(0x29174d);
+                            child.material = new THREE.MeshBasicMaterial({
+                                color: color,
+                                wireframe: true,
+                                transparent: origMat.transparent || false,
+                                opacity: origMat.opacity || 1,
+                                side: origMat.side || THREE.FrontSide
+                            });
+                        } else {
+                            if (originalMaterials.has(child.uuid)) {
+                                child.material = originalMaterials.get(child.uuid);
+                            }
+                        }
+                    }
+                });
+            });
+        }
+        function buildScene(isMobile) {
+            const loader = new GLTFLoader();
+            const draco = new DRACOLoader();
+            draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+            loader.setDRACOLoader(draco);
+            loader.setMeshoptDecoder(MeshoptDecoder);
+            const validObjects = sceneObjects.filter(item => !(isMobile && item.showOnMobile === false));
+            totalAssets = validObjects.length;
+            if(totalAssets === 0) {
+                 document.getElementById('loader').style.display = 'none';
+                 return;
+            }
+            sceneObjects.forEach((item, index) => {
+                if (isMobile && item.showOnMobile === false) return;
+                loader.load(item.src, (gltf) => {
+                    const m = gltf.scene;
+                    m.position.set(item.position.x, item.position.y || 0, item.position.z);
+                    if (item.rotation) m.rotation.set(item.rotation.x*Math.PI/180, item.rotation.y*Math.PI/180, item.rotation.z*Math.PI/180);
+                    m.scale.setScalar(item.scale);
+                    m.userData = {
+                        modalContent: item.modalContent,
+                        clickable: item.clickable !== false,
+                        includeInFit: item.includeInFit !== false,
+                        originalPosition: m.position.clone(),
+                        sceneObjectIndex: index,
+                        originalScale: item.scale
+                    };
+                    m.traverse(c => {
+                        if(c.isMesh) {
+                            c.castShadow = true;
+                            c.receiveShadow = true;
+                            if(c.geometry.computeBoundsTree) c.geometry.computeBoundsTree();
+                        }
+                    });
+                    scene.add(m);
+                    clickableObjects.push(m);
+                    loadedObjectsMap.set(index, m);
+                    loadedAssets++; updateLoader();
+                    if(loadedAssets === totalAssets) {
+                        switchCamera(1);
+                        buildEditorPanel();
+                        buildBoundingBoxes();
+                        buildClickableZones();
+                        updateCam3Visibility();
+                    }
+                }, undefined, (err) => {
+                    console.error("Error loading model:", item.src, err);
+                    loadedAssets++; updateLoader();
+                 });
+            });
+        }
+        function updateLoader() {
+            const p = Math.round((loadedAssets/totalAssets)*100);
+            document.querySelector('.loader-bar').style.width = p+'%';
+            if(loadedAssets>=totalAssets) setTimeout(()=> {
+                 document.getElementById('loader').style.opacity='0';
+                setTimeout(()=>document.getElementById('loader').style.display='none', 800);
+            }, 500);
+        }
+        function onMouseMove(e) {
+            if (window.innerWidth <= 768) return;
+            if (document.getElementById('side-panel').classList.contains('open')) return;
+            if (editorModeActive) return;
+            mouse.x = (e.clientX/window.innerWidth)*2-1;
+            mouse.y = -(e.clientY/window.innerHeight)*2+1;
+            raycaster.setFromCamera(mouse, getActiveCamera());
+            const zoneHits = raycaster.intersectObjects(clickableZones, false);
+            if (zoneHits.length > 0) {
+                const zone = zoneHits[0].object;
+                const parentObj = zone.userData.parentObject;
+                if (parentObj && parentObj.userData.modalContent && parentObj.userData.clickable && currentHoveredObject !== parentObj) {
+                    clearHover();
+                    applyHover(parentObj);
+                }
+                return;
+            }
+            const hits = raycaster.intersectObjects(clickableObjects, true);
+            if(hits.length>0) {
+                let obj = hits[0].object;
+                while(obj.parent && !obj.userData.modalContent) obj = obj.parent;
+                if(obj.userData.modalContent && obj.userData.clickable && currentHoveredObject !== obj) {
+                    clearHover();
+                    applyHover(obj);
+                } else if (!obj.userData.clickable) {
+                    clearHover();
+                }
+            } else clearHover();
+        }
+        function wrapText(context, text, maxWidth) {
+            const words = text.split(' ');
+            let line = '';
+            const lines = [];
+            for(let n = 0; n < words.length; n++) {
+                const testLine = line + words[n] + ' ';
+                const metrics = context.measureText(testLine);
+                const testWidth = metrics.width;
+                if (testWidth > maxWidth && n > 0) {
+                    lines.push(line);
+                    line = words[n] + ' ';
+                } else {
+                    line = testLine;
+                }
+            }
+            lines.push(line);
+            return lines;
+        }
+        function createHoverTextMesh(text, fontSize, maxW, opts = {}) {
+            const fontStyle = opts.fontStyle || 'bold';
+            const letterSpacing = opts.letterSpacing || 0;
+            const fillColor = isWireMode ? '#ffffff' : (opts.color || '#000000');
+            const opacity = opts.opacity !== undefined ? opts.opacity : 1.0;
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const fontStr = `${fontStyle} ${fontSize}px "Space Mono"`;
+            ctx.font = fontStr;
+            const lines = wrapText(ctx, text, maxW);
+            const lineHeight = fontSize * 1.1;
+            canvas.width = maxW + 100;
+            canvas.height = (lines.length * lineHeight) + 80;
+            ctx.font = fontStr;
+            ctx.fillStyle = fillColor;
+            ctx.globalAlpha = opacity;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            if (letterSpacing) ctx.letterSpacing = `${letterSpacing}px`;
+            const centerX = canvas.width / 2;
+            let startY = (canvas.height - (lines.length * lineHeight)) / 2 + (lineHeight / 2);
+            lines.forEach((line, i) => {
+                ctx.fillText(line.trim(), centerX, startY + (i * lineHeight));
+            });
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.needsUpdate = true;
+            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            const mat = new THREE.MeshBasicMaterial({
+                map: tex, transparent: true,
+                depthTest: false, depthWrite: false,
+                side: THREE.DoubleSide, toneMapped: false
+            });
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width, canvas.height), mat);
+            mesh.renderOrder = 9999;
+            return mesh;
+        }
+        function applyHover(obj) {
+            currentHoveredObject = obj;
+            new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + PARAMS.hoverLiftDistance }, PARAMS.hoverAnimationDuration).start();
+            const box = new THREE.Box3().setFromObject(obj);
+            const bboxTopLocal = box.max.y - obj.position.y;
+            obj.userData._bboxTopLocal = bboxTopLocal;
+            const maxW = PARAMS.hoverLabelFontBox;
+            const content = obj.userData.modalContent;
+            const rotX = PARAMS.hoverLabelRotationX * Math.PI / 180;
+            const rotY = PARAMS.hoverLabelRotationY * Math.PI / 180;
+            const rotZ = PARAMS.hoverLabelRotationZ * Math.PI / 180;
+            const artistText = content.artist || '';
+            if (artistText) {
+                hoverLabelArtist = createHoverTextMesh(artistText, PARAMS.hoverArtistFontSize, maxW, {
+                    fontStyle: PARAMS.hoverArtistFontStyle,
+                    letterSpacing: PARAMS.hoverArtistLetterSpacing,
+                    color: PARAMS.hoverArtistColor,
+                    opacity: PARAMS.hoverArtistOpacity
+                });
+                const artistY = obj.position.y + bboxTopLocal + PARAMS.hoverLiftDistance + PARAMS.hoverLabelOffsetY;
+                hoverLabelArtist.position.set(obj.position.x, artistY, obj.position.z);
+                hoverLabelArtist.rotation.set(rotX, rotY, rotZ);
+                scene.add(hoverLabelArtist);
+            }
+            const nameText = content.hoverDisplayName || content.name || '';
+            if (nameText) {
+                hoverLabel = createHoverTextMesh(nameText, PARAMS.hoverLabelFontSize, maxW, {
+                    fontStyle: PARAMS.hoverLabelFontStyle,
+                    letterSpacing: PARAMS.hoverLabelLetterSpacing,
+                    color: PARAMS.hoverLabelColor,
+                    opacity: PARAMS.hoverLabelOpacity
+                });
+                const nameY = obj.position.y + bboxTopLocal + PARAMS.hoverLiftDistance + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
+                hoverLabel.position.set(obj.position.x, nameY, obj.position.z);
+                hoverLabel.rotation.set(rotX, rotY, rotZ);
+                scene.add(hoverLabel);
+            }
+        }
+        function clearHover() {
+            if(currentHoveredObject) {
+                new TWEEN(currentHoveredObject.position).to({ y: currentHoveredObject.userData.originalPosition.y }, PARAMS.hoverAnimationDuration).start();
+                currentHoveredObject = null;
+            }
+            if(hoverLabel) { scene.remove(hoverLabel); hoverLabel=null; }
+            if(hoverLabelArtist) { scene.remove(hoverLabelArtist); hoverLabelArtist=null; }
+        }
+        let sX, sY;
+        function onPointerDown(e) { sX=e.clientX; sY=e.clientY; }
+        function onPointerUp(e) {
+            if (editorModeActive) return;
+            if(Math.abs(e.clientX-sX)<5 && Math.abs(e.clientY-sY)<5) {
+                mouse.x = (e.clientX/window.innerWidth)*2-1;
+                mouse.y = -(e.clientY/window.innerHeight)*2+1;
+                raycaster.setFromCamera(mouse, getActiveCamera());
+                const zoneHits = raycaster.intersectObjects(clickableZones, false);
+                if (zoneHits.length > 0) {
+                    const zone = zoneHits[0].object;
+                    const parentObj = zone.userData.parentObject;
+                    if (parentObj && parentObj.userData.modalContent && parentObj.userData.clickable) {
+                        openPanel(parentObj.userData.modalContent, parentObj);
+                        return;
+                    }
+                }
+                const hits = raycaster.intersectObjects(clickableObjects, true);
+                if(hits.length>0) {
+                    let obj = hits[0].object;
+                    while(obj.parent && !obj.userData.modalContent) obj = obj.parent;
+                    if(obj.userData.modalContent && obj.userData.clickable) {
+                        openPanel(obj.userData.modalContent, obj);
+                    }
+                }
+            }
+        }
+        let touchSX, touchSY;
+        function onTouchStart(e) {
+            if (e.touches.length !== 1) return;
+            touchSX = e.touches[0].clientX;
+            touchSY = e.touches[0].clientY;
+        }
+        function onTouchEnd(e) {
+            if (editorModeActive) return;
+            if (document.getElementById('side-panel').classList.contains('open')) return;
+            const t = e.changedTouches[0];
+            if (Math.abs(t.clientX - touchSX) > 10 || Math.abs(t.clientY - touchSY) > 10) return;
+            mouse.x = (t.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(t.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, getActiveCamera());
+            const zoneHits = raycaster.intersectObjects(clickableZones, false);
+            if (zoneHits.length > 0) {
+                const zone = zoneHits[0].object;
+                const parentObj = zone.userData.parentObject;
+                if (parentObj && parentObj.userData.modalContent && parentObj.userData.clickable) {
+                    openPanel(parentObj.userData.modalContent, parentObj);
+                    return;
+                }
+            }
+            const hits = raycaster.intersectObjects(clickableObjects, true);
+            if (hits.length > 0) {
+                let obj = hits[0].object;
+                while (obj.parent && !obj.userData.modalContent) obj = obj.parent;
+                if (obj.userData.modalContent && obj.userData.clickable) {
+                    openPanel(obj.userData.modalContent, obj);
+                }
+            }
+        }
+        function formatEuroPrice(val) {
+            const num = parseFloat(String(val).replace(/[^0-9.\-]/g, ''));
+            if (isNaN(num)) return val;
+            return '€' + num.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        function openPanel(content, obj) {
+            if(currentSelectedObject === obj && document.getElementById('side-panel').classList.contains('open')) return;
+            clearHover();
+            currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); });
+            currentActiveVideos = [];
+            const activeCam = getActiveCamera();
+            const activeControls = currentCameraMode === 'persp' ? controls : controlsOrtho;
+            if(!originalCameraState) {
+                originalCameraState = { 
+                    zoom: activeCam.zoom,
+                    target: activeControls.target.clone()
+                };
+            }
+            currentSelectedObject = obj;
+            const box = new THREE.Box3().setFromObject(obj);
+            const center = box.getCenter(new THREE.Vector3());
+            const isMobileNow = window.innerWidth <= 768;
+            const baseZoom = isMobileNow ? PARAMS.initialCameraZoomMobile : PARAMS.initialCameraZoom;
+            const zoomFactor = isMobileNow ? PARAMS.selectionZoomFactorMobile : PARAMS.selectionZoomFactor;
+            const targetZoom = baseZoom / zoomFactor;
+            new TWEEN(activeCam)
+                .to({ zoom: targetZoom }, PARAMS.zoomInAnimationDuration)
+                .onUpdate(() => activeCam.updateProjectionMatrix())
+                .start();
+            new TWEEN(activeControls.target)
+                .to({ x: center.x, y: center.y, z: center.z }, PARAMS.zoomInAnimationDuration)
+                .start();
+            document.getElementById('panel-artist').innerText = content.artist || "UNKNOWN";
+            document.getElementById('panel-title').innerText = content.name;
+            const metaGrid = document.getElementById('panel-meta-grid');
+            const val = (v) => (!v || v === "") ? '-' : v;
+            let metaHTML = `
+                <span class="meta-label">DIMENSIONS:</span> <span class="meta-value">${val(content.dimensions)}</span>
+                <span class="meta-label">CATEGORY:</span> <span class="meta-value">${val(content.category)}</span>
+                <span class="meta-label">PRODUCT TYPE:</span> <span class="meta-value">${val(content.type)}</span>
+                <span class="meta-label">COLOR:</span> <span class="meta-value">${val(content.color)}</span>
+            `;
+            if (content.edition && content.edition !== "") {
+                metaHTML += `<span class="meta-label">EDITION:</span> <span class="meta-value">${content.edition}</span>`;
+            }
+            if (PARAMS.showPrice && content.price && content.price !== "") {
+                const formattedPrice = formatEuroPrice(content.price);
+                metaHTML += `<span class="meta-label">PRICE:</span> <span class="meta-value">${formattedPrice}</span>`;
+            }
+            metaGrid.innerHTML = metaHTML;
+            document.getElementById('panel-desc').innerText = content.description || "";
+            document.getElementById('panel-bio-header').innerText = content.artist ? `ABOUT ${content.artist}` : "";
+            document.getElementById('panel-bio').innerText = content.bio || "";
+            const linksContainer = document.getElementById('panel-links');
+             linksContainer.innerHTML = '';
+             const mediaContainer = document.getElementById('panel-media');
+             mediaContainer.innerHTML = '';
+            const images = content.media.filter(m => m.type === 'image');
+            const models = content.media.filter(m => m.type === 'model');
+            if (images.length > 0) {
+                const carouselDiv = document.createElement('div');
+                carouselDiv.className = 'media-carousel-container';
+                let currentImgIdx = 0;
+                images.forEach((imgData, idx) => {
+                    const img = document.createElement('img');
+                    img.src = imgData.src;
+                    img.className = `carousel-img ${idx === 0 ? 'active' : ''}`;
+                    img.dataset.index = idx;
+                    carouselDiv.appendChild(img);
+                });
+                const updateCarousel = () => {
+                    Array.from(carouselDiv.querySelectorAll('.carousel-img')).forEach(img => img.classList.remove('active'));
+                    carouselDiv.children[currentImgIdx].classList.add('active');
+                    if(images.length > 1) {
+                        const btnL = carouselDiv.querySelector('.nav-left');
+                        const btnR = carouselDiv.querySelector('.nav-right');
+                        if(btnL) btnL.style.display = currentImgIdx > 0 ? 'flex' : 'none';
+                        if(btnR) btnR.style.display = currentImgIdx < images.length - 1 ? 'flex' : 'none';
+                    }
+                };
+                if (images.length > 1) {
+                    const btnLeft = document.createElement('div');
+                    btnLeft.className = 'carousel-nav-btn nav-left';
+                    btnLeft.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.5"><path d="M15 18l-6-6 6-6"/></svg>`;
+                    btnLeft.onclick = (e) => {
+                        e.stopPropagation();
+                        if (currentImgIdx > 0) {
+                            currentImgIdx--;
+                            updateCarousel();
+                        }
+                    };
+                    carouselDiv.appendChild(btnLeft);
+                    const btnRight = document.createElement('div');
+                    btnRight.className = 'carousel-nav-btn nav-right';
+                    btnRight.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.5"><path d="M9 18l6-6-6-6"/></svg>`;
+                    btnRight.onclick = (e) => {
+                        e.stopPropagation();
+                        if (currentImgIdx < images.length - 1) {
+                            currentImgIdx++;
+                            updateCarousel();
+                        }
+                    };
+                    carouselDiv.appendChild(btnRight);
+                    updateCarousel();
+                }
+                let touchStartX = 0;
+                carouselDiv.addEventListener('touchstart', (e) => {
+                    touchStartX = e.touches[0].clientX;
+                }, {passive: true});
+                carouselDiv.addEventListener('touchend', (e) => {
+                    const touchEndX = e.changedTouches[0].clientX;
+                    const diff = touchEndX - touchStartX;
+                    if (Math.abs(diff) > 50) {
+                        if (diff > 0 && currentImgIdx > 0) {
+                            currentImgIdx--;
+                            updateCarousel();
+                        } else if (diff < 0 && currentImgIdx < images.length - 1) {
+                            currentImgIdx++;
+                            updateCarousel();
+                        }
+                    }
+                });
+                mediaContainer.appendChild(carouselDiv);
+            }
+            models.forEach(m => {
+                const item = document.createElement('div');
+                 item.className = 'panel-media-item';
+                let wrapper = document.createElement('div');
+                wrapper.className = 'media-wrapper';
+                wrapper.style.height = '300px';
+                item.appendChild(wrapper);
+                mediaContainer.appendChild(item);
+                setTimeout(() => initModal3D(wrapper, m.src), 50);
+            });
+            document.getElementById('side-panel').classList.add('open');
+            document.getElementById('side-panel').scrollTop = 0;
+        }
+        function initModal3D(container, src) {
+            const sceneM = new THREE.Scene();
+             sceneM.background = new THREE.Color(0xf4f4f4);
+             if (globalEnvMap) sceneM.environment = globalEnvMap;
+            const renM = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renM.setPixelRatio(window.devicePixelRatio);
+            renM.toneMapping = THREE.ACESFilmicToneMapping;
+            renM.toneMappingExposure = 1.3;
+            container.appendChild(renM.domElement);
+            const camM = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
+            sceneM.add(new THREE.HemisphereLight(0xffffff, 0xffffff, 1.2));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 3.5);
+             dirLight.position.set(5, 10, 7);
+             sceneM.add(dirLight);
+            const ctrlM = new OrbitControls(camM, renM.domElement);
+             ctrlM.autoRotate = true; ctrlM.autoRotateSpeed = 2.5;
+             ctrlM.enableDamping = true;
+            const loader = new GLTFLoader();
+            const draco = new DRACOLoader();
+            draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+            loader.setDRACOLoader(draco);
+            loader.setMeshoptDecoder(MeshoptDecoder);
+            loader.load(src, (gltf) => {
+                const model = gltf.scene;
+                model.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+                sceneM.add(model);
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                ctrlM.target.copy(center);
+                camM.position.set(center.x, center.y + maxDim * 0.2, center.z + maxDim * 2.5);
+                const w = container.offsetWidth || 300;
+                renM.setSize(w, w);
+                camM.aspect = 1;
+                camM.updateProjectionMatrix();
+                ctrlM.update();
+            });
+            function loop() {
+                 if (!document.getElementById('side-panel').classList.contains('open')) { renM.dispose(); return; }
+                modalAnimationFrameId = requestAnimationFrame(loop);
+                 ctrlM.update();
+                 renM.render(sceneM, camM);
+             }
+            loop();
+        }
+        window.closePanel = function() {
+            currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); v.remove(); });
+            currentActiveVideos = [];
+            document.getElementById('panel-media').innerHTML = "";
+            if(originalCameraState) {
+                const activeCam = getActiveCamera();
+                const activeControls = currentCameraMode === 'persp' ? controls : controlsOrtho;
+                new TWEEN(activeCam)
+                    .to({ zoom: originalCameraState.zoom }, PARAMS.zoomOutAnimationDuration)
+                    .onUpdate(() => activeCam.updateProjectionMatrix())
+                    .start();
+                new TWEEN(activeControls.target)
+                    .to({ x: originalCameraState.target.x, y: originalCameraState.target.y, z: originalCameraState.target.z }, PARAMS.zoomOutAnimationDuration)
+                    .start();
+            }
+            originalCameraState = null; currentSelectedObject=null;
+            if(modalAnimationFrameId) { cancelAnimationFrame(modalAnimationFrameId); modalAnimationFrameId = null; }
+            document.getElementById('side-panel').classList.remove('open');
+        }
+        function updateOrthoFrustum() {
+            if (!cameraOrtho) return;
+            const aspect = window.innerWidth / window.innerHeight;
+            const box = new THREE.Box3();
+            clickableObjects.forEach(o => box.expandByObject(o));
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z) * 1.5;
+            cameraOrtho.left = -maxDim * aspect; 
+            cameraOrtho.right = maxDim * aspect;
+            cameraOrtho.top = maxDim; 
+            cameraOrtho.bottom = -maxDim;
+            cameraOrtho.updateProjectionMatrix();
+        }
+        function onWindowResize() {
+            const aspect = window.innerWidth / window.innerHeight;
+            camera.aspect = aspect;
+            camera.updateProjectionMatrix();
+            updateOrthoFrustum();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+        window.toggleCameraLock = function() {
+            isCameraLocked = !isCameraLocked;
+            const btnIcon = document.getElementById('btn-lock-icon');
+            const svgPath = btnIcon.querySelector('path');
+            const activeControls = currentCameraMode === 'persp' ? controls : controlsOrtho;
+            if (isCameraLocked) {
+                svgPath.setAttribute('d', 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z');
+                btnIcon.style.opacity = '1';
+                activeControls.enableRotate = false;
+            } else {
+                svgPath.setAttribute('d', 'M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z');
+                btnIcon.style.opacity = '0.5';
+                activeControls.enableRotate = true;
+            }
+        };
+        function animate() {
+            requestAnimationFrame(animate);
+            if (currentCameraMode === 'persp') {
+                controls.update();
+                composer.passes[0].camera = camera;
+                if (ssaoPass) ssaoPass.camera = camera;
+            } else {
+                controlsOrtho.update();
+                composer.passes[0].camera = cameraOrtho;
+                if (ssaoPass) ssaoPass.camera = cameraOrtho;
+            }
+            if(currentHoveredObject) {
+                const bboxTop = currentHoveredObject.userData._bboxTopLocal || 0;
+                const baseY = currentHoveredObject.position.y + bboxTop + PARAMS.hoverLiftDistance;
+                if(hoverLabelArtist) {
+                    const artistY = baseY + PARAMS.hoverLabelOffsetY;
+                    hoverLabelArtist.position.set(currentHoveredObject.position.x, artistY, currentHoveredObject.position.z);
+                }
+                if(hoverLabel) {
+                    const nameY = baseY + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
+                    hoverLabel.position.set(currentHoveredObject.position.x, nameY, currentHoveredObject.position.z);
+                }
+            }
+            composer.render();
+        }
+        function TWEEN(obj) {
+            this.target = obj;
+            this.to = (dest, dur) => { this.dest = dest; this.dur = dur; return this; };
+            this.easing = (fn) => { this.ease = fn; return this; };
+            this.onUpdate = (fn) => { this.updateFn = fn; return this; };
+            this.onComplete = (fn) => { this.completeFn = fn; return this; };
+            this.start = () => {
+                const start = {}; for(let k in this.dest) start[k] = this.target[k];
+                const startTime = Date.now();
+                const ease = this.ease || (t => t*(2-t)); 
+                const tick = () => {
+                    const now = Date.now();
+                    let p = (now - startTime) / this.dur;
+                    if(p > 1) p = 1;
+                    const e = ease(p);
+                    for(let k in this.dest) this.target[k] = start[k]+(this.dest[k]-start[k])*e;
+                    if(this.updateFn) this.updateFn();
+                    if(p < 1) {
+                        requestAnimationFrame(tick);
+                    } else {
+                        if(this.completeFn) this.completeFn();
+                    }
+                }; tick();
+            };
+        }
+        function buildBoundingBoxes() {
+            boundingBoxHelpers.forEach(h => scene.remove(h));
+            boundingBoxHelpers = [];
+            clickableObjects.forEach(obj => {
+                if (!obj.userData.clickable) return;
+                const box = new THREE.Box3().setFromObject(obj);
+                const helper = new THREE.Box3Helper(box, 0x000000);
+                helper.material.transparent = true;
+                helper.material.opacity = 0.3;
+                helper.material.linewidth = 1;
+                helper.visible = boundingBoxesVisible;
+                helper.userData.isBoundingBoxHelper = true;
+                scene.add(helper);
+                boundingBoxHelpers.push(helper);
+            });
+        }
+        function buildClickableZones() {
+            clickableZones.forEach(z => scene.remove(z));
+            clickableZones.length = 0;
+            const isMobileNow = window.innerWidth <= 768;
+            clickableObjects.forEach(obj => {
+                if (!obj.userData.clickable) return;
+                const box = new THREE.Box3().setFromObject(obj);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                const liftExtra = isMobileNow ? 0 : PARAMS.hoverLiftDistance;
+                const extendedHeight = size.y + liftExtra;
+                const extendedCenterY = center.y + liftExtra / 2;
+                const geometry = new THREE.BoxGeometry(
+                    Math.max(size.x, 50),
+                    extendedHeight,
+                    Math.max(size.z, 50)
+                );
+                const material = new THREE.MeshBasicMaterial({
+                    visible: false,
+                    side: THREE.DoubleSide
+                });
+                const zoneMesh = new THREE.Mesh(geometry, material);
+                zoneMesh.position.set(center.x, extendedCenterY, center.z);
+                zoneMesh.userData.parentObject = obj;
+                zoneMesh.userData.isClickableZone = true;
+                zoneMesh.raycast = THREE.Mesh.prototype.raycast;
+                scene.add(zoneMesh);
+                clickableZones.push(zoneMesh);
+            });
+        }
+        function toggleBoundingBoxes() {
+            boundingBoxesVisible = !boundingBoxesVisible;
+            boundingBoxHelpers.forEach(h => {
+                h.visible = boundingBoxesVisible;
+            });
+        }
+        function updateClickableZonePosition(obj) {
+            const zone = clickableZones.find(z => z.userData.parentObject === obj);
+            if (!zone) return;
+            const box = new THREE.Box3().setFromObject(obj);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const origY = obj.userData.originalPosition.y;
+            const currentY = obj.position.y;
+            const lift = currentY - origY;
+            const extendedHeight = size.y + PARAMS.hoverLiftDistance;
+            zone.geometry.dispose();
+            zone.geometry = new THREE.BoxGeometry(
+                Math.max(size.x, 50),
+                extendedHeight,
+                Math.max(size.z, 50)
+            );
+            zone.position.set(center.x, center.y - lift / 2, center.z);
+        }
+        function showMobileLabels() {
+            hideMobileLabels();
+            mobileLabelsVisible = true;
+            const maxW = PARAMS.hoverLabelFontBox;
+            const rotX = PARAMS.hoverLabelRotationX * Math.PI / 180;
+            const rotY = PARAMS.hoverLabelRotationY * Math.PI / 180;
+            const rotZ = PARAMS.hoverLabelRotationZ * Math.PI / 180;
+            clickableObjects.forEach(obj => {
+                if (!obj.userData.clickable) return;
+                const content = obj.userData.modalContent;
+                if (!content) return;
+                const box = new THREE.Box3().setFromObject(obj);
+                const bboxTopLocal = box.max.y - obj.position.y;
+                const artistText = content.artist || '';
+                if (artistText) {
+                    const label = createHoverTextMesh(artistText, PARAMS.hoverArtistFontSize, maxW, {
+                        fontStyle: PARAMS.hoverArtistFontStyle,
+                        letterSpacing: PARAMS.hoverArtistLetterSpacing,
+                        color: PARAMS.hoverArtistColor,
+                        opacity: PARAMS.hoverArtistOpacity
+                    });
+                    const y = obj.position.y + bboxTopLocal + PARAMS.hoverLabelOffsetY;
+                    label.position.set(obj.position.x, y, obj.position.z);
+                    label.rotation.set(rotX, rotY, rotZ);
+                    scene.add(label);
+                    mobileStaticLabels.push(label);
+                }
+                const nameText = content.hoverDisplayName || content.name || '';
+                if (nameText) {
+                    const label = createHoverTextMesh(nameText, PARAMS.hoverLabelFontSize, maxW, {
+                        fontStyle: PARAMS.hoverLabelFontStyle,
+                        letterSpacing: PARAMS.hoverLabelLetterSpacing,
+                        color: PARAMS.hoverLabelColor,
+                        opacity: PARAMS.hoverLabelOpacity
+                    });
+                    const y = obj.position.y + bboxTopLocal + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
+                    label.position.set(obj.position.x, y, obj.position.z);
+                    label.rotation.set(rotX, rotY, rotZ);
+                    scene.add(label);
+                    mobileStaticLabels.push(label);
+                }
+            });
+        }
+        function hideMobileLabels() {
+            mobileLabelsVisible = false;
+            mobileStaticLabels.forEach(l => scene.remove(l));
+            mobileStaticLabels = [];
+        }
+        window.toggleEditorMode = function() {
+            editorModeActive = !editorModeActive;
+            const btnEditor = document.getElementById('btn-editor');
+            const editorPanel = document.getElementById('editor-panel');
+            const transformGroup = document.getElementById('transform-group');
+            const btnCam3 = document.getElementById('btn-cam3');
+            if (editorModeActive) {
+                if(btnEditor) btnEditor.classList.add('active');
+                editorPanel.classList.add('open');
+                transformGroup.style.display = 'flex';
+                transformControls.visible = true;
+                transformControls.enabled = true;
+                if(btnCam3) btnCam3.style.display = 'inline-block';
+                if (!selectedEditorObject && clickableObjects.length > 0) {
+                    for (let i = 0; i < clickableObjects.length; i++) {
+                        const idx = clickableObjects[i].userData.sceneObjectIndex;
+                        if (!lockedObjects.has(idx)) {
+                            selectEditorObject(clickableObjects[i]);
+                            break;
+                        }
+                    }
+                }
+            } else {
+                if(btnEditor) btnEditor.classList.remove('active');
+                editorPanel.classList.remove('open');
+                transformGroup.style.display = 'none';
+                transformControls.visible = false;
+                transformControls.enabled = false;
+                transformControls.detach();
+                selectedEditorObject = null;
+                updateCam3Visibility();
+                if(currentCameraMode === 'persp') {
+                    switchCamera(1);
+                }
+            }
+        };
+        window.setTransformMode = function(mode) {
+            currentTransformMode = mode;
+            transformControls.setMode(mode);
+            document.getElementById('btn-translate').classList.toggle('active', mode === 'translate');
+            document.getElementById('btn-rotate').classList.toggle('active', mode === 'rotate');
+            document.getElementById('btn-scale').classList.toggle('active', mode === 'scale');
+        };
+        function updateCameraParamsDisplay() {
+            const activeCamera = getActiveCamera();
+            document.getElementById('cam-pos-x').value = activeCamera.position.x.toFixed(0);
+            document.getElementById('cam-pos-y').value = activeCamera.position.y.toFixed(0);
+            document.getElementById('cam-pos-z').value = activeCamera.position.z.toFixed(0);
+            if (activeCamera.isPerspectiveCamera) {
+                document.getElementById('cam-fov').value = activeCamera.fov.toFixed(0);
+            }
+        }
+        window.updateCameraFOV = function(value) {
+            const fov = parseFloat(value) || 60;
+            const activeCamera = getActiveCamera();
+            if (activeCamera.isPerspectiveCamera) {
+                activeCamera.fov = fov;
+                activeCamera.updateProjectionMatrix();
+            }
+        };
+        window.updateCameraPosition = function() {
+            const x = parseFloat(document.getElementById('cam-pos-x').value) || 0;
+            const y = parseFloat(document.getElementById('cam-pos-y').value) || 0;
+            const z = parseFloat(document.getElementById('cam-pos-z').value) || 0;
+            const activeCamera = getActiveCamera();
+            activeCamera.position.set(x, y, z);
+            activeCamera.updateProjectionMatrix();
+        };
+        function buildEditorPanel() {
+            const tbody = document.getElementById('editor-table-body');
+            tbody.innerHTML = '';
+            sceneObjects.forEach((item, index) => {
+                const obj = loadedObjectsMap.get(index);
+                if (!obj) return;
+                const name = item.modalContent?.name || `Object ${index + 1}`;
+                const pos = obj.position;
+                const rot = obj.rotation;
+                const scl = obj.scale.x;
+                const isLocked = lockedObjects.has(index);
+                const tr = document.createElement('tr');
+                tr.dataset.index = index;
+                if (isLocked) tr.classList.add('locked');
+                tr.onclick = (e) => {
+                    if (e.target.tagName !== 'INPUT') selectEditorObjectByIndex(index);
+                };
+                tr.innerHTML = `
+                    <td class="lock-cell"><span class="lock-icon" onclick="toggleLock(${index}, event)">${isLocked ? '🔒' : '🔓'}</span></td>
+                    <td class="name-cell" title="${name}">${name}</td>
+                    <td class="col-x"><input type="number" data-prop="posX" data-index="${index}" value="${pos.x.toFixed(0)}" step="10" ${isLocked ? 'disabled' : ''}></td>
+                    <td class="col-y"><input type="number" data-prop="posY" data-index="${index}" value="${pos.y.toFixed(0)}" step="10" ${isLocked ? 'disabled' : ''}></td>
+                    <td class="col-z"><input type="number" data-prop="posZ" data-index="${index}" value="${pos.z.toFixed(0)}" step="10" ${isLocked ? 'disabled' : ''}></td>
+                    <td class="col-x"><input type="number" data-prop="rotX" data-index="${index}" value="${(rot.x * 180 / Math.PI).toFixed(0)}" step="5" ${isLocked ? 'disabled' : ''}></td>
+                    <td class="col-y"><input type="number" data-prop="rotY" data-index="${index}" value="${(rot.y * 180 / Math.PI).toFixed(0)}" step="5" ${isLocked ? 'disabled' : ''}></td>
+                    <td class="col-z"><input type="number" data-prop="rotZ" data-index="${index}" value="${(rot.z * 180 / Math.PI).toFixed(0)}" step="5" ${isLocked ? 'disabled' : ''}></td>
+                    <td class="col-s"><input type="number" data-prop="scale" data-index="${index}" value="${scl.toFixed(0)}" step="10" ${isLocked ? 'disabled' : ''}></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            tbody.querySelectorAll('input').forEach(input => {
+                input.addEventListener('focus', () => saveUndoState());
+                input.addEventListener('change', handleEditorInputChange);
+                input.addEventListener('input', handleEditorInputChange);
+            });
+        }
+        window.toggleLock = function(index, event) {
+            event.stopPropagation();
+            if (lockedObjects.has(index)) lockedObjects.delete(index);
+            else {
+                lockedObjects.add(index);
+                if (selectedEditorObject && selectedEditorObject.userData.sceneObjectIndex === index) {
+                    transformControls.detach();
+                    selectedEditorObject = null;
+                }
+            }
+            buildEditorPanel();
+            if (selectedEditorObject) selectEditorObject(selectedEditorObject);
+        };
+        function handleEditorInputChange(e) {
+            const input = e.target;
+            const index = parseInt(input.dataset.index);
+            const prop = input.dataset.prop;
+            const value = parseFloat(input.value) || 0;
+            const obj = loadedObjectsMap.get(index);
+            if (!obj) return;
+            switch(prop) {
+                case 'posX': obj.position.x = value; break;
+                case 'posY': obj.position.y = value; break;
+                case 'posZ': obj.position.z = value; break;
+                case 'rotX': obj.rotation.x = value * Math.PI / 180; break;
+                case 'rotY': obj.rotation.y = value * Math.PI / 180; break;
+                case 'rotZ': obj.rotation.z = value * Math.PI / 180; break;
+                case 'scale': obj.scale.setScalar(value); break;
+            }
+            obj.userData.originalPosition = obj.position.clone();
+        }
+        function selectEditorObjectByIndex(index) {
+            if (lockedObjects.has(index)) return;
+            const obj = loadedObjectsMap.get(index);
+            if (obj) selectEditorObject(obj);
+        }
+        function selectEditorObject(obj) {
+            if (lockedObjects.has(obj.userData.sceneObjectIndex)) return;
+            selectedEditorObject = obj;
+            document.querySelectorAll('#editor-table-body tr').forEach(row => {
+                row.classList.remove('selected');
+                if (parseInt(row.dataset.index) === obj.userData.sceneObjectIndex) {
+                    row.classList.add('selected');
+                }
+            });
+            if (transformControls && editorModeActive) transformControls.attach(obj);
+        }
+        function updateEditorPanelValues() {
+            if (!selectedEditorObject) return;
+            const index = selectedEditorObject.userData.sceneObjectIndex;
+            const pos = selectedEditorObject.position;
+            const rot = selectedEditorObject.rotation;
+            const scl = selectedEditorObject.scale.x;
+            const inputs = document.querySelectorAll(`#editor-table-body input[data-index="${index}"]`);
+            inputs.forEach(input => {
+                const prop = input.dataset.prop;
+                let value;
+                switch(prop) {
+                    case 'posX': value = pos.x.toFixed(0); break;
+                    case 'posY': value = pos.y.toFixed(0); break;
+                    case 'posZ': value = pos.z.toFixed(0); break;
+                    case 'rotX': value = (rot.x * 180 / Math.PI).toFixed(0); break;
+                    case 'rotY': value = (rot.y * 180 / Math.PI).toFixed(0); break;
+                    case 'rotZ': value = (rot.z * 180 / Math.PI).toFixed(0); break;
+                    case 'scale': value = scl.toFixed(0); break;
+                }
+                if (document.activeElement !== input) input.value = value;
+            });
+            selectedEditorObject.userData.originalPosition = selectedEditorObject.position.clone();
+        }
+        window.switchCamera = function(mode) {
+            const btnCam3p = document.getElementById('btn-cam3');
+            const btnCam1 = document.getElementById('btn-cam1');
+            const btnCam2 = document.getElementById('btn-cam2');
+            const btnLockIcon = document.getElementById('btn-lock-icon');
+            [btnCam3p, btnCam1, btnCam2].forEach(b => { if(b) b.classList.remove('active') });
+            isCameraLocked = false;
+            const svgPath = btnLockIcon.querySelector('path');
+            svgPath.setAttribute('d', 'M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z');
+            btnLockIcon.style.opacity = '0.5';
+            if (mode === 'persp') {
+                currentCameraMode = 'persp';
+                currentCameraIndex = 3;
+                if(btnCam3p) btnCam3p.classList.add('active');
+                controlsOrtho.enabled = false;
+                controls.enabled = true;
+                controls.enableRotate = true;
+                if (transformControls) transformControls.camera = camera;
+                camera.position.set(runtimeParams.cam3PosX, runtimeParams.cam3PosY, runtimeParams.cam3PosZ);
+                camera.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                controls.update();
+            } else {
+                currentCameraMode = 'ortho';
+                currentCameraIndex = mode;
+                if(mode === 1) btnCam1.classList.add('active');
+                if(mode === 2) btnCam2.classList.add('active');
+                controls.enabled = false;
+                controlsOrtho.enabled = false;
+                if (transformControls) transformControls.camera = cameraOrtho;
+                updateOrthoFrustum();
+                let tx=0, ty=0, tz=0;
+                let targetUp = new THREE.Vector3(0, 1, 0);
+                if(mode === 1) {
+                    tx = runtimeParams.cam1PosX; ty = runtimeParams.cam1PosY; tz = runtimeParams.cam1PosZ;
+                }
+                else if(mode === 2) {
+                    tx = runtimeParams.cam2PosX; ty = runtimeParams.cam2PosY; tz = runtimeParams.cam2PosZ;
+                }
+                const startPos = cameraOrtho.position.clone();
+                const startRot = cameraOrtho.quaternion.clone();
+                const startUp = cameraOrtho.up.clone();
+                const endPos = new THREE.Vector3(tx, ty, tz);
+                const dummyCam = cameraOrtho.clone();
+                dummyCam.position.copy(endPos);
+                dummyCam.up.copy(targetUp);
+                dummyCam.lookAt(0, 0, 0);
+                const endRot = dummyCam.quaternion.clone();
+                const animData = { t: 0 };
+                new TWEEN(animData)
+                    .to({ t: 1 }, 2000)
+                    .easing(t => t)
+                    .onUpdate(() => {
+                        const k = animData.t;
+                        cameraOrtho.position.lerpVectors(startPos, endPos, k);
+                        cameraOrtho.up.lerpVectors(startUp, targetUp, k).normalize();
+                        cameraOrtho.quaternion.slerpQuaternions(startRot, endRot, k);
+                    })
+                    .onComplete(() => {
+                        cameraOrtho.position.copy(endPos);
+                        cameraOrtho.up.copy(targetUp);
+                        cameraOrtho.lookAt(0,0,0);
+                        controlsOrtho.target.set(0, 0, 0);
+                        controlsOrtho.update();
+                        controlsOrtho.enabled = true;
+                        controlsOrtho.enableRotate = true;
+                    })
+                    .start();
+            }
+        };
+        function getActiveCamera() { 
+            return currentCameraMode === 'persp' ? camera : cameraOrtho; 
+        }
+        function handleEditorClick(e) {
+            if (!editorModeActive) return;
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            const activeCamera = getActiveCamera();
+            raycaster.setFromCamera(mouse, activeCamera);
+            const hits = raycaster.intersectObjects(clickableObjects, true);
+            if (hits.length > 0) {
+                let obj = hits[0].object;
+                while (obj.parent && !obj.userData.modalContent) obj = obj.parent;
+                if (obj.userData.sceneObjectIndex !== undefined) selectEditorObject(obj);
+            }
+        }
+        window.printEditorData = function() {
+            let output = ""; 
+            sceneObjects.forEach((item, index) => {
+                const obj = loadedObjectsMap.get(index);
+                if (!obj) return;
+                const pos = obj.position;
+                const rot = obj.rotation;
+                const scl = obj.scale.x;
+                output += `${pos.x.toFixed(0)}\t${pos.y.toFixed(0)}\t${pos.z.toFixed(0)}\t`;
+                output += `${(rot.x * 180 / Math.PI).toFixed(0)}\t${(rot.y * 180 / Math.PI).toFixed(0)}\t${(rot.z * 180 / Math.PI).toFixed(0)}\t`;
+                output += `${scl.toFixed(0)}\n`;
+            });
+            navigator.clipboard.writeText(output).then(() => {
+                alert('COPIED TO CLIPBOARD!\n\nPaste this directly into your Excel sheet starting at cell AB8 (Columns AB -> AH).');
+            }).catch(err => {
+                console.log(output);
+                alert('Copy failed. Check console for data.');
+            });
+        };
+        window.switchEditorTab = function(tabName) {
+            document.querySelectorAll('.editor-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+            document.querySelectorAll('.editor-tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `tab-${tabName}`);
+            });
+            if (tabName === 'parameters') {
+                buildParametersPanel();
+            } else if (tabName === 'scene') {
+                buildSceneParametersPanel();
+            }
+        };
+        function buildParametersPanel() {
+            const grid = document.getElementById('params-grid');
+            const isMobile = window.innerWidth <= 768;
+            grid.innerHTML = `
+                <div class="params-section-title">SSAO (Ambient Occlusion)</div>
+                <span class="params-label">SSAO Desktop</span>
+                <span class="params-value ${runtimeParams.ssaoEnabledDesktop ? 'on' : 'off'}">${runtimeParams.ssaoEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.ssaoEnabledDesktop ? 'on' : ''}" onclick="toggleParam('ssaoEnabledDesktop')"></div>
+                <span class="params-label">SSAO Mobile</span>
+                <span class="params-value ${runtimeParams.ssaoEnabledMobile ? 'on' : 'off'}">${runtimeParams.ssaoEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.ssaoEnabledMobile ? 'on' : ''}" onclick="toggleParam('ssaoEnabledMobile')"></div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Kernel Radius</span>
+                    <input type="range" class="params-slider" min="1" max="32" step="1" value="${runtimeParams.ssaoKernelRadius}" onchange="updateSliderParam('ssaoKernelRadius', this.value)">
+                    <span class="params-slider-value">${runtimeParams.ssaoKernelRadius}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Intensity</span>
+                    <input type="range" class="params-slider" min="0" max="2" step="0.1" value="${runtimeParams.ssaoIntensity}" onchange="updateSliderParam('ssaoIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.ssaoIntensity}</span>
+                </div>
+                <div class="params-section-title">BLOOM (Glow)</div>
+                <span class="params-label">Bloom Desktop</span>
+                <span class="params-value ${runtimeParams.bloomEnabledDesktop ? 'on' : 'off'}">${runtimeParams.bloomEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.bloomEnabledDesktop ? 'on' : ''}" onclick="toggleParam('bloomEnabledDesktop')"></div>
+                <span class="params-label">Bloom Mobile</span>
+                <span class="params-value ${runtimeParams.bloomEnabledMobile ? 'on' : 'off'}">${runtimeParams.bloomEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.bloomEnabledMobile ? 'on' : ''}" onclick="toggleParam('bloomEnabledMobile')"></div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Strength</span>
+                    <input type="range" class="params-slider" min="0" max="0.5" step="0.01" value="${runtimeParams.bloomStrength}" onchange="updateSliderParam('bloomStrength', this.value)">
+                    <span class="params-slider-value">${runtimeParams.bloomStrength}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Threshold</span>
+                    <input type="range" class="params-slider" min="0.5" max="1" step="0.01" value="${runtimeParams.bloomThreshold}" onchange="updateSliderParam('bloomThreshold', this.value)">
+                    <span class="params-slider-value">${runtimeParams.bloomThreshold}</span>
+                </div>
+                <div class="params-section-title">TONE MAPPING</div>
+                <span class="params-label">Tone Mapping Desktop</span>
+                <span class="params-value ${runtimeParams.tonemappingEnabledDesktop ? 'on' : 'off'}">${runtimeParams.tonemappingEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.tonemappingEnabledDesktop ? 'on' : ''}" onclick="toggleParam('tonemappingEnabledDesktop')"></div>
+                <span class="params-label">Tone Mapping Mobile</span>
+                <span class="params-value ${runtimeParams.tonemappingEnabledMobile ? 'on' : 'off'}">${runtimeParams.tonemappingEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.tonemappingEnabledMobile ? 'on' : ''}" onclick="toggleParam('tonemappingEnabledMobile')"></div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Exposure Desktop</span>
+                    <input type="range" class="params-slider" min="0.5" max="2.5" step="0.05" value="${runtimeParams.tonemappingExposureDesktop}" onchange="updateSliderParam('tonemappingExposureDesktop', this.value)">
+                    <span class="params-slider-value">${runtimeParams.tonemappingExposureDesktop}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Exposure Mobile</span>
+                    <input type="range" class="params-slider" min="0.5" max="2.5" step="0.05" value="${runtimeParams.tonemappingExposureMobile}" onchange="updateSliderParam('tonemappingExposureMobile', this.value)">
+                    <span class="params-slider-value">${runtimeParams.tonemappingExposureMobile}</span>
+                </div>
+                <div class="params-section-title">SHADOWS</div>
+                <span class="params-label">Shadows Desktop</span>
+                <span class="params-value ${runtimeParams.shadowsEnabledDesktop ? 'on' : 'off'}">${runtimeParams.shadowsEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.shadowsEnabledDesktop ? 'on' : ''}" onclick="toggleParam('shadowsEnabledDesktop')"></div>
+                <span class="params-label">Shadows Mobile</span>
+                <span class="params-value ${runtimeParams.shadowsEnabledMobile ? 'on' : 'off'}">${runtimeParams.shadowsEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.shadowsEnabledMobile ? 'on' : ''}" onclick="toggleParam('shadowsEnabledMobile')"></div>
+                <div class="params-section-title">ANTI-ALIASING</div>
+                <span class="params-label">FXAA Desktop</span>
+                <span class="params-value ${runtimeParams.fxaaEnabledDesktop ? 'on' : 'off'}">${runtimeParams.fxaaEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.fxaaEnabledDesktop ? 'on' : ''}" onclick="toggleParam('fxaaEnabledDesktop')"></div>
+                <span class="params-label">FXAA Mobile</span>
+                <span class="params-value ${runtimeParams.fxaaEnabledMobile ? 'on' : 'off'}">${runtimeParams.fxaaEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.fxaaEnabledMobile ? 'on' : ''}" onclick="toggleParam('fxaaEnabledMobile')"></div>
+                <div class="params-section-title">ANISOTROPY (Texture Quality)</div>
+                <span class="params-label">Anisotropy Desktop</span>
+                <span class="params-value ${runtimeParams.anisotropyEnabledDesktop ? 'on' : 'off'}">${runtimeParams.anisotropyEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.anisotropyEnabledDesktop ? 'on' : ''}" onclick="toggleParam('anisotropyEnabledDesktop')"></div>
+                <span class="params-label">Anisotropy Mobile</span>
+                <span class="params-value ${runtimeParams.anisotropyEnabledMobile ? 'on' : 'off'}">${runtimeParams.anisotropyEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.anisotropyEnabledMobile ? 'on' : ''}" onclick="toggleParam('anisotropyEnabledMobile')"></div>
+                <div class="params-section-title">ENVIRONMENT MAP</div>
+                <span class="params-label">EnvMap Desktop</span>
+                <span class="params-value ${runtimeParams.envmapEnabledDesktop ? 'on' : 'off'}">${runtimeParams.envmapEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.envmapEnabledDesktop ? 'on' : ''}" onclick="toggleParam('envmapEnabledDesktop')"></div>
+                <span class="params-label">EnvMap Mobile</span>
+                <span class="params-value ${runtimeParams.envmapEnabledMobile ? 'on' : 'off'}">${runtimeParams.envmapEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.envmapEnabledMobile ? 'on' : ''}" onclick="toggleParam('envmapEnabledMobile')"></div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Intensity Desktop</span>
+                    <input type="range" class="params-slider" min="0" max="3" step="0.1" value="${runtimeParams.envmapIntensityDesktop}" onchange="updateSliderParam('envmapIntensityDesktop', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'envmapIntensityDesktop')">${runtimeParams.envmapIntensityDesktop}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Intensity Mobile</span>
+                    <input type="range" class="params-slider" min="0" max="2" step="0.1" value="${runtimeParams.envmapIntensityMobile}" onchange="updateSliderParam('envmapIntensityMobile', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'envmapIntensityMobile')">${runtimeParams.envmapIntensityMobile}</span>
+                </div>
+                <div class="params-section-title">RECT AREA LIGHT</div>
+                <span class="params-label">RectAreaLight Desktop</span>
+                <span class="params-value ${runtimeParams.rectarealightEnabledDesktop ? 'on' : 'off'}">${runtimeParams.rectarealightEnabledDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.rectarealightEnabledDesktop ? 'on' : ''}" onclick="toggleParam('rectarealightEnabledDesktop')"></div>
+                <span class="params-label">RectAreaLight Mobile</span>
+                <span class="params-value ${runtimeParams.rectarealightEnabledMobile ? 'on' : 'off'}">${runtimeParams.rectarealightEnabledMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.rectarealightEnabledMobile ? 'on' : ''}" onclick="toggleParam('rectarealightEnabledMobile')"></div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Intensity</span>
+                    <input type="range" class="params-slider" min="0" max="5" step="0.1" value="${runtimeParams.rectarealightIntensity}" onchange="updateSliderParam('rectarealightIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.rectarealightIntensity}</span>
+                </div>
+                <div class="params-section-title">LIGHTING</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Hemisphere</span>
+                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${runtimeParams.lightHemisphereIntensity}" onchange="updateSliderParam('lightHemisphereIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.lightHemisphereIntensity}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Sun</span>
+                    <input type="range" class="params-slider" min="0" max="5" step="0.1" value="${runtimeParams.lightSunIntensity}" onchange="updateSliderParam('lightSunIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.lightSunIntensity}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Fill</span>
+                    <input type="range" class="params-slider" min="0" max="2" step="0.1" value="${runtimeParams.lightFillIntensity}" onchange="updateSliderParam('lightFillIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.lightFillIntensity}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Rim</span>
+                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${runtimeParams.lightRimIntensity}" onchange="updateSliderParam('lightRimIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.lightRimIntensity}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Accent</span>
+                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${runtimeParams.lightAccentIntensity}" onchange="updateSliderParam('lightAccentIntensity', this.value)">
+                    <span class="params-slider-value">${runtimeParams.lightAccentIntensity}</span>
+                </div>
+                <div class="params-section-title">PBR MATERIALS</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Roughness Boost</span>
+                    <input type="range" class="params-slider" min="-0.5" max="0.5" step="0.05" value="${runtimeParams.pbrRoughnessBoost}" onchange="updateSliderParam('pbrRoughnessBoost', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'pbrRoughnessBoost')">${runtimeParams.pbrRoughnessBoost}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Metalness Boost</span>
+                    <input type="range" class="params-slider" min="-0.5" max="0.5" step="0.05" value="${runtimeParams.pbrMetalnessBoost}" onchange="updateSliderParam('pbrMetalnessBoost', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'pbrMetalnessBoost')">${runtimeParams.pbrMetalnessBoost}</span>
+                </div>
+                <div class="params-section-title">COLOR CORRECTION</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Brightness</span>
+                    <input type="range" class="params-slider" min="0.5" max="2" step="0.05" value="${runtimeParams.filterBrightness}" onchange="updateSliderParam('filterBrightness', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'filterBrightness')">${runtimeParams.filterBrightness}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Contrast</span>
+                    <input type="range" class="params-slider" min="0.5" max="2" step="0.05" value="${runtimeParams.filterContrast}" onchange="updateSliderParam('filterContrast', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'filterContrast')">${runtimeParams.filterContrast}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Saturation</span>
+                    <input type="range" class="params-slider" min="0" max="2" step="0.05" value="${runtimeParams.filterSaturation}" onchange="updateSliderParam('filterSaturation', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'filterSaturation')">${runtimeParams.filterSaturation}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Hue Rotate</span>
+                    <input type="range" class="params-slider" min="-180" max="180" step="5" value="${runtimeParams.filterHueRotate}" onchange="updateSliderParam('filterHueRotate', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'filterHueRotate')">${runtimeParams.filterHueRotate}°</span>
+                </div>
+                <div class="params-section-title">HDRI PRESET (Shift+1..6)</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Active: ${currentHdriPreset} - ${hdriPresets[currentHdriPreset]?.name || 'Unknown'}</span>
+                    <input type="range" class="params-slider" min="1" max="6" step="1" value="${currentHdriPreset}" onchange="switchHdriPreset(parseInt(this.value))">
+                    <span class="params-slider-value">${currentHdriPreset}</span>
+                </div>
+            `;
+        }
+        window.buildSceneParametersPanel = function() {
+            const grid = document.getElementById('scene-params-grid');
+            grid.innerHTML = `
+                <div class="params-section-title">CAMERA 1 POSITION</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">X</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam1PosX}" onchange="updateSceneSliderParam('cam1PosX', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam1PosX')">${runtimeParams.cam1PosX}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Y</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam1PosY}" onchange="updateSceneSliderParam('cam1PosY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam1PosY')">${runtimeParams.cam1PosY}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Z</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam1PosZ}" onchange="updateSceneSliderParam('cam1PosZ', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam1PosZ')">${runtimeParams.cam1PosZ}</span>
+                </div>
+                <div class="params-section-title">CAMERA 2 POSITION</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">X</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam2PosX}" onchange="updateSceneSliderParam('cam2PosX', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam2PosX')">${runtimeParams.cam2PosX}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Y</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam2PosY}" onchange="updateSceneSliderParam('cam2PosY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam2PosY')">${runtimeParams.cam2PosY}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Z</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam2PosZ}" onchange="updateSceneSliderParam('cam2PosZ', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam2PosZ')">${runtimeParams.cam2PosZ}</span>
+                </div>
+                <div class="params-section-title">CAMERA 3 POSITION</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">X</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam3PosX}" onchange="updateSceneSliderParam('cam3PosX', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam3PosX')">${runtimeParams.cam3PosX}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Y</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam3PosY}" onchange="updateSceneSliderParam('cam3PosY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam3PosY')">${runtimeParams.cam3PosY}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Z</span>
+                    <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam3PosZ}" onchange="updateSceneSliderParam('cam3PosZ', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam3PosZ')">${runtimeParams.cam3PosZ}</span>
+                </div>
+                <span class="params-label">Show Cam 3 Public</span>
+                <span class="params-value ${runtimeParams.cam3ShowPublic ? 'on' : 'off'}">${runtimeParams.cam3ShowPublic ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.cam3ShowPublic ? 'on' : ''}" onclick="toggleParam('cam3ShowPublic'); updateCam3Visibility(); buildSceneParametersPanel()"></div>
+                <div class="params-section-title">CAMERA SETTINGS</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Initial Zoom</span>
+                    <input type="range" class="params-slider" min="100" max="10000" step="100" value="${runtimeParams.initialCameraZoom}" onchange="updateSceneSliderParam('initialCameraZoom', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'initialCameraZoom')">${runtimeParams.initialCameraZoom}</span>
+                </div>
+                <div class="params-section-title">HOVER LABEL (Desktop)</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Font Size</span>
+                    <input type="range" class="params-slider" min="8" max="48" step="1" value="${runtimeParams.hoverLabelFontSize}" onchange="updateSceneSliderParam('hoverLabelFontSize', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelFontSize')">${runtimeParams.hoverLabelFontSize}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Offset Y</span>
+                    <input type="range" class="params-slider" min="-200" max="200" step="5" value="${runtimeParams.hoverLabelOffsetY}" onchange="updateSceneSliderParam('hoverLabelOffsetY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelOffsetY')">${runtimeParams.hoverLabelOffsetY}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Name Offset Y</span>
+                    <input type="range" class="params-slider" min="-200" max="200" step="5" value="${runtimeParams.hoverLabelNameOffsetY}" onchange="updateSceneSliderParam('hoverLabelNameOffsetY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelNameOffsetY')">${runtimeParams.hoverLabelNameOffsetY}px</span>
+                </div>
+                <div class="params-section-title">PANEL SETTINGS</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Panel Width</span>
+                    <input type="range" class="params-slider" min="200" max="500" step="10" value="${runtimeParams.panelWidth}" onchange="updateSceneSliderParam('panelWidth', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'panelWidth')">${runtimeParams.panelWidth}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Panel Top Offset</span>
+                    <input type="range" class="params-slider" min="0" max="200" step="5" value="${runtimeParams.panelTopOffset}" onchange="updateSceneSliderParam('panelTopOffset', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'panelTopOffset')">${runtimeParams.panelTopOffset}px</span>
+                </div>
+            `;
+        }
+        window.updateSceneSliderParam = function(paramName, value) {
+            runtimeParams[paramName] = parseFloat(value);
+            PARAMS[paramName] = parseFloat(value);
+            const slider = event.target;
+            const valueSpan = slider.parentElement.querySelector('.params-slider-value');
+            if (valueSpan) {
+                const suffix = ['panelWidth', 'panelTopOffset', 'hoverLabelFontSize', 'hoverLabelOffsetY', 'hoverLabelNameOffsetY'].includes(paramName) ? 'px' : '';
+                valueSpan.textContent = value + suffix;
+            }
+            if (paramName.startsWith('cam1') && currentCameraIndex === 1) {
+                cameraOrtho.position.set(runtimeParams.cam1PosX, runtimeParams.cam1PosY, runtimeParams.cam1PosZ);
+                cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+            } else if (paramName.startsWith('cam2') && currentCameraIndex === 2) {
+                cameraOrtho.position.set(runtimeParams.cam2PosX, runtimeParams.cam2PosY, runtimeParams.cam2PosZ);
+                cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+            } else if (paramName.startsWith('cam3') && currentCameraIndex === 3) {
+                camera.position.set(runtimeParams.cam3PosX, runtimeParams.cam3PosY, runtimeParams.cam3PosZ);
+                camera.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                controls.update();
+            }
+        };
+        window.makeSceneEditable = function(span, paramName) {
+            const currentValue = runtimeParams[paramName];
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'params-slider-input';
+            input.value = currentValue;
+            input.step = 'any';
+            const finishEdit = () => {
+                const newValue = parseFloat(input.value);
+                if (!isNaN(newValue)) {
+                    runtimeParams[paramName] = newValue;
+                    PARAMS[paramName] = newValue;
+                    const slider = span.parentElement.querySelector('.params-slider');
+                    if (slider) slider.value = newValue;
+                    if (paramName.startsWith('cam1') && currentCameraIndex === 1) {
+                        cameraOrtho.position.set(runtimeParams.cam1PosX, runtimeParams.cam1PosY, runtimeParams.cam1PosZ);
+                        cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                    } else if (paramName.startsWith('cam2') && currentCameraIndex === 2) {
+                        cameraOrtho.position.set(runtimeParams.cam2PosX, runtimeParams.cam2PosY, runtimeParams.cam2PosZ);
+                        cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                    } else if (paramName.startsWith('cam3') && currentCameraIndex === 3) {
+                        camera.position.set(runtimeParams.cam3PosX, runtimeParams.cam3PosY, runtimeParams.cam3PosZ);
+                        camera.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                        controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                        controls.update();
+                    }
+                }
+                buildSceneParametersPanel();
+            };
+            input.onblur = finishEdit;
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') finishEdit();
+                if (e.key === 'Escape') buildSceneParametersPanel();
+            };
+            span.replaceWith(input);
+            input.focus();
+            input.select();
+        };
+        window.toggleParam = function(paramName) {
+            runtimeParams[paramName] = !runtimeParams[paramName];
+            applyRuntimeParameters();
+            buildParametersPanel();
+        };
+        window.updateSliderParam = function(paramName, value) {
+            runtimeParams[paramName] = parseFloat(value);
+            applyRuntimeParameters();
+            const slider = event.target;
+            const valueSpan = slider.parentElement.querySelector('.params-slider-value');
+            if (valueSpan) {
+                valueSpan.textContent = paramName === 'filterHueRotate' ? value + '°' : value;
+            }
+        };
+        window.updateSliderDisplay = function(slider) {
+            const valueSpan = slider.parentElement.querySelector('.params-slider-value');
+            if (valueSpan) {
+                valueSpan.textContent = slider.value;
+            }
+        };
+        window.makeEditable = function(span, paramName) {
+            const currentValue = runtimeParams[paramName];
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'params-slider-input';
+            input.value = currentValue;
+            input.step = 'any';
+            const finishEdit = () => {
+                const newValue = parseFloat(input.value);
+                if (!isNaN(newValue)) {
+                    runtimeParams[paramName] = newValue;
+                    applyRuntimeParameters();
+                    const slider = span.parentElement.querySelector('.params-slider');
+                    if (slider) slider.value = newValue;
+                }
+                buildParametersPanel();
+            };
+            input.onblur = finishEdit;
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') finishEdit();
+                if (e.key === 'Escape') buildParametersPanel();
+            };
+            span.replaceWith(input);
+            input.focus();
+            input.select();
+        };
+        window.switchHdriPreset = function(presetNum) {
+            if (hdriPresets && hdriPresets[presetNum]) {
+                loadHDRI(presetNum);
+                if (editorModeActive) buildParametersPanel();
+            }
+        };
+        window.updateCam3Visibility = function() {
+            const btnCam3p = document.getElementById('btn-cam3');
+            if (btnCam3p) {
+                if (editorModeActive || runtimeParams.cam3ShowPublic) {
+                    btnCam3p.style.display = 'inline-block';
+                } else {
+                    btnCam3p.style.display = 'none';
+                }
+            }
+        };
+        function applyRuntimeParameters() {
+            const isMobile = window.innerWidth <= 768;
+            if (lightHemi) lightHemi.intensity = runtimeParams.lightHemisphereIntensity;
+            if (lightSun) {
+                lightSun.intensity = runtimeParams.lightSunIntensity;
+                const useShadows = isMobile ? runtimeParams.shadowsEnabledMobile : runtimeParams.shadowsEnabledDesktop;
+                lightSun.castShadow = useShadows;
+            }
+            if (lightFill) lightFill.intensity = runtimeParams.lightFillIntensity;
+            if (lightRim) lightRim.intensity = runtimeParams.lightRimIntensity;
+            if (lightAccent) lightAccent.intensity = runtimeParams.lightAccentIntensity;
+            const useRectAreaLight = isMobile ? runtimeParams.rectarealightEnabledMobile : runtimeParams.rectarealightEnabledDesktop;
+            if (rectLight1) {
+                rectLight1.visible = useRectAreaLight;
+                rectLight1.intensity = runtimeParams.rectarealightIntensity;
+            }
+            if (rectLight2) {
+                rectLight2.visible = useRectAreaLight;
+                rectLight2.intensity = runtimeParams.rectarealightIntensity * 0.6;
+            }
+            if (ssaoPass) {
+                const useSSAO = isMobile ? runtimeParams.ssaoEnabledMobile : runtimeParams.ssaoEnabledDesktop;
+                ssaoPass.enabled = useSSAO;
+                ssaoPass.kernelRadius = runtimeParams.ssaoKernelRadius;
+                ssaoPass.minDistance = 0.001 * (1 / Math.max(0.1, runtimeParams.ssaoIntensity));
+                ssaoPass.maxDistance = 0.1 * runtimeParams.ssaoIntensity;
+            }
+            if (bloomPass) {
+                const useBloom = isMobile ? runtimeParams.bloomEnabledMobile : runtimeParams.bloomEnabledDesktop;
+                bloomPass.enabled = useBloom;
+                bloomPass.strength = runtimeParams.bloomStrength;
+                bloomPass.radius = runtimeParams.bloomRadius;
+                bloomPass.threshold = runtimeParams.bloomThreshold;
+            }
+            if (renderer) {
+                const useTonemapping = isMobile ? runtimeParams.tonemappingEnabledMobile : runtimeParams.tonemappingEnabledDesktop;
+                if (useTonemapping) {
+                    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                    renderer.toneMappingExposure = isMobile ? runtimeParams.tonemappingExposureMobile : runtimeParams.tonemappingExposureDesktop;
+                } else {
+                    renderer.toneMapping = THREE.NoToneMapping;
+                    renderer.toneMappingExposure = 1.0;
+                }
+                const useShadows = isMobile ? runtimeParams.shadowsEnabledMobile : runtimeParams.shadowsEnabledDesktop;
+                renderer.shadowMap.enabled = useShadows;
+            }
+            if (fxaaPass) {
+                const useFXAA = isMobile ? runtimeParams.fxaaEnabledMobile : runtimeParams.fxaaEnabledDesktop;
+                fxaaPass.enabled = useFXAA;
+            }
+            const useEnvMap = isMobile ? runtimeParams.envmapEnabledMobile : runtimeParams.envmapEnabledDesktop;
+            if (scene) {
+                scene.environment = useEnvMap ? globalEnvMap : null;
+            }
+            const envIntensity = isMobile ? runtimeParams.envmapIntensityMobile : runtimeParams.envmapIntensityDesktop;
+            const roughnessBoost = runtimeParams.pbrRoughnessBoost || 0;
+            const metalnessBoost = runtimeParams.pbrMetalnessBoost || 0;
+            const useAnisotropy = isMobile ? runtimeParams.anisotropyEnabledMobile : runtimeParams.anisotropyEnabledDesktop;
+            const maxAniso = renderer ? renderer.capabilities.getMaxAnisotropy() : 1;
+            clickableObjects.forEach(obj => {
+                obj.traverse(child => {
+                    if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
+                        const mat = child.material;
+                        mat.envMapIntensity = envIntensity;
+                        if (mat._originalRoughness === undefined) {
+                            mat._originalRoughness = mat.roughness;
+                        }
+                        if (mat._originalMetalness === undefined) {
+                            mat._originalMetalness = mat.metalness;
+                        }
+                        mat.roughness = Math.max(0, Math.min(1, mat._originalRoughness + roughnessBoost));
+                        mat.metalness = Math.max(0, Math.min(1, mat._originalMetalness + metalnessBoost));
+                        if (mat.map) mat.map.anisotropy = useAnisotropy ? maxAniso : 1;
+                        if (mat.normalMap) mat.normalMap.anisotropy = useAnisotropy ? maxAniso : 1;
+                        if (mat.roughnessMap) mat.roughnessMap.anisotropy = useAnisotropy ? maxAniso : 1;
+                        mat.needsUpdate = true;
+                    }
+                });
+            });
+            applyColorFilters();
+        }
+        function applyColorFilters() {
+            if (!renderer) return;
+            const canvas = renderer.domElement;
+            const brightness = runtimeParams.filterBrightness;
+            const contrast = runtimeParams.filterContrast;
+            const saturation = runtimeParams.filterSaturation;
+            const hueRotate = runtimeParams.filterHueRotate;
+            canvas.style.filter = `brightness(${brightness}) contrast(${contrast}) saturate(${saturation}) hue-rotate(${hueRotate}deg)`;
+        }
+        window.resetParameters = function() {
+            runtimeParams = { ...RENDER_PARAMS };
+            applyRuntimeParameters();
+            buildParametersPanel();
+        };
+        window.resetSceneParameters = function() {
+            buildSceneParametersPanel();
+        };
+        window.printParameters = function() {
+            let output = "\n";
+            output += "\n";
+            output += "\n\n";
+            output += "\n";
+            output += `--ssao-enabled-desktop: ${runtimeParams.ssaoEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--ssao-enabled-mobile: ${runtimeParams.ssaoEnabledMobile ? 'yes' : 'no'};\n`;
+            output += `--ssao-kernel-radius: ${runtimeParams.ssaoKernelRadius};\n`;
+            output += `--ssao-intensity: ${runtimeParams.ssaoIntensity};\n\n`;
+            output += "\n";
+            output += `--bloom-enabled-desktop: ${runtimeParams.bloomEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--bloom-enabled-mobile: ${runtimeParams.bloomEnabledMobile ? 'yes' : 'no'};\n`;
+            output += `--bloom-strength: ${runtimeParams.bloomStrength};\n`;
+            output += `--bloom-radius: ${runtimeParams.bloomRadius};\n`;
+            output += `--bloom-threshold: ${runtimeParams.bloomThreshold};\n\n`;
+            output += "\n";
+            output += `--tonemapping-enabled-desktop: ${runtimeParams.tonemappingEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--tonemapping-enabled-mobile: ${runtimeParams.tonemappingEnabledMobile ? 'yes' : 'no'};\n`;
+            output += `--tonemapping-exposure-desktop: ${runtimeParams.tonemappingExposureDesktop};\n`;
+            output += `--tonemapping-exposure-mobile: ${runtimeParams.tonemappingExposureMobile};\n\n`;
+            output += "\n";
+            output += `--shadows-enabled-desktop: ${runtimeParams.shadowsEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--shadows-enabled-mobile: ${runtimeParams.shadowsEnabledMobile ? 'yes' : 'no'};\n\n`;
+            output += "\n";
+            output += `--fxaa-enabled-desktop: ${runtimeParams.fxaaEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--fxaa-enabled-mobile: ${runtimeParams.fxaaEnabledMobile ? 'yes' : 'no'};\n\n`;
+            output += "\n";
+            output += `--envmap-enabled-desktop: ${runtimeParams.envmapEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--envmap-enabled-mobile: ${runtimeParams.envmapEnabledMobile ? 'yes' : 'no'};\n`;
+            output += `--envmap-intensity-desktop: ${runtimeParams.envmapIntensityDesktop};\n`;
+            output += `--envmap-intensity-mobile: ${runtimeParams.envmapIntensityMobile};\n\n`;
+            output += "\n";
+            output += `--rectarealight-enabled-desktop: ${runtimeParams.rectarealightEnabledDesktop ? 'yes' : 'no'};\n`;
+            output += `--rectarealight-enabled-mobile: ${runtimeParams.rectarealightEnabledMobile ? 'yes' : 'no'};\n`;
+            output += `--rectarealight-intensity: ${runtimeParams.rectarealightIntensity};\n\n`;
+            output += "\n";
+            output += `--light-hemisphere-intensity: ${runtimeParams.lightHemisphereIntensity};\n`;
+            output += `--light-sun-intensity: ${runtimeParams.lightSunIntensity};\n`;
+            output += `--light-fill-intensity: ${runtimeParams.lightFillIntensity};\n`;
+            output += `--light-rim-intensity: ${runtimeParams.lightRimIntensity};\n`;
+            output += `--light-accent-intensity: ${runtimeParams.lightAccentIntensity};\n\n`;
+            output += "\n";
+            output += `--pbr-roughness-boost: ${runtimeParams.pbrRoughnessBoost};\n`;
+            output += `--pbr-metalness-boost: ${runtimeParams.pbrMetalnessBoost};\n\n`;
+            output += "\n";
+            output += `--filter-brightness: ${runtimeParams.filterBrightness};\n`;
+            output += `--filter-contrast: ${runtimeParams.filterContrast};\n`;
+            output += `--filter-saturation: ${runtimeParams.filterSaturation};\n`;
+            output += `--filter-hue-rotate: ${runtimeParams.filterHueRotate};\n\n`;
+            output += "\n";
+            output += `--hdri-preset: ${currentHdriPreset};\n\n`;
+            output += "\n";
+            output += `--cam3-show-public: ${runtimeParams.cam3ShowPublic ? 'yes' : 'no'};\n`;
+            navigator.clipboard.writeText(output).then(() => {
+                alert('RENDER PARAMETERS COPIED!\n\nPaste into your :root CSS section.');
+            }).catch(err => {
+                console.log(output);
+                alert('Copy failed. Check console for data.');
+            });
+        };
+        window.printSceneParameters = function() {
+            let output = "\n";
+            output += `--cam1-pos-x: ${runtimeParams.cam1PosX};\n`;
+            output += `--cam1-pos-y: ${runtimeParams.cam1PosY};\n`;
+            output += `--cam1-pos-z: ${runtimeParams.cam1PosZ};\n`;
+            output += `--cam2-pos-x: ${runtimeParams.cam2PosX};\n`;
+            output += `--cam2-pos-y: ${runtimeParams.cam2PosY};\n`;
+            output += `--cam2-pos-z: ${runtimeParams.cam2PosZ};\n`;
+            output += `--cam3-pos-x: ${runtimeParams.cam3PosX};\n`;
+            output += `--cam3-pos-y: ${runtimeParams.cam3PosY};\n`;
+            output += `--cam3-pos-z: ${runtimeParams.cam3PosZ};\n`;
+            output += `--cam3-show-public: ${runtimeParams.cam3ShowPublic ? 'yes' : 'no'};\n`;
+            output += `--initial-camera-zoom: ${runtimeParams.initialCameraZoom};\n`;
+            output += `--hover-label-font-size: ${runtimeParams.hoverLabelFontSize}px;\n`;
+            output += `--hover-label-offset-y: ${runtimeParams.hoverLabelOffsetY}px;\n`;
+            output += `--hover-label-name-offset-y: ${runtimeParams.hoverLabelNameOffsetY}px;\n`;
+            output += `--panel-width: ${runtimeParams.panelWidth}px;\n`;
+            output += `--panel-top-offset: ${runtimeParams.panelTopOffset}px;\n`;
+            navigator.clipboard.writeText(output).then(() => {
+                alert('SCENE PARAMETERS COPIED!\n\nPaste into your :root CSS section.');
+            }).catch(err => {
+                console.log(output);
+                alert('Copy failed. Check console for data.');
+            });
+        };
+        function saveUndoState() {
+            const state = {};
+            loadedObjectsMap.forEach((obj, index) => {
+                state[index] = {
+                    position: obj.position.clone(),
+                    rotation: obj.rotation.clone(),
+                    scale: obj.scale.x
+                };
+            });
+            undoStack.push(state);
+            if (undoStack.length > MAX_UNDO_STEPS) undoStack.shift();
+            redoStack = [];
+        }
+        function handleKeyDown(e) {
+            if (e.key === 'Escape') { closePanel(); return; }
+            if (e.shiftKey && (e.key === 'E' || e.key === 'e')) {
+                e.preventDefault();
+                toggleEditorMode();
+                return;
+            }
+            if (e.shiftKey && (e.key === 'B' || e.key === 'b')) {
+                e.preventDefault();
+                toggleBoundingBoxes();
+                return;
+            }
+            if (!editorModeActive) return;
+            if (e.ctrlKey && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+            if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) { e.preventDefault(); redo(); }
+        }
+        function undo() {
+            if (undoStack.length === 0) return;
+            const currentState = {};
+            loadedObjectsMap.forEach((obj, index) => {
+                currentState[index] = { position: obj.position.clone(), rotation: obj.rotation.clone(), scale: obj.scale.x };
+            });
+            redoStack.push(currentState);
+            const prevState = undoStack.pop();
+            applyState(prevState);
+        }
+        function redo() {
+            if (redoStack.length === 0) return;
+            const currentState = {};
+            loadedObjectsMap.forEach((obj, index) => {
+                currentState[index] = { position: obj.position.clone(), rotation: obj.rotation.clone(), scale: obj.scale.x };
+            });
+            undoStack.push(currentState);
+            const nextState = redoStack.pop();
+            applyState(nextState);
+        }
+        function applyState(state) {
+            for (const index in state) {
+                const obj = loadedObjectsMap.get(parseInt(index));
+                if (obj) {
+                    obj.position.copy(state[index].position);
+                    obj.rotation.copy(state[index].rotation);
+                    obj.scale.setScalar(state[index].scale);
+                    obj.userData.originalPosition = obj.position.clone();
+                }
+            }
+            buildEditorPanel();
+            if (selectedEditorObject) selectEditorObject(selectedEditorObject);
+        }
+    </script>
+</body>
+</html>
