@@ -313,11 +313,11 @@
                 <div class="hidden lg:block lg:w-[35%] pointer-events-none"></div>
 
                 <div class="w-full lg:w-[60%] flex flex-col items-center lg:items-start text-center lg:text-left">
-                    <h1 class="font-header text-[11px] tracking-[0.5em] uppercase mb-3 lg:mb-4 text-black">Contemporary Artifacts</h1>
-                     
+                    <h1 id="site-title" class="font-header text-[11px] tracking-[0.5em] uppercase mb-3 lg:mb-4 text-black">Contemporary Artifacts</h1>
+
                     <div class="lg:hidden mb-2">
                         <button onclick="toggleInfo()" class="font-body text-[9px] uppercase tracking-widest border border-black/10 px-4 py-2 hover:bg-black hover:text-white transition-all">
-                            Information <span id="info-icon">+</span>
+                            <span id="info-btn-text">Information</span> <span id="info-icon">+</span>
                         </button>
                     </div>
                      
@@ -334,7 +334,7 @@
         <div class="flex items-center justify-between gap-2 border-b border-gray-100 pb-4">
             <div class="flex items-center gap-4 flex-1 min-w-0">
                 <div id="filter-wrapper" class="flex flex-wrap items-center gap-2 lg:gap-6">
-                    <span class="font-header text-[8px] lg:text-[9px] uppercase tracking-widest text-gray-300 whitespace-nowrap">Category:</span>
+                    <span id="category-label" class="font-header text-[8px] lg:text-[9px] uppercase tracking-widest text-gray-300 whitespace-nowrap">Category:</span>
                     <div id="filter-list" class="flex flex-wrap items-center gap-x-3 gap-y-2"></div>
                 </div>
             </div>
@@ -410,6 +410,9 @@
 
         // Labels for Turkish
         const TR_LABELS = {
+            siteTitle: 'Çağdaş Artefaktlar',
+            information: 'Bilgi',
+            categoryLabel: 'Kategori:',
             image: 'Görsel',
             studio: 'Stüdyo',
             artwork: 'Eser',
@@ -429,6 +432,9 @@
 
         // Labels for English
         const EN_LABELS = {
+            siteTitle: 'Contemporary Artifacts',
+            information: 'Information',
+            categoryLabel: 'Category:',
             image: 'Image',
             studio: 'Studio',
             artwork: 'Artwork',
@@ -499,6 +505,12 @@
             if (!sheetRows) return;
 
             const cols = currentLang === 'tr' ? TR_COLUMNS : EN_COLUMNS;
+            const labels = getLabels();
+
+            // Update UI labels based on language
+            document.getElementById('site-title').innerText = labels.siteTitle;
+            document.getElementById('info-btn-text').innerText = labels.information;
+            document.getElementById('category-label').innerText = labels.categoryLabel;
 
             // Update header description based on language
             // English: C1 (row 0, column C index 2), Turkish: C2 (row 1, column C index 2)
