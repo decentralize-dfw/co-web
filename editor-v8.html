@@ -173,25 +173,24 @@
             z-index: 1000;
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
-            gap: 4px;
+            align-items: stretch;
+            gap: 3px;
             user-select: none;
-        }
-        .ui-row {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .ui-label {
-            font-family: var(--font-headers);
-            font-size: 7px;
-            color: #000;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
         }
         .toggle-group {
             display: flex;
             gap: 3px;
+        }
+        .ui-view-group,
+        .ui-graphics-group {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .ui-view-group .toggle-btn,
+        .ui-graphics-group .toggle-btn {
+            flex: 1;
+            text-align: center;
         }
         .toggle-btn {
             padding: 4px 8px;
@@ -206,6 +205,7 @@
             color: #000;
             border: 1px solid rgba(0, 0, 0, 0.05);
             border-radius: 8px;
+            white-space: nowrap;
         }
         .toggle-btn.active {
             background: rgba(0, 0, 0, 0.85);
@@ -330,6 +330,7 @@
             position: fixed;
             left: var(--panel-right-offset);
             top: var(--panel-top-offset);
+            bottom: var(--panel-bottom-offset);
             width: var(--panel-width);
             max-height: calc(100vh - var(--panel-top-offset) - var(--panel-bottom-offset));
             background: rgba(255, 255, 255, var(--panel-bg-opacity));
@@ -347,14 +348,16 @@
             overflow-y: auto; overflow-x: hidden;
             scrollbar-width: thin;
             scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+            display: flex;
+            flex-direction: column;
         }
-        #info-panel::-webkit-scrollbar { width: 10px; }
+        #info-panel::-webkit-scrollbar { width: 12px; }
         #info-panel::-webkit-scrollbar-track { background: transparent; margin: 2px 0; }
         #info-panel::-webkit-scrollbar-thumb {
             background: rgba(0, 0, 0, 0.15);
             background-clip: padding-box;
-            border-left: 2px solid transparent;
-            border-right: 5px solid transparent;
+            border-left: 5px solid transparent;
+            border-right: 2px solid transparent;
             border-top: 2px solid transparent;
             border-bottom: 2px solid transparent;
             border-radius: 10px;
@@ -407,6 +410,11 @@
         .info-panel-close svg { width: 12px; height: 12px; stroke: #000; stroke-width: 2; }
         .info-panel-content {
             padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding-bottom: 15px;
         }
         .info-panel-logo {
             width: 100%;
@@ -443,7 +451,7 @@
             scrollbar-width: thin;
             scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
         }
-        #side-panel::-webkit-scrollbar { width: 10px; }
+        #side-panel::-webkit-scrollbar { width: 12px; }
         #side-panel::-webkit-scrollbar-track { background: transparent; margin: 2px 0; }
         #side-panel::-webkit-scrollbar-thumb {
             background: rgba(0, 0, 0, 0.15);
@@ -510,7 +518,7 @@
             border-radius: 50%;
             background: transparent;
             border: 1px solid rgba(0,0,0,0.8);
-            display: none; 
+            display: none;
             align-items: center; justify-content: center;
             cursor: pointer;
             z-index: 10;
@@ -519,8 +527,26 @@
         }
         .carousel-nav-btn:hover { opacity: 1; border-width: 1.5px; }
         .carousel-nav-btn svg { width: 14px; height: 14px; stroke: black; }
-        .nav-right { right: 0; } 
-        .nav-left { left: 0; } 
+        .nav-right { right: 0; }
+        .nav-left { left: 0; }
+        .carousel-dots {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            width: 100%;
+        }
+        .carousel-dot {
+            width: 5px;
+            height: 5px;
+            border-radius: 1px;
+            background-color: rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .carousel-dot:hover { background-color: rgba(0, 0, 0, 0.4); }
+        .carousel-dot.active { background-color: rgba(0, 0, 0, 0.7); }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .panel-text-section { padding: var(--panel-content-padding); padding-top: 0; }
         .panel-artist {
@@ -846,29 +872,33 @@
         }
         #marquee-bar {
             position: fixed;
-            top: 22px;
-            left: 50%;
-            transform: translateX(-50%);
+            top: 20px;
             z-index: 999;
             overflow: hidden;
             white-space: nowrap;
-            max-width: 40vw;
+            height: 30px;
+            display: flex;
+            align-items: center;
             pointer-events: none;
             margin-top: var(--marquee-vertical-gap);
         }
-        #marquee-bar .marquee-content {
-            display: inline-block;
+        #marquee-bar .marquee-track {
+            display: flex;
             animation: marqueeScroll var(--marquee-speed) linear infinite;
+            white-space: nowrap;
+        }
+        #marquee-bar .marquee-content {
             font-family: var(--font-headers);
             font-size: var(--marquee-font-size);
             color: var(--ui-color);
             text-transform: uppercase;
             letter-spacing: 1px;
             white-space: nowrap;
+            flex-shrink: 0;
         }
         @keyframes marqueeScroll {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
         }
         #footer {
             position: fixed;
@@ -976,8 +1006,19 @@
             .panel-description { font-size: 0.76rem; }
             .panel-bio-text { font-size: 0.64rem; }
             .panel-meta-grid { font-size: 0.64rem; }
-            .carousel-nav-btn.nav-left { left: -17%; }
-            .carousel-nav-btn.nav-right { right: -17%; }
+            .carousel-nav-btn {
+                width: 40px;
+                height: 40px;
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid rgba(0, 0, 0, 0.1);
+                opacity: 1;
+            }
+            .carousel-nav-btn svg {
+                width: 20px;
+                height: 20px;
+            }
+            .carousel-nav-btn.nav-left { left: 10px; }
+            .carousel-nav-btn.nav-right { right: 10px; }
             #editor-panel {
                 left: 0;
                 top: 0;
@@ -988,47 +1029,110 @@
                 border-radius: 0;
                 overflow-y: auto;
                 overflow-x: hidden;
+                font-size: 1.2vw;
             }
             #editor-panel .editor-table {
-                font-size: 8px;
+                font-size: 1.1vw;
+                width: 100%;
+                table-layout: fixed;
             }
             #editor-panel .editor-table input {
-                width: 28px;
-                font-size: 8px;
-                padding: 1px 2px;
+                width: 100%;
+                font-size: 1.1vw;
+                padding: 1px;
+                box-sizing: border-box;
             }
             #editor-panel .editor-table th,
             #editor-panel .editor-table td {
-                padding: 1px 2px;
+                padding: 1px;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
             #editor-panel .editor-table th.name-col {
-                min-width: 50px;
-                max-width: 60px;
+                min-width: 0;
+                max-width: none;
+                width: 30%;
             }
             #editor-panel .editor-table td.name-cell {
-                font-size: 7px;
-                max-width: 60px;
+                font-size: 1vw;
+                max-width: none;
+            }
+            #editor-panel .editor-tabs {
+                display: flex;
+                flex-wrap: nowrap;
             }
             #editor-panel .editor-tabs button {
-                font-size: 8px;
-                padding: 4px 6px;
+                font-size: 1.2vw;
+                padding: 3px 2px;
+                flex: 1;
+                min-width: 0;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
             #editor-panel .editor-footer-btn {
-                font-size: 8px;
-                padding: 3px 6px;
+                font-size: 1.2vw;
+                padding: 2px 4px;
             }
             #editor-panel .params-grid {
-                font-size: 8px;
+                font-size: 1.1vw;
+                gap: 2px 4px;
+                padding: 4px;
             }
+            #editor-panel .params-section-title {
+                font-size: 1.2vw;
+                padding: 4px 0 2px 0;
+                margin-top: 4px;
+            }
+            #editor-panel .params-label {
+                font-size: 1.1vw;
+                padding: 2px 0;
+            }
+            #editor-panel .params-value {
+                font-size: 1.1vw;
+                padding: 2px 4px;
+                min-width: 0;
+            }
+            #editor-panel .params-toggle {
+                width: 5vw;
+                height: 2.5vw;
+                min-width: 20px;
+                min-height: 12px;
+            }
+            #editor-panel .params-toggle::after {
+                width: 2vw;
+                height: 2vw;
+                min-width: 10px;
+                min-height: 10px;
+                top: 0.25vw;
+                left: 0.25vw;
+            }
+            #editor-panel .params-toggle.on::after {
+                left: 2.5vw;
+            }
+            #editor-panel .params-slider-row {
+                gap: 2px;
+                padding: 2px 0;
+                flex-wrap: nowrap;
+            }
+            #editor-panel .params-slider-label {
+                flex: 0 0 40%;
+                font-size: 1vw;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            #editor-panel .params-slider {
+                flex: 1;
+                min-width: 0;
+            }
+            #editor-panel .params-slider-value,
             #editor-panel .params-slider-input {
-                width: 36px;
-                font-size: 8px;
-            }
-            #editor-panel .params-row label {
-                font-size: 8px;
-            }
-            #editor-panel input[type="range"] {
-                display: none;
+                width: 6vw;
+                min-width: 0;
+                font-size: 1vw;
+                flex-shrink: 0;
             }
         }
     </style>
@@ -1068,35 +1172,30 @@
     </div>
     <!-- MARQUEE BAR -->
     <div id="marquee-bar">
-        <span class="marquee-content" id="marquee-text"></span>
+        <div class="marquee-track" id="marquee-track">
+            <span class="marquee-content" id="marquee-text"></span>
+            <span class="marquee-content" id="marquee-text-dup"></span>
+        </div>
     </div>
     <!-- UI CONTAINER (NEW STRUCTURE) -->
     <div id="ui-container">
-        <!-- ROW 1: VIEW CONTROLS -->
-        <div class="ui-row">
+        <div class="toggle-group ui-view-group">
             <button class="lock-btn" id="btn-lock-icon" onclick="toggleCameraLock()" title="Lock/Unlock Camera">
                 <svg viewBox="0 0 24 24" id="lock-icon-svg">
                     <path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z"/>
                 </svg>
             </button>
-            <span class="ui-label">VIEW</span>
-            <div class="toggle-group">
-                <button class="toggle-btn active" id="btn-cam1" onclick="switchCamera(1)">1</button>
-                <button class="toggle-btn" id="btn-cam2" onclick="switchCamera(2)">2</button>
-                <button class="toggle-btn" id="btn-cam3" onclick="switchCamera('persp')" style="display:none">3</button>
-                <button class="toggle-btn" id="btn-cam-mobile" onclick="switchCamera('mobile')" style="display:none">M</button>
-            </div>
+            <button class="toggle-btn active" id="btn-cam1" onclick="switchCamera(1)">VIEW 1</button>
+            <button class="toggle-btn" id="btn-cam2" onclick="switchCamera(2)">VIEW 2</button>
+            <button class="toggle-btn" id="btn-cam3" onclick="switchCamera('persp')" style="display:none">VIEW 3</button>
+            <button class="toggle-btn" id="btn-cam-mobile" onclick="switchCamera('mobile')" style="display:none">MOBILE</button>
         </div>
-        <!-- ROW 2: GRAPHICS CONTROLS -->
-        <div class="ui-row">
-            <span class="ui-label">GRAPHICS</span>
-            <div class="toggle-group">
-                <button class="toggle-btn active" id="btn-mid" onclick="handlePresetSelection('default')">DEFAULT</button>
-                <button class="toggle-btn" id="btn-low" onclick="handlePresetSelection('low')">WIRE</button>
-            </div>
+        <div class="toggle-group ui-graphics-group">
+            <button class="toggle-btn active" id="btn-mid" onclick="handlePresetSelection('default')">DEFAULT</button>
+            <button class="toggle-btn" id="btn-low" onclick="handlePresetSelection('low')">WIRE</button>
         </div>
         <!-- Editor Transform Tools (Hidden initially) -->
-        <div class="transform-group" id="transform-group" style="display: none; margin-top: 8px;">
+        <div class="transform-group" id="transform-group" style="display: none; margin-top: 4px;">
             <button class="transform-btn active" id="btn-translate" onclick="setTransformMode('translate')">T</button>
             <button class="transform-btn" id="btn-rotate" onclick="setTransformMode('rotate')">R</button>
             <button class="transform-btn" id="btn-scale" onclick="setTransformMode('scale')">S</button>
@@ -1516,6 +1615,8 @@
             await loadDataFromSheet();
             if (marqueeText) {
                 document.getElementById('marquee-text').textContent = marqueeText;
+                document.getElementById('marquee-text-dup').textContent = marqueeText;
+                positionMarquee();
             }
             document.querySelector('.loader-text').innerText = "LOADING ASSETS";
             init(); animate();
@@ -2078,14 +2179,21 @@
                     img.dataset.index = idx;
                     carouselDiv.appendChild(img);
                 });
+                let dotsDiv = null;
                 const updateCarousel = () => {
                     Array.from(carouselDiv.querySelectorAll('.carousel-img')).forEach(img => img.classList.remove('active'));
-                    carouselDiv.children[currentImgIdx].classList.add('active');
+                    const imgElements = carouselDiv.querySelectorAll('.carousel-img');
+                    if (imgElements[currentImgIdx]) imgElements[currentImgIdx].classList.add('active');
                     if(images.length > 1) {
                         const btnL = carouselDiv.querySelector('.nav-left');
                         const btnR = carouselDiv.querySelector('.nav-right');
                         if(btnL) btnL.style.display = currentImgIdx > 0 ? 'flex' : 'none';
                         if(btnR) btnR.style.display = currentImgIdx < images.length - 1 ? 'flex' : 'none';
+                        if (dotsDiv) {
+                            dotsDiv.querySelectorAll('.carousel-dot').forEach((dot, i) => {
+                                dot.classList.toggle('active', i === currentImgIdx);
+                            });
+                        }
                     }
                 };
                 if (images.length > 1) {
@@ -2111,6 +2219,18 @@
                         }
                     };
                     carouselDiv.appendChild(btnRight);
+                    dotsDiv = document.createElement('div');
+                    dotsDiv.className = 'carousel-dots';
+                    images.forEach((_, idx) => {
+                        const dot = document.createElement('div');
+                        dot.className = `carousel-dot ${idx === 0 ? 'active' : ''}`;
+                        dot.onclick = (e) => {
+                            e.stopPropagation();
+                            currentImgIdx = idx;
+                            updateCarousel();
+                        };
+                        dotsDiv.appendChild(dot);
+                    });
                     updateCarousel();
                 }
                 let touchStartX = 0;
@@ -2131,6 +2251,7 @@
                     }
                 });
                 mediaContainer.appendChild(carouselDiv);
+                if (dotsDiv) mediaContainer.appendChild(dotsDiv);
             }
             models.forEach(m => {
                 const item = document.createElement('div');
@@ -2262,6 +2383,22 @@
             cameraOrtho.bottom = -maxDim;
             cameraOrtho.updateProjectionMatrix();
         }
+        function positionMarquee() {
+            const bar = document.getElementById('marquee-bar');
+            if (!bar) return;
+            if (window.innerWidth <= 768) { bar.style.display = 'none'; return; }
+            bar.style.display = 'flex';
+            const infoButtons = document.getElementById('info-buttons');
+            const uiContainer = document.getElementById('ui-container');
+            if (!infoButtons || !uiContainer) return;
+            const leftEnd = infoButtons.getBoundingClientRect().right + 15;
+            const rightEnd = uiContainer.getBoundingClientRect().left - 15;
+            const width = rightEnd - leftEnd;
+            if (width < 50) { bar.style.display = 'none'; return; }
+            bar.style.left = leftEnd + 'px';
+            bar.style.width = width + 'px';
+            bar.style.transform = 'none';
+        }
         function onWindowResize() {
             const aspect = window.innerWidth / window.innerHeight;
             camera.aspect = aspect;
@@ -2269,6 +2406,7 @@
             updateOrthoFrustum();
             renderer.setSize(window.innerWidth, window.innerHeight);
             composer.setSize(window.innerWidth, window.innerHeight);
+            positionMarquee();
         }
         window.toggleCameraLock = function() {
             isCameraLocked = !isCameraLocked;
