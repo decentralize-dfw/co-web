@@ -184,11 +184,14 @@
             top: 20px;
             right: 20px;
             z-index: 1000;
-            display: flex;
+            display: none;
             flex-direction: row;
             align-items: flex-start;
             gap: 5px;
             user-select: none;
+        }
+        #ui-container.editor-visible {
+            display: flex;
         }
         .ui-right-column {
             display: flex;
@@ -199,14 +202,7 @@
             display: flex;
             gap: 3px;
         }
-        .ui-view-group {
-            display: none;
-            align-items: center;
-            gap: 3px;
-        }
-        .editor-visible .ui-view-group {
-            display: flex;
-        }
+        .ui-view-group,
         .ui-graphics-group {
             display: flex;
             align-items: center;
@@ -1826,9 +1822,9 @@
             controlsOrtho.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controlsOrtho.enabled = true;
             if (isMobile && PARAMS.mobilePanEnabled) { controlsOrtho.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }; }
-            let activeCamDot = 1;
-            let camDotFadeTimer = null;
-            let camSwitching = false;
+            window.activeCamDot = 1;
+            window.camDotFadeTimer = null;
+            window.camSwitching = false;
             function onControlsChange() {
                 if (isCameraLocked || editorModeActive) return;
                 if (camSwitching) return;
@@ -2090,14 +2086,8 @@
                     }
                 }
                 if (camToggle) {
-                    if (uiContainer && uiContainer.style.display !== 'none') {
-                        const uiRect = uiContainer.getBoundingClientRect();
-                        camToggle.style.right = (window.innerWidth - uiRect.right) + 'px';
-                        camToggle.style.top = (uiRect.top) + 'px';
-                    } else {
-                        camToggle.style.right = '20px';
-                        camToggle.style.top = '20px';
-                    }
+                    camToggle.style.right = '20px';
+                    camToggle.style.top = '20px';
                     camToggle.style.left = 'auto';
                 }
             }
