@@ -132,6 +132,7 @@
             --marquee-font-size: 9px;
             --marquee-vertical-gap: 6px;
             --marquee-color: #b6a6d0;
+            --marquee-mobile-enabled: yes;
             --marquee-mobile-speed: 20s;
             --marquee-mobile-font-size: 7px;
             --marquee-mobile-top-offset: 12px;
@@ -151,6 +152,9 @@
             --panel-desc-font-size: 0.95rem;
             --panel-text-spacing: 1.5rem;
             --panel-content-padding: 2rem;
+            --selected-rotate-x: 0;
+            --selected-rotate-y: 0.5;
+            --selected-rotate-z: 0;
             --selection-zoom-factor: 0.2;
             --selection-zoom-factor-mobile: 0.3;
              --zoom-in-animation-duration: 1.0s;
@@ -1557,6 +1561,9 @@
             hoverLabelOffsetY: getParamNum('--hover-label-offset-y'),
             hoverLabelNameOffsetY: getParamNum('--hover-label-name-offset-y'),
             showPrice: getParam('--show-price') === 'yes',
+            selectedRotateX: getParamNum('--selected-rotate-x') || 0,
+            selectedRotateY: getParamNum('--selected-rotate-y') || 0.5,
+            selectedRotateZ: getParamNum('--selected-rotate-z') || 0,
             selectionZoomFactor: getParamNum('--selection-zoom-factor'),
             selectionZoomFactorMobile: getParamNum('--selection-zoom-factor-mobile'),
             zoomInAnimationDuration: parseFloat(getParam('--zoom-in-animation-duration')) * 1000,
@@ -1709,8 +1716,8 @@
             controls.enableRotate = true;
             controls.minDistance = PARAMS.cameraMinDist;
             controls.maxDistance = PARAMS.cameraMaxDist;
-            controls.minPolarAngle = runtimeParams.cameraMinPolarAngle * Math.PI / 180;
-            controls.maxPolarAngle = runtimeParams.cameraMaxPolarAngle * Math.PI / 180;
+            controls.minPolarAngle = (90 - runtimeParams.cameraMaxPolarAngle) * Math.PI / 180;
+            controls.maxPolarAngle = (90 - runtimeParams.cameraMinPolarAngle) * Math.PI / 180;
             controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controls.enabled = false;
             if (isMobile) { controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }; }
@@ -1720,11 +1727,30 @@
             controlsOrtho.enablePan = isMobile;
             controlsOrtho.enableZoom = true;
             controlsOrtho.enableRotate = true;
-            controlsOrtho.minPolarAngle = runtimeParams.cameraMinPolarAngle * Math.PI / 180;
-            controlsOrtho.maxPolarAngle = runtimeParams.cameraMaxPolarAngle * Math.PI / 180;
+            controlsOrtho.minPolarAngle = (90 - runtimeParams.cameraMaxPolarAngle) * Math.PI / 180;
+            controlsOrtho.maxPolarAngle = (90 - runtimeParams.cameraMinPolarAngle) * Math.PI / 180;
             controlsOrtho.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controlsOrtho.enabled = true;
             if (isMobile) { controlsOrtho.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }; }
+            let cameraButtonFadeTimer = null;
+            function onControlsChange() {
+                if (isCameraLocked || editorModeActive) return;
+                const activeBtn = document.querySelector('.toggle-btn.active:not(#btn-low):not(#btn-mid):not(#btn-editor)');
+                if (activeBtn && !cameraButtonFadeTimer) {
+                    cameraButtonFadeTimer = setTimeout(() => {
+                        activeBtn.style.transition = 'opacity 5s ease';
+                        activeBtn.style.opacity = '0.3';
+                    }, 100);
+                    setTimeout(() => {
+                        activeBtn.classList.remove('active');
+                        activeBtn.style.transition = '';
+                        activeBtn.style.opacity = '';
+                        cameraButtonFadeTimer = null;
+                    }, 5100);
+                }
+            }
+            controls.addEventListener('change', onControlsChange);
+            controlsOrtho.addEventListener('change', onControlsChange);
             transformControls = new TransformControls(camera, renderer.domElement);
             transformControls.setMode('translate');
             transformControls.setSize(0.8);
@@ -1869,6 +1895,7 @@
                 scene.background = new THREE.Color(0xb6a5d0);
                 scene.environment = null;
                 applyLowModeMaterials(true);
+                document.querySelectorAll('.marquee-content').forEach(el => el.style.color = '#ffffff');
             }
             else if (level === 'default') {
                 isWireMode = false;
@@ -1882,6 +1909,8 @@
                 scene.background = null;
                 scene.environment = globalEnvMap;
                 applyLowModeMaterials(false);
+                const marqueeColor = getComputedStyle(document.documentElement).getPropertyValue('--marquee-color').trim() || '#b6a6d0';
+                document.querySelectorAll('.marquee-content').forEach(el => el.style.color = marqueeColor);
             }
         };
         function applyLowModeMaterials(enableLow) {
@@ -2053,10 +2082,15 @@
         }
         function applyHover(obj) {
             currentHoveredObject = obj;
-            new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + PARAMS.hoverLiftDistance }, PARAMS.hoverAnimationDuration).start();
+            const hasSelection = !!currentSelectedObject;
+            const liftMult = hasSelection ? 0.2 : 1.0;
+            const textScale = hasSelection ? 0.2 : 1.0;
+            const liftDist = PARAMS.hoverLiftDistance * liftMult;
+            new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + liftDist }, PARAMS.hoverAnimationDuration).start();
             const box = new THREE.Box3().setFromObject(obj);
             const bboxTopLocal = box.max.y - obj.position.y;
             obj.userData._bboxTopLocal = bboxTopLocal;
+            obj.userData._hoverLiftMult = liftMult;
             const maxW = PARAMS.hoverLabelFontBox;
             const content = obj.userData.modalContent;
             const rotX = PARAMS.hoverLabelRotationX * Math.PI / 180;
@@ -2070,9 +2104,10 @@
                     color: PARAMS.hoverArtistColor,
                     opacity: PARAMS.hoverArtistOpacity
                 });
-                const artistY = obj.position.y + bboxTopLocal + PARAMS.hoverLiftDistance + PARAMS.hoverLabelOffsetY;
+                const artistY = obj.position.y + bboxTopLocal + liftDist + PARAMS.hoverLabelOffsetY;
                 hoverLabelArtist.position.set(obj.position.x, artistY, obj.position.z);
                 hoverLabelArtist.rotation.set(rotX, rotY, rotZ);
+                hoverLabelArtist.scale.setScalar(textScale);
                 scene.add(hoverLabelArtist);
             }
             const nameText = content.hoverDisplayName || content.name || '';
@@ -2083,9 +2118,10 @@
                     color: PARAMS.hoverLabelColor,
                     opacity: PARAMS.hoverLabelOpacity
                 });
-                const nameY = obj.position.y + bboxTopLocal + PARAMS.hoverLiftDistance + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
+                const nameY = obj.position.y + bboxTopLocal + liftDist + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
                 hoverLabel.position.set(obj.position.x, nameY, obj.position.z);
                 hoverLabel.rotation.set(rotX, rotY, rotZ);
+                hoverLabel.scale.setScalar(textScale);
                 scene.add(hoverLabel);
             }
         }
@@ -2169,12 +2205,17 @@
             const activeCam = getActiveCamera();
             const activeControls = currentCameraMode === 'persp' ? controls : controlsOrtho;
             if(!originalCameraState) {
-                originalCameraState = { 
+                originalCameraState = {
                     zoom: activeCam.zoom,
-                    target: activeControls.target.clone()
+                    target: activeControls.target.clone(),
+                    position: activeCam.position.clone(),
+                    locked: isCameraLocked
                 };
             }
             currentSelectedObject = obj;
+            if (!obj.userData._originalRotation) {
+                obj.userData._originalRotation = obj.rotation.clone();
+            }
             const box = new THREE.Box3().setFromObject(obj);
             const center = box.getCenter(new THREE.Vector3());
             const isMobileNow = window.innerWidth <= 768;
@@ -2375,9 +2416,21 @@
                 new TWEEN(activeControls.target)
                     .to({ x: originalCameraState.target.x, y: originalCameraState.target.y, z: originalCameraState.target.z }, PARAMS.zoomOutAnimationDuration)
                     .start();
+                if (originalCameraState.locked && originalCameraState.position) {
+                    new TWEEN(activeCam.position)
+                        .to({ x: originalCameraState.position.x, y: originalCameraState.position.y, z: originalCameraState.position.z }, PARAMS.zoomOutAnimationDuration)
+                        .start();
+                }
             }
-            if(currentSelectedObject && currentSelectedObject.userData.originalPosition) {
-                new TWEEN(currentSelectedObject.position).to({ y: currentSelectedObject.userData.originalPosition.y }, PARAMS.hoverAnimationDuration).start();
+            if(currentSelectedObject) {
+                if (currentSelectedObject.userData.originalPosition) {
+                    new TWEEN(currentSelectedObject.position).to({ y: currentSelectedObject.userData.originalPosition.y }, PARAMS.hoverAnimationDuration).start();
+                }
+                if (currentSelectedObject.userData._originalRotation) {
+                    const origRot = currentSelectedObject.userData._originalRotation;
+                    new TWEEN(currentSelectedObject.rotation).to({ x: origRot.x, y: origRot.y, z: origRot.z }, PARAMS.hoverAnimationDuration).start();
+                    currentSelectedObject.userData._originalRotation = null;
+                }
             }
             originalCameraState = null; currentSelectedObject=null;
             clearHover();
@@ -2483,13 +2536,24 @@
             }
             marqueeAnimId = requestAnimationFrame(tick);
         }
+        let mobileMarqueeEnabled = getParam('--marquee-mobile-enabled') === 'yes';
         function positionMarquee() {
             const bar = document.getElementById('marquee-bar');
             if (!bar) return;
             const isMobileNow = window.innerWidth <= 768;
-            bar.style.display = 'flex';
             const infoButtons = document.getElementById('info-buttons');
             if (!infoButtons) return;
+            if (isMobileNow && !mobileMarqueeEnabled) {
+                bar.style.display = 'none';
+                infoButtons.style.left = '50%';
+                infoButtons.style.transform = 'translateX(-50%)';
+                return;
+            }
+            if (isMobileNow) {
+                infoButtons.style.left = '12px';
+                infoButtons.style.transform = 'none';
+            }
+            bar.style.display = 'flex';
             const leftEnd = infoButtons.getBoundingClientRect().right + 15;
             let rightEnd;
             if (isMobileNow) {
@@ -2542,7 +2606,9 @@
             }
             if(currentHoveredObject) {
                 const bboxTop = currentHoveredObject.userData._bboxTopLocal || 0;
-                const baseY = currentHoveredObject.position.y + bboxTop + PARAMS.hoverLiftDistance;
+                const liftMult = currentHoveredObject.userData._hoverLiftMult || 1.0;
+                const liftDist = PARAMS.hoverLiftDistance * liftMult;
+                const baseY = currentHoveredObject.position.y + bboxTop + liftDist;
                 if(hoverLabelArtist) {
                     const artistY = baseY + PARAMS.hoverLabelOffsetY;
                     hoverLabelArtist.position.set(currentHoveredObject.position.x, artistY, currentHoveredObject.position.z);
@@ -2551,6 +2617,12 @@
                     const nameY = baseY + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
                     hoverLabel.position.set(currentHoveredObject.position.x, nameY, currentHoveredObject.position.z);
                 }
+            }
+            if(currentSelectedObject && !editorModeActive) {
+                const dt = 0.016;
+                currentSelectedObject.rotation.x += PARAMS.selectedRotateX * dt;
+                currentSelectedObject.rotation.y += PARAMS.selectedRotateY * dt;
+                currentSelectedObject.rotation.z += PARAMS.selectedRotateZ * dt;
             }
             composer.render();
         }
@@ -2714,6 +2786,9 @@
                 transformControls.enabled = true;
                 if(btnCam3) btnCam3.style.display = 'inline-block';
                 if(btnCamMobile) btnCamMobile.style.display = 'inline-block';
+                if (window.innerWidth <= 768 && currentCameraIndex !== 'mobile') {
+                    switchCamera('mobile');
+                }
                 if (!selectedEditorObject && clickableObjects.length > 0) {
                     for (let i = 0; i < clickableObjects.length; i++) {
                         const idx = clickableObjects[i].userData.sceneObjectIndex;
@@ -3477,6 +3552,9 @@
                     <span class="params-slider-value">${getComputedStyle(document.documentElement).getPropertyValue('--marquee-color').trim() || '#b6a6d0'}</span>
                 </div>
                 <div class="params-section-title">MARQUEE MOBILE</div>
+                <span class="params-label">Mobile Marquee</span>
+                <span class="params-value ${mobileMarqueeEnabled ? 'on' : 'off'}">${mobileMarqueeEnabled ? 'ON' : 'OFF'}</span>
+                <div class="params-toggle ${mobileMarqueeEnabled ? 'on' : ''}" onclick="mobileMarqueeEnabled = !mobileMarqueeEnabled; positionMarquee(); buildSceneParametersPanel()"></div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Mobile Speed (s)</span>
                     <input type="range" class="params-slider" min="5" max="60" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-speed')) || 20}" onchange="updateMarqueeParam('mobileSpeed', this.value)">
@@ -3725,6 +3803,22 @@
                     <input type="range" class="params-slider" min="0.5" max="5" step="0.25" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-content-padding')) || 2}" onchange="document.documentElement.style.setProperty('--panel-content-padding', this.value+'rem'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'rem'">
                     <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-content-padding')) || 2}rem</span>
                 </div>
+                <div class="params-section-title">SELECTED OBJECT ROTATION</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Rotate X Speed</span>
+                    <input type="range" class="params-slider" min="-5" max="5" step="0.1" value="${PARAMS.selectedRotateX}" onchange="updateSceneSliderParam('selectedRotateX', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'selectedRotateX')">${PARAMS.selectedRotateX}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Rotate Y Speed</span>
+                    <input type="range" class="params-slider" min="-5" max="5" step="0.1" value="${PARAMS.selectedRotateY}" onchange="updateSceneSliderParam('selectedRotateY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'selectedRotateY')">${PARAMS.selectedRotateY}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Rotate Z Speed</span>
+                    <input type="range" class="params-slider" min="-5" max="5" step="0.1" value="${PARAMS.selectedRotateZ}" onchange="updateSceneSliderParam('selectedRotateZ', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'selectedRotateZ')">${PARAMS.selectedRotateZ}</span>
+                </div>
                 <div class="params-section-title">SELECTION & ZOOM</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Zoom Factor</span>
@@ -3840,6 +3934,14 @@
                 camera.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
                 controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
                 controls.update();
+            } else if (paramName === 'camMobileFov' && currentCameraIndex === 'mobile') {
+                if (currentCameraMode === 'persp') {
+                    camera.fov = parseFloat(value);
+                    camera.updateProjectionMatrix();
+                } else {
+                    cameraOrtho.zoom = runtimeParams.initialCameraZoomMobile * (45 / parseFloat(value));
+                    cameraOrtho.updateProjectionMatrix();
+                }
             } else if (paramName.startsWith('camMobile') && currentCameraIndex === 'mobile') {
                 cameraOrtho.position.set(runtimeParams.camMobilePosX, runtimeParams.camMobilePosY, runtimeParams.camMobilePosZ);
                 cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
@@ -4036,12 +4138,12 @@
                 });
             });
             if (controls) {
-                controls.minPolarAngle = runtimeParams.cameraMinPolarAngle * Math.PI / 180;
-                controls.maxPolarAngle = runtimeParams.cameraMaxPolarAngle * Math.PI / 180;
+                controls.minPolarAngle = (90 - runtimeParams.cameraMaxPolarAngle) * Math.PI / 180;
+                controls.maxPolarAngle = (90 - runtimeParams.cameraMinPolarAngle) * Math.PI / 180;
             }
             if (controlsOrtho) {
-                controlsOrtho.minPolarAngle = runtimeParams.cameraMinPolarAngle * Math.PI / 180;
-                controlsOrtho.maxPolarAngle = runtimeParams.cameraMaxPolarAngle * Math.PI / 180;
+                controlsOrtho.minPolarAngle = (90 - runtimeParams.cameraMaxPolarAngle) * Math.PI / 180;
+                controlsOrtho.maxPolarAngle = (90 - runtimeParams.cameraMinPolarAngle) * Math.PI / 180;
             }
             applyColorFilters();
         }
