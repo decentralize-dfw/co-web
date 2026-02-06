@@ -108,8 +108,10 @@
             --camera-max-distance: 45000;
             --camera-min-polar-angle: 0;
             --camera-max-polar-angle: 80;
-            --enable-pan: no; 
-             --hover-lift-distance: 100px;
+            --enable-pan: no;
+            --mobile-pan-enabled: yes; 
+             --hover-while-selected-factor: 0.2;
+            --hover-lift-distance: 100px;
             --hover-animation-duration: 0.3s;
             --hover-label-font-size: 60px;
             --hover-label-font-style: bold;
@@ -132,6 +134,7 @@
             --marquee-font-size: 9px;
             --marquee-vertical-gap: 6px;
             --marquee-color: #b6a6d0;
+            --wire-toggle-size: 28px;
             --marquee-mobile-enabled: yes;
             --marquee-mobile-speed: 20s;
             --marquee-mobile-font-size: 7px;
@@ -945,6 +948,41 @@
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
+        #wire-toggle {
+            position: fixed;
+            z-index: 999;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: all 0.4s ease;
+        }
+        #wire-toggle .wire-toggle-track {
+            width: calc(var(--wire-toggle-size) * 1.8);
+            height: var(--wire-toggle-size);
+            border-radius: calc(var(--wire-toggle-size) / 2);
+            background: rgba(200,200,200,0.3);
+            position: relative;
+            transition: background 0.4s ease;
+        }
+        #wire-toggle.active .wire-toggle-track {
+            background: rgba(182,165,208,0.6);
+        }
+        #wire-toggle .wire-toggle-thumb {
+            width: var(--wire-toggle-size);
+            height: var(--wire-toggle-size);
+            border-radius: 50%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: left 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
+            background: #ddd;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+        #wire-toggle.active .wire-toggle-thumb {
+            left: calc(var(--wire-toggle-size) * 0.8);
+            background: #4a1d96;
+            box-shadow: 0 0 8px rgba(74,29,150,0.5);
+        }
         #footer {
             position: fixed;
             bottom: 4px;
@@ -1007,7 +1045,7 @@
             }
             #info-panel.open { transform: translateY(0); }
             #info-buttons {
-                top: var(--marquee-mobile-top-offset);
+                top: 12px;
                 left: 12px;
                 transform: none;
                 flex-direction: row;
@@ -1025,7 +1063,6 @@
             #ui-container.editor-visible { display: flex !important; }
             #marquee-bar {
                 display: flex;
-                top: var(--marquee-mobile-top-offset);
                 height: auto;
             }
             #marquee-bar .marquee-content {
@@ -1221,6 +1258,11 @@
     <!-- MARQUEE BAR -->
     <div id="marquee-bar">
         <div class="marquee-track" id="marquee-track"></div>
+    </div>
+    <div id="wire-toggle" onclick="toggleWireMode()">
+        <div class="wire-toggle-track">
+            <div class="wire-toggle-thumb"></div>
+        </div>
     </div>
     <!-- UI CONTAINER (NEW STRUCTURE) -->
     <div id="ui-container">
@@ -1542,6 +1584,7 @@
         };
         let runtimeParams = { ...RENDER_PARAMS };
         const PARAMS = {
+            hoverWhileSelectedFactor: getParamNum('--hover-while-selected-factor') || 0.2,
             hoverLiftDistance: getParamNum('--hover-lift-distance'),
             hoverAnimationDuration: parseFloat(getParam('--hover-animation-duration')) * 1000,
             hoverLabelFontSize: getParamNum('--hover-label-font-size'),
@@ -1574,6 +1617,7 @@
             cameraMinDist: getParamNum('--camera-min-distance'),
             cameraMaxDist: getParamNum('--camera-max-distance'),
             enablePan: getParam('--enable-pan') === 'yes',
+            mobilePanEnabled: getParam('--mobile-pan-enabled') === 'yes',
             cam1PosX: getParamNum('--cam1-pos-x'),
             cam1PosY: getParamNum('--cam1-pos-y'),
             cam1PosZ: getParamNum('--cam1-pos-z'),
@@ -1712,7 +1756,7 @@
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.enablePan = isMobile;
+            controls.enablePan = isMobile && PARAMS.mobilePanEnabled;
             controls.enableRotate = true;
             controls.minDistance = PARAMS.cameraMinDist;
             controls.maxDistance = PARAMS.cameraMaxDist;
@@ -1720,22 +1764,26 @@
             controls.maxPolarAngle = (90 - runtimeParams.cameraMinPolarAngle) * Math.PI / 180;
             controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controls.enabled = false;
-            if (isMobile) { controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }; }
+            if (isMobile && PARAMS.mobilePanEnabled) { controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }; }
             controlsOrtho = new OrbitControls(cameraOrtho, renderer.domElement);
             controlsOrtho.enableDamping = true;
             controlsOrtho.dampingFactor = 0.05;
-            controlsOrtho.enablePan = isMobile;
+            controlsOrtho.enablePan = isMobile && PARAMS.mobilePanEnabled;
             controlsOrtho.enableZoom = true;
             controlsOrtho.enableRotate = true;
             controlsOrtho.minPolarAngle = (90 - runtimeParams.cameraMaxPolarAngle) * Math.PI / 180;
             controlsOrtho.maxPolarAngle = (90 - runtimeParams.cameraMinPolarAngle) * Math.PI / 180;
             controlsOrtho.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controlsOrtho.enabled = true;
-            if (isMobile) { controlsOrtho.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }; }
+            if (isMobile && PARAMS.mobilePanEnabled) { controlsOrtho.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }; }
             let cameraButtonFadeTimer = null;
             function onControlsChange() {
                 if (isCameraLocked || editorModeActive) return;
-                const activeBtn = document.querySelector('.toggle-btn.active:not(#btn-low):not(#btn-mid):not(#btn-editor)');
+                if (cameraJustUnlocked) {
+                    cameraJustUnlocked = false;
+                    return;
+                }
+                const activeBtn = document.querySelector('.toggle-btn.active:not(#btn-low):not(#btn-mid):not(#btn-editor):not(#btn-lock-icon)');
                 if (activeBtn && !cameraButtonFadeTimer) {
                     cameraButtonFadeTimer = setTimeout(() => {
                         activeBtn.style.transition = 'opacity 5s ease';
@@ -1939,6 +1987,43 @@
                 });
             });
         }
+        window.toggleWireMode = function() {
+            const toggle = document.getElementById('wire-toggle');
+            if (isWireMode) {
+                applyLightingPreset('default');
+                toggle.classList.remove('active');
+            } else {
+                applyLightingPreset('low');
+                toggle.classList.add('active');
+            }
+        };
+        function positionWireToggle() {
+            const toggle = document.getElementById('wire-toggle');
+            if (!toggle) return;
+            const isMobileNow = window.innerWidth <= 768;
+            const infoButtons = document.getElementById('info-buttons');
+            const bar = document.getElementById('marquee-bar');
+            if (isMobileNow) {
+                if (bar && bar.style.display !== 'none') {
+                    const barRect = bar.getBoundingClientRect();
+                    toggle.style.top = (barRect.bottom + 8) + 'px';
+                } else if (infoButtons) {
+                    toggle.style.top = (infoButtons.getBoundingClientRect().bottom + 8) + 'px';
+                }
+                toggle.style.right = '12px';
+                toggle.style.left = 'auto';
+            } else {
+                const leftMargin = infoButtons ? infoButtons.getBoundingClientRect().left : 20;
+                toggle.style.right = leftMargin + 'px';
+                if (bar && bar.style.display !== 'none') {
+                    const barRect = bar.getBoundingClientRect();
+                    toggle.style.top = (barRect.bottom + 8) + 'px';
+                } else {
+                    toggle.style.top = '35px';
+                }
+                toggle.style.left = 'auto';
+            }
+        }
         function buildScene(isMobile) {
             const loader = new GLTFLoader();
             const draco = new DRACOLoader();
@@ -2083,14 +2168,13 @@
         function applyHover(obj) {
             currentHoveredObject = obj;
             const hasSelection = !!currentSelectedObject;
-            const liftMult = hasSelection ? 0.2 : 1.0;
-            const textScale = hasSelection ? 0.2 : 1.0;
-            const liftDist = PARAMS.hoverLiftDistance * liftMult;
+            const f = hasSelection ? PARAMS.hoverWhileSelectedFactor : 1.0;
+            const liftDist = PARAMS.hoverLiftDistance * f;
             new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + liftDist }, PARAMS.hoverAnimationDuration).start();
             const box = new THREE.Box3().setFromObject(obj);
             const bboxTopLocal = box.max.y - obj.position.y;
             obj.userData._bboxTopLocal = bboxTopLocal;
-            obj.userData._hoverLiftMult = liftMult;
+            obj.userData._hoverLiftMult = f;
             const maxW = PARAMS.hoverLabelFontBox;
             const content = obj.userData.modalContent;
             const rotX = PARAMS.hoverLabelRotationX * Math.PI / 180;
@@ -2104,10 +2188,10 @@
                     color: PARAMS.hoverArtistColor,
                     opacity: PARAMS.hoverArtistOpacity
                 });
-                const artistY = obj.position.y + bboxTopLocal + liftDist + PARAMS.hoverLabelOffsetY;
+                const artistY = obj.position.y + bboxTopLocal + liftDist + PARAMS.hoverLabelOffsetY * f;
                 hoverLabelArtist.position.set(obj.position.x, artistY, obj.position.z);
                 hoverLabelArtist.rotation.set(rotX, rotY, rotZ);
-                hoverLabelArtist.scale.setScalar(textScale);
+                hoverLabelArtist.scale.setScalar(f);
                 scene.add(hoverLabelArtist);
             }
             const nameText = content.hoverDisplayName || content.name || '';
@@ -2118,10 +2202,10 @@
                     color: PARAMS.hoverLabelColor,
                     opacity: PARAMS.hoverLabelOpacity
                 });
-                const nameY = obj.position.y + bboxTopLocal + liftDist + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
+                const nameY = obj.position.y + bboxTopLocal + liftDist + (PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY) * f;
                 hoverLabel.position.set(obj.position.x, nameY, obj.position.z);
                 hoverLabel.rotation.set(rotX, rotY, rotZ);
-                hoverLabel.scale.setScalar(textScale);
+                hoverLabel.scale.setScalar(f);
                 scene.add(hoverLabel);
             }
         }
@@ -2215,6 +2299,16 @@
             currentSelectedObject = obj;
             if (!obj.userData._originalRotation) {
                 obj.userData._originalRotation = obj.rotation.clone();
+            }
+            if (isWireMode) {
+                obj.traverse(child => {
+                    if (child.isMesh && child.material) {
+                        child.material = new THREE.MeshBasicMaterial({
+                            color: 0xffffff, wireframe: true,
+                            transparent: true, opacity: 1, side: THREE.DoubleSide
+                        });
+                    }
+                });
             }
             const box = new THREE.Box3().setFromObject(obj);
             const center = box.getCenter(new THREE.Vector3());
@@ -2431,6 +2525,18 @@
                     new TWEEN(currentSelectedObject.rotation).to({ x: origRot.x, y: origRot.y, z: origRot.z }, PARAMS.hoverAnimationDuration).start();
                     currentSelectedObject.userData._originalRotation = null;
                 }
+                if (isWireMode) {
+                    currentSelectedObject.traverse(child => {
+                        if (child.isMesh && originalMaterials.has(child.uuid)) {
+                            child.material = new THREE.MeshBasicMaterial({
+                                color: 0x29174d, wireframe: true,
+                                transparent: originalMaterials.get(child.uuid).transparent || false,
+                                opacity: originalMaterials.get(child.uuid).opacity || 1,
+                                side: originalMaterials.get(child.uuid).side || THREE.FrontSide
+                            });
+                        }
+                    });
+                }
             }
             originalCameraState = null; currentSelectedObject=null;
             clearHover();
@@ -2536,17 +2642,23 @@
             }
             marqueeAnimId = requestAnimationFrame(tick);
         }
-        let mobileMarqueeEnabled = getParam('--marquee-mobile-enabled') === 'yes';
+        window.mobileMarqueeEnabled = getParam('--marquee-mobile-enabled') === 'yes';
         function positionMarquee() {
             const bar = document.getElementById('marquee-bar');
             if (!bar) return;
             const isMobileNow = window.innerWidth <= 768;
             const infoButtons = document.getElementById('info-buttons');
             if (!infoButtons) return;
+            const wireToggle = document.getElementById('wire-toggle');
             if (isMobileNow && !mobileMarqueeEnabled) {
                 bar.style.display = 'none';
                 infoButtons.style.left = '50%';
                 infoButtons.style.transform = 'translateX(-50%)';
+                if (wireToggle) {
+                    wireToggle.style.top = (infoButtons.getBoundingClientRect().bottom + 8) + 'px';
+                    wireToggle.style.right = '12px';
+                    wireToggle.style.left = 'auto';
+                }
                 return;
             }
             if (isMobileNow) {
@@ -2557,7 +2669,15 @@
             const leftEnd = infoButtons.getBoundingClientRect().right + 15;
             let rightEnd;
             if (isMobileNow) {
+                const mobileTopOffset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-top-offset')) || 12;
+                bar.style.top = mobileTopOffset + 'px';
                 rightEnd = window.innerWidth - 12;
+                if (wireToggle) {
+                    const barRect = bar.getBoundingClientRect();
+                    wireToggle.style.top = (barRect.bottom + 8) + 'px';
+                    wireToggle.style.right = '12px';
+                    wireToggle.style.left = 'auto';
+                }
             } else {
                 const uiContainer = document.getElementById('ui-container');
                 if (!uiContainer) return;
@@ -2568,6 +2688,7 @@
             bar.style.left = leftEnd + 'px';
             bar.style.width = width + 'px';
             bar.style.transform = 'none';
+            positionWireToggle();
         }
         function onWindowResize() {
             const aspect = window.innerWidth / window.innerHeight;
@@ -2578,19 +2699,32 @@
             composer.setSize(window.innerWidth, window.innerHeight);
             positionMarquee();
         }
+        let cameraJustUnlocked = false;
         window.toggleCameraLock = function() {
             isCameraLocked = !isCameraLocked;
             const btnIcon = document.getElementById('btn-lock-icon');
             const svgPath = btnIcon.querySelector('path');
-            const activeControls = currentCameraMode === 'persp' ? controls : controlsOrtho;
             if (isCameraLocked) {
                 svgPath.setAttribute('d', 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z');
                 btnIcon.style.opacity = '1';
-                activeControls.enableRotate = false;
+                controls.enableRotate = false;
+                controls.enablePan = false;
+                controls.enableZoom = false;
+                controlsOrtho.enableRotate = false;
+                controlsOrtho.enablePan = false;
+                controlsOrtho.enableZoom = false;
+                cameraJustUnlocked = false;
             } else {
                 svgPath.setAttribute('d', 'M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z');
                 btnIcon.style.opacity = '0.5';
-                activeControls.enableRotate = true;
+                const isMobileNow = window.innerWidth <= 768;
+                controls.enableRotate = true;
+                controls.enablePan = isMobileNow && PARAMS.mobilePanEnabled;
+                controls.enableZoom = true;
+                controlsOrtho.enableRotate = true;
+                controlsOrtho.enablePan = isMobileNow && PARAMS.mobilePanEnabled;
+                controlsOrtho.enableZoom = true;
+                cameraJustUnlocked = true;
             }
         };
         function animate() {
@@ -2606,15 +2740,15 @@
             }
             if(currentHoveredObject) {
                 const bboxTop = currentHoveredObject.userData._bboxTopLocal || 0;
-                const liftMult = currentHoveredObject.userData._hoverLiftMult || 1.0;
-                const liftDist = PARAMS.hoverLiftDistance * liftMult;
+                const f = currentHoveredObject.userData._hoverLiftMult || 1.0;
+                const liftDist = PARAMS.hoverLiftDistance * f;
                 const baseY = currentHoveredObject.position.y + bboxTop + liftDist;
                 if(hoverLabelArtist) {
-                    const artistY = baseY + PARAMS.hoverLabelOffsetY;
+                    const artistY = baseY + PARAMS.hoverLabelOffsetY * f;
                     hoverLabelArtist.position.set(currentHoveredObject.position.x, artistY, currentHoveredObject.position.z);
                 }
                 if(hoverLabel) {
-                    const nameY = baseY + PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY;
+                    const nameY = baseY + (PARAMS.hoverLabelOffsetY + PARAMS.hoverLabelNameOffsetY) * f;
                     hoverLabel.position.set(currentHoveredObject.position.x, nameY, currentHoveredObject.position.z);
                 }
             }
@@ -3600,6 +3734,9 @@
                 <span class="params-label">Enable Pan</span>
                 <span class="params-value ${PARAMS.enablePan ? 'on' : 'off'}">${PARAMS.enablePan ? 'YES' : 'NO'}</span>
                 <div class="params-toggle ${PARAMS.enablePan ? 'on' : ''}" onclick="PARAMS.enablePan = !PARAMS.enablePan; if(controls) controls.enablePan = PARAMS.enablePan; if(controlsOrtho) controlsOrtho.enablePan = PARAMS.enablePan; buildSceneParametersPanel()"></div>
+                <span class="params-label">Mobile Pan</span>
+                <span class="params-value ${PARAMS.mobilePanEnabled ? 'on' : 'off'}">${PARAMS.mobilePanEnabled ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${PARAMS.mobilePanEnabled ? 'on' : ''}" onclick="PARAMS.mobilePanEnabled = !PARAMS.mobilePanEnabled; const mp = PARAMS.mobilePanEnabled; if(controls) controls.enablePan = mp; if(controlsOrtho) controlsOrtho.enablePan = mp; if(mp) { controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }; controlsOrtho.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }; } else { controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE }; controlsOrtho.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_ROTATE }; } buildSceneParametersPanel()"></div>
                 <div class="params-section-title">CAM LOOK-AT</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">X</span>
@@ -3617,6 +3754,11 @@
                     <span class="params-slider-value" onclick="makeSceneEditable(this, 'camLookZ')">${PARAMS.camLookZ}</span>
                 </div>
                 <div class="params-section-title">HOVER ANIMATION</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">While-Selected Factor</span>
+                    <input type="range" class="params-slider" min="0.05" max="1" step="0.05" value="${PARAMS.hoverWhileSelectedFactor}" onchange="updateSceneSliderParam('hoverWhileSelectedFactor', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverWhileSelectedFactor')">${PARAMS.hoverWhileSelectedFactor}</span>
+                </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Lift Distance</span>
                     <input type="range" class="params-slider" min="0" max="500" step="5" value="${PARAMS.hoverLiftDistance}" onchange="updateSceneSliderParam('hoverLiftDistance', this.value)">
@@ -3843,6 +3985,12 @@
                 <span class="params-label">Show Price</span>
                 <span class="params-value ${PARAMS.showPrice ? 'on' : 'off'}">${PARAMS.showPrice ? 'YES' : 'NO'}</span>
                 <div class="params-toggle ${PARAMS.showPrice ? 'on' : ''}" onclick="PARAMS.showPrice = !PARAMS.showPrice; buildSceneParametersPanel()"></div>
+                <div class="params-section-title">WIREFRAME TOGGLE</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Toggle Size (px)</span>
+                    <input type="range" class="params-slider" min="16" max="60" step="2" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--wire-toggle-size')) || 28}" onchange="document.documentElement.style.setProperty('--wire-toggle-size', this.value+'px'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'px'; positionWireToggle()">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--wire-toggle-size')) || 28}px</span>
+                </div>
                 <div class="params-section-title">COLORS</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">UI Color</span>
