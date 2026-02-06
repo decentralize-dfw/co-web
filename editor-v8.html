@@ -106,6 +106,8 @@
             --camera-fov: 45;
              --camera-min-distance: 100;
             --camera-max-distance: 45000;
+            --camera-min-polar-angle: 0;
+            --camera-max-polar-angle: 80;
             --enable-pan: no; 
              --hover-lift-distance: 100px;
             --hover-animation-duration: 0.3s;
@@ -130,10 +132,13 @@
             --marquee-font-size: 9px;
             --marquee-vertical-gap: 6px;
             --marquee-color: #b6a6d0;
+            --marquee-mobile-speed: 20s;
+            --marquee-mobile-font-size: 7px;
+            --marquee-mobile-top-offset: 12px;
             --panel-width: 480px;
             --panel-right-offset: 20px;
             --panel-top-offset: 120px; 
-            --panel-bottom-offset: 20px;
+            --panel-bottom-offset: 30px;
             --panel-border-radius: 24px;
             --panel-bg-opacity: 0.4;
              --panel-blur: 8px;
@@ -998,13 +1003,13 @@
             }
             #info-panel.open { transform: translateY(0); }
             #info-buttons {
-                top: 12px;
-                left: 50%;
-                transform: translateX(-50%);
+                top: var(--marquee-mobile-top-offset);
+                left: 12px;
+                transform: none;
                 flex-direction: row;
                 gap: 6px;
                 width: auto;
-                max-width: calc(100vw - 24px);
+                max-width: 50vw;
             }
             .info-btn {
                 padding: 8px 10px;
@@ -1014,7 +1019,14 @@
             .info-btn img { width: 12px; height: 12px; }
             #ui-container { display: none; }
             #ui-container.editor-visible { display: flex !important; }
-            #marquee-bar { display: none; }
+            #marquee-bar {
+                display: flex;
+                top: var(--marquee-mobile-top-offset);
+                height: auto;
+            }
+            #marquee-bar .marquee-content {
+                font-size: var(--marquee-mobile-font-size);
+            }
             #mobile-labels-toggle.visible {
                 display: flex;
                 position: fixed;
@@ -1520,7 +1532,9 @@
             hoverLabelOffsetY: getParamNum('--hover-label-offset-y'),
             hoverLabelNameOffsetY: getParamNum('--hover-label-name-offset-y'),
             panelWidth: getParamNum('--panel-width') || 280,
-            panelTopOffset: getParamNum('--panel-top-offset') || 60
+            panelTopOffset: getParamNum('--panel-top-offset') || 60,
+            cameraMinPolarAngle: getParamNum('--camera-min-polar-angle') || 0,
+            cameraMaxPolarAngle: getParamNum('--camera-max-polar-angle') || 80
         };
         let runtimeParams = { ...RENDER_PARAMS };
         const PARAMS = {
@@ -1691,24 +1705,26 @@
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.enablePan = false;
+            controls.enablePan = isMobile;
             controls.enableRotate = true;
             controls.minDistance = PARAMS.cameraMinDist;
             controls.maxDistance = PARAMS.cameraMaxDist;
-            controls.minPolarAngle = 0;
-            controls.maxPolarAngle = Math.PI / 2;
+            controls.minPolarAngle = runtimeParams.cameraMinPolarAngle * Math.PI / 180;
+            controls.maxPolarAngle = runtimeParams.cameraMaxPolarAngle * Math.PI / 180;
             controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controls.enabled = false;
+            if (isMobile) { controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }; }
             controlsOrtho = new OrbitControls(cameraOrtho, renderer.domElement);
             controlsOrtho.enableDamping = true;
             controlsOrtho.dampingFactor = 0.05;
-            controlsOrtho.enablePan = false;
+            controlsOrtho.enablePan = isMobile;
             controlsOrtho.enableZoom = true;
             controlsOrtho.enableRotate = true;
-            controlsOrtho.minPolarAngle = 0;
-            controlsOrtho.maxPolarAngle = Math.PI / 2;
+            controlsOrtho.minPolarAngle = runtimeParams.cameraMinPolarAngle * Math.PI / 180;
+            controlsOrtho.maxPolarAngle = runtimeParams.cameraMaxPolarAngle * Math.PI / 180;
             controlsOrtho.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controlsOrtho.enabled = true;
+            if (isMobile) { controlsOrtho.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }; }
             transformControls = new TransformControls(camera, renderer.domElement);
             transformControls.setMode('translate');
             transformControls.setSize(0.8);
@@ -1778,9 +1794,9 @@
             const useSSAO = isMobile ? runtimeParams.ssaoEnabledMobile : runtimeParams.ssaoEnabledDesktop;
             ssaoPass = new SSAOPass(scene, cameraOrtho, window.innerWidth, window.innerHeight);
             ssaoPass.kernelRadius = runtimeParams.ssaoKernelRadius;
-            ssaoPass.minDistance = 0.005;
-            ssaoPass.maxDistance = 0.1;
-            ssaoPass.output = 0;
+            ssaoPass.minDistance = 0.001;
+            ssaoPass.maxDistance = 0.15;
+            ssaoPass.output = SSAOPass.OUTPUT.Default;
             ssaoPass.enabled = useSSAO;
             composer.addPass(ssaoPass);
             const useBloom = isMobile ? runtimeParams.bloomEnabledMobile : runtimeParams.bloomEnabledDesktop;
@@ -1955,7 +1971,6 @@
         }
         function onMouseMove(e) {
             if (window.innerWidth <= 768) return;
-            if (document.getElementById('side-panel').classList.contains('open')) return;
             if (editorModeActive) return;
             mouse.x = (e.clientX/window.innerWidth)*2-1;
             mouse.y = -(e.clientY/window.innerHeight)*2+1;
@@ -1964,7 +1979,7 @@
             if (zoneHits.length > 0) {
                 const zone = zoneHits[0].object;
                 const parentObj = zone.userData.parentObject;
-                if (parentObj && parentObj.userData.modalContent && parentObj.userData.clickable && currentHoveredObject !== parentObj) {
+                if (parentObj && parentObj.userData.modalContent && parentObj.userData.clickable && currentHoveredObject !== parentObj && parentObj !== currentSelectedObject) {
                     clearHover();
                     applyHover(parentObj);
                 }
@@ -1974,7 +1989,7 @@
             if(hits.length>0) {
                 let obj = hits[0].object;
                 while(obj.parent && !obj.userData.modalContent) obj = obj.parent;
-                if(obj.userData.modalContent && obj.userData.clickable && currentHoveredObject !== obj) {
+                if(obj.userData.modalContent && obj.userData.clickable && currentHoveredObject !== obj && obj !== currentSelectedObject) {
                     clearHover();
                     applyHover(obj);
                 } else if (!obj.userData.clickable) {
@@ -2146,7 +2161,9 @@
         }
         function openPanel(content, obj) {
             if(currentSelectedObject === obj && document.getElementById('side-panel').classList.contains('open')) return;
-            clearHover();
+            if(hoverLabel) { scene.remove(hoverLabel); hoverLabel=null; }
+            if(hoverLabelArtist) { scene.remove(hoverLabelArtist); hoverLabelArtist=null; }
+            currentHoveredObject = null;
             currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); });
             currentActiveVideos = [];
             const activeCam = getActiveCamera();
@@ -2359,7 +2376,11 @@
                     .to({ x: originalCameraState.target.x, y: originalCameraState.target.y, z: originalCameraState.target.z }, PARAMS.zoomOutAnimationDuration)
                     .start();
             }
+            if(currentSelectedObject && currentSelectedObject.userData.originalPosition) {
+                new TWEEN(currentSelectedObject.position).to({ y: currentSelectedObject.userData.originalPosition.y }, PARAMS.hoverAnimationDuration).start();
+            }
             originalCameraState = null; currentSelectedObject=null;
+            clearHover();
             if(modalAnimationFrameId) { cancelAnimationFrame(modalAnimationFrameId); modalAnimationFrameId = null; }
             document.getElementById('side-panel').classList.remove('open');
         }
@@ -2465,13 +2486,19 @@
         function positionMarquee() {
             const bar = document.getElementById('marquee-bar');
             if (!bar) return;
-            if (window.innerWidth <= 768) { bar.style.display = 'none'; return; }
+            const isMobileNow = window.innerWidth <= 768;
             bar.style.display = 'flex';
             const infoButtons = document.getElementById('info-buttons');
-            const uiContainer = document.getElementById('ui-container');
-            if (!infoButtons || !uiContainer) return;
+            if (!infoButtons) return;
             const leftEnd = infoButtons.getBoundingClientRect().right + 15;
-            const rightEnd = uiContainer.getBoundingClientRect().left - 15;
+            let rightEnd;
+            if (isMobileNow) {
+                rightEnd = window.innerWidth - 12;
+            } else {
+                const uiContainer = document.getElementById('ui-container');
+                if (!uiContainer) return;
+                rightEnd = uiContainer.getBoundingClientRect().left - 15;
+            }
             const width = rightEnd - leftEnd;
             if (width < 50) { bar.style.display = 'none'; return; }
             bar.style.left = leftEnd + 'px';
@@ -2990,8 +3017,40 @@
                     .start();
             }
         };
-        function getActiveCamera() { 
-            return currentCameraMode === 'persp' ? camera : cameraOrtho; 
+        window.toggleMobileCameraMode = function() {
+            if (currentCameraMode === 'ortho') {
+                // Switch to perspective
+                currentCameraMode = 'persp';
+                controlsOrtho.enabled = false;
+                controls.enabled = true;
+                controls.enableRotate = true;
+                if (transformControls) transformControls.camera = camera;
+                // Transfer position from ortho camera
+                camera.position.copy(cameraOrtho.position);
+                camera.lookAt(controlsOrtho.target);
+                controls.target.copy(controlsOrtho.target);
+                camera.fov = runtimeParams.camMobileFov || 45;
+                camera.updateProjectionMatrix();
+                controls.update();
+            } else {
+                // Switch to orthographic
+                currentCameraMode = 'ortho';
+                controls.enabled = false;
+                controlsOrtho.enabled = true;
+                controlsOrtho.enableRotate = true;
+                if (transformControls) transformControls.camera = cameraOrtho;
+                // Transfer position from perspective camera
+                cameraOrtho.position.copy(camera.position);
+                cameraOrtho.up.set(0, 1, 0);
+                cameraOrtho.lookAt(controls.target);
+                controlsOrtho.target.copy(controls.target);
+                updateOrthoFrustum();
+                cameraOrtho.updateProjectionMatrix();
+                controlsOrtho.update();
+            }
+        };
+        function getActiveCamera() {
+            return currentCameraMode === 'persp' ? camera : cameraOrtho;
         }
         function handleEditorClick(e) {
             if (!editorModeActive) return;
@@ -3038,6 +3097,53 @@
                 buildSceneParametersPanel();
             }
         };
+        function attachValueEditing(container) {
+            container.querySelectorAll('.params-slider-value').forEach(span => {
+                if (span.dataset.editBound) return;
+                span.dataset.editBound = '1';
+                span.style.cursor = 'pointer';
+                span.addEventListener('click', function() {
+                    const row = this.closest('.params-slider-row');
+                    if (!row) return;
+                    const slider = row.querySelector('.params-slider');
+                    if (!slider) return;
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.className = 'params-slider-input';
+                    input.value = parseFloat(slider.value);
+                    input.step = 'any';
+                    const origSpan = this;
+                    const parentRow = this.parentElement;
+                    const finishEdit = () => {
+                        const newValue = parseFloat(input.value);
+                        if (!isNaN(newValue)) {
+                            slider.value = newValue;
+                            slider.dispatchEvent(new Event('change'));
+                        }
+                        if (input.parentElement) {
+                            const newSpan = origSpan.cloneNode(false);
+                            newSpan.textContent = isNaN(newValue) ? origSpan.textContent : newValue;
+                            newSpan.dataset.editBound = '';
+                            input.replaceWith(newSpan);
+                            attachValueEditing(parentRow);
+                        }
+                    };
+                    input.onblur = finishEdit;
+                    input.onkeydown = (e) => {
+                        e.stopPropagation();
+                        if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); finishEdit(); }
+                        if (e.key === 'Escape') {
+                            if (input.parentElement) input.replaceWith(origSpan);
+                            origSpan.dataset.editBound = '';
+                            attachValueEditing(parentRow);
+                        }
+                    };
+                    this.replaceWith(input);
+                    input.focus();
+                    input.select();
+                });
+            });
+        }
         function buildParametersPanel() {
             const grid = document.getElementById('params-grid');
             const isMobile = window.innerWidth <= 768;
@@ -3051,12 +3157,12 @@
                 <div class="params-toggle ${runtimeParams.ssaoEnabledMobile ? 'on' : ''}" onclick="toggleParam('ssaoEnabledMobile')"></div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Kernel Radius</span>
-                    <input type="range" class="params-slider" min="1" max="32" step="1" value="${runtimeParams.ssaoKernelRadius}" onchange="updateSliderParam('ssaoKernelRadius', this.value)">
+                    <input type="range" class="params-slider" min="1" max="128" step="1" value="${runtimeParams.ssaoKernelRadius}" onchange="updateSliderParam('ssaoKernelRadius', this.value)">
                     <span class="params-slider-value">${runtimeParams.ssaoKernelRadius}</span>
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Intensity</span>
-                    <input type="range" class="params-slider" min="0" max="2" step="0.1" value="${runtimeParams.ssaoIntensity}" onchange="updateSliderParam('ssaoIntensity', this.value)">
+                    <input type="range" class="params-slider" min="0" max="5" step="0.1" value="${runtimeParams.ssaoIntensity}" onchange="updateSliderParam('ssaoIntensity', this.value)">
                     <span class="params-slider-value">${runtimeParams.ssaoIntensity}</span>
                 </div>
                 <div class="params-section-title">BLOOM (Glow)</div>
@@ -3073,8 +3179,13 @@
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Threshold</span>
-                    <input type="range" class="params-slider" min="0.5" max="1" step="0.01" value="${runtimeParams.bloomThreshold}" onchange="updateSliderParam('bloomThreshold', this.value)">
+                    <input type="range" class="params-slider" min="0" max="2" step="0.01" value="${runtimeParams.bloomThreshold}" onchange="updateSliderParam('bloomThreshold', this.value)">
                     <span class="params-slider-value">${runtimeParams.bloomThreshold}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Radius</span>
+                    <input type="range" class="params-slider" min="0" max="2" step="0.01" value="${runtimeParams.bloomRadius}" onchange="updateSliderParam('bloomRadius', this.value)">
+                    <span class="params-slider-value">${runtimeParams.bloomRadius}</span>
                 </div>
                 <div class="params-section-title">TONE MAPPING</div>
                 <span class="params-label">Tone Mapping Desktop</span>
@@ -3085,12 +3196,12 @@
                 <div class="params-toggle ${runtimeParams.tonemappingEnabledMobile ? 'on' : ''}" onclick="toggleParam('tonemappingEnabledMobile')"></div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Exposure Desktop</span>
-                    <input type="range" class="params-slider" min="0.5" max="2.5" step="0.05" value="${runtimeParams.tonemappingExposureDesktop}" onchange="updateSliderParam('tonemappingExposureDesktop', this.value)">
+                    <input type="range" class="params-slider" min="0" max="10" step="0.05" value="${runtimeParams.tonemappingExposureDesktop}" onchange="updateSliderParam('tonemappingExposureDesktop', this.value)">
                     <span class="params-slider-value">${runtimeParams.tonemappingExposureDesktop}</span>
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Exposure Mobile</span>
-                    <input type="range" class="params-slider" min="0.5" max="2.5" step="0.05" value="${runtimeParams.tonemappingExposureMobile}" onchange="updateSliderParam('tonemappingExposureMobile', this.value)">
+                    <input type="range" class="params-slider" min="0" max="10" step="0.05" value="${runtimeParams.tonemappingExposureMobile}" onchange="updateSliderParam('tonemappingExposureMobile', this.value)">
                     <span class="params-slider-value">${runtimeParams.tonemappingExposureMobile}</span>
                 </div>
                 <div class="params-section-title">SHADOWS</div>
@@ -3100,6 +3211,16 @@
                 <span class="params-label">Shadows Mobile</span>
                 <span class="params-value ${runtimeParams.shadowsEnabledMobile ? 'on' : 'off'}">${runtimeParams.shadowsEnabledMobile ? 'YES' : 'NO'}</span>
                 <div class="params-toggle ${runtimeParams.shadowsEnabledMobile ? 'on' : ''}" onclick="toggleParam('shadowsEnabledMobile')"></div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Shadow Bias</span>
+                    <input type="range" class="params-slider" min="-0.01" max="0.01" step="0.0001" value="${runtimeParams.shadowBias}" onchange="updateSliderParam('shadowBias', this.value)">
+                    <span class="params-slider-value">${runtimeParams.shadowBias}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Normal Bias</span>
+                    <input type="range" class="params-slider" min="0" max="1" step="0.01" value="${runtimeParams.shadowNormalBias}" onchange="updateSliderParam('shadowNormalBias', this.value)">
+                    <span class="params-slider-value">${runtimeParams.shadowNormalBias}</span>
+                </div>
                 <div class="params-section-title">ANTI-ALIASING</div>
                 <span class="params-label">FXAA Desktop</span>
                 <span class="params-value ${runtimeParams.fxaaEnabledDesktop ? 'on' : 'off'}">${runtimeParams.fxaaEnabledDesktop ? 'YES' : 'NO'}</span>
@@ -3123,12 +3244,12 @@
                 <div class="params-toggle ${runtimeParams.envmapEnabledMobile ? 'on' : ''}" onclick="toggleParam('envmapEnabledMobile')"></div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Intensity Desktop</span>
-                    <input type="range" class="params-slider" min="0" max="3" step="0.1" value="${runtimeParams.envmapIntensityDesktop}" onchange="updateSliderParam('envmapIntensityDesktop', this.value)" oninput="updateSliderDisplay(this)">
+                    <input type="range" class="params-slider" min="0" max="10" step="0.1" value="${runtimeParams.envmapIntensityDesktop}" onchange="updateSliderParam('envmapIntensityDesktop', this.value)" oninput="updateSliderDisplay(this)">
                     <span class="params-slider-value" onclick="makeEditable(this, 'envmapIntensityDesktop')">${runtimeParams.envmapIntensityDesktop}</span>
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Intensity Mobile</span>
-                    <input type="range" class="params-slider" min="0" max="2" step="0.1" value="${runtimeParams.envmapIntensityMobile}" onchange="updateSliderParam('envmapIntensityMobile', this.value)" oninput="updateSliderDisplay(this)">
+                    <input type="range" class="params-slider" min="0" max="10" step="0.1" value="${runtimeParams.envmapIntensityMobile}" onchange="updateSliderParam('envmapIntensityMobile', this.value)" oninput="updateSliderDisplay(this)">
                     <span class="params-slider-value" onclick="makeEditable(this, 'envmapIntensityMobile')">${runtimeParams.envmapIntensityMobile}</span>
                 </div>
                 <div class="params-section-title">RECT AREA LIGHT</div>
@@ -3140,13 +3261,13 @@
                 <div class="params-toggle ${runtimeParams.rectarealightEnabledMobile ? 'on' : ''}" onclick="toggleParam('rectarealightEnabledMobile')"></div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Intensity</span>
-                    <input type="range" class="params-slider" min="0" max="5" step="0.1" value="${runtimeParams.rectarealightIntensity}" onchange="updateSliderParam('rectarealightIntensity', this.value)">
+                    <input type="range" class="params-slider" min="0" max="20" step="0.1" value="${runtimeParams.rectarealightIntensity}" onchange="updateSliderParam('rectarealightIntensity', this.value)">
                     <span class="params-slider-value">${runtimeParams.rectarealightIntensity}</span>
                 </div>
                 <div class="params-section-title">LIGHTING</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Hemisphere</span>
-                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${runtimeParams.lightHemisphereIntensity}" onchange="updateSliderParam('lightHemisphereIntensity', this.value)">
+                    <input type="range" class="params-slider" min="0" max="10" step="0.05" value="${runtimeParams.lightHemisphereIntensity}" onchange="updateSliderParam('lightHemisphereIntensity', this.value)">
                     <span class="params-slider-value">${runtimeParams.lightHemisphereIntensity}</span>
                 </div>
                 <div class="params-slider-row">
@@ -3161,15 +3282,20 @@
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Rim</span>
-                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${runtimeParams.lightRimIntensity}" onchange="updateSliderParam('lightRimIntensity', this.value)">
+                    <input type="range" class="params-slider" min="0" max="10" step="0.05" value="${runtimeParams.lightRimIntensity}" onchange="updateSliderParam('lightRimIntensity', this.value)">
                     <span class="params-slider-value">${runtimeParams.lightRimIntensity}</span>
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Accent</span>
-                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${runtimeParams.lightAccentIntensity}" onchange="updateSliderParam('lightAccentIntensity', this.value)">
+                    <input type="range" class="params-slider" min="0" max="10" step="0.05" value="${runtimeParams.lightAccentIntensity}" onchange="updateSliderParam('lightAccentIntensity', this.value)">
                     <span class="params-slider-value">${runtimeParams.lightAccentIntensity}</span>
                 </div>
                 <div class="params-section-title">PBR MATERIALS</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">EnvMap Intensity</span>
+                    <input type="range" class="params-slider" min="0" max="5" step="0.1" value="${runtimeParams.pbrEnvmapIntensity}" onchange="updateSliderParam('pbrEnvmapIntensity', this.value)" oninput="updateSliderDisplay(this)">
+                    <span class="params-slider-value" onclick="makeEditable(this, 'pbrEnvmapIntensity')">${runtimeParams.pbrEnvmapIntensity}</span>
+                </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Roughness Boost</span>
                     <input type="range" class="params-slider" min="-0.5" max="0.5" step="0.05" value="${runtimeParams.pbrRoughnessBoost}" onchange="updateSliderParam('pbrRoughnessBoost', this.value)" oninput="updateSliderDisplay(this)">
@@ -3188,12 +3314,12 @@
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Contrast</span>
-                    <input type="range" class="params-slider" min="0.5" max="2" step="0.05" value="${runtimeParams.filterContrast}" onchange="updateSliderParam('filterContrast', this.value)" oninput="updateSliderDisplay(this)">
+                    <input type="range" class="params-slider" min="0" max="5" step="0.05" value="${runtimeParams.filterContrast}" onchange="updateSliderParam('filterContrast', this.value)" oninput="updateSliderDisplay(this)">
                     <span class="params-slider-value" onclick="makeEditable(this, 'filterContrast')">${runtimeParams.filterContrast}</span>
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Saturation</span>
-                    <input type="range" class="params-slider" min="0" max="2" step="0.05" value="${runtimeParams.filterSaturation}" onchange="updateSliderParam('filterSaturation', this.value)" oninput="updateSliderDisplay(this)">
+                    <input type="range" class="params-slider" min="0" max="5" step="0.05" value="${runtimeParams.filterSaturation}" onchange="updateSliderParam('filterSaturation', this.value)" oninput="updateSliderDisplay(this)">
                     <span class="params-slider-value" onclick="makeEditable(this, 'filterSaturation')">${runtimeParams.filterSaturation}</span>
                 </div>
                 <div class="params-slider-row">
@@ -3208,6 +3334,7 @@
                     <span class="params-slider-value">${currentHdriPreset}</span>
                 </div>
             `;
+            attachValueEditing(grid);
         }
         window.buildSceneParametersPanel = function() {
             const grid = document.getElementById('scene-params-grid');
@@ -3266,7 +3393,10 @@
                 <span class="params-label">Mobile Labels Public</span>
                 <span class="params-value ${runtimeParams.mobileLabelsShowPublic ? 'on' : 'off'}">${runtimeParams.mobileLabelsShowPublic ? 'YES' : 'NO'}</span>
                 <div class="params-toggle ${runtimeParams.mobileLabelsShowPublic ? 'on' : ''}" onclick="toggleParam('mobileLabelsShowPublic'); buildSceneParametersPanel()"></div>
-                <div class="params-section-title">MOBILE CAMERA POSITION</div>
+                <div class="params-section-title">MOBILE CAMERA</div>
+                <span class="params-label">Camera Mode</span>
+                <span class="params-value">${currentCameraMode === 'persp' ? 'PERSPECTIVE' : 'ORTHOGRAPHIC'}</span>
+                <div class="params-toggle ${currentCameraMode === 'persp' ? 'on' : ''}" onclick="toggleMobileCameraMode(); buildSceneParametersPanel()"></div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">X</span>
                     <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.camMobilePosX}" onchange="updateSceneSliderParam('camMobilePosX', this.value)">
@@ -3346,7 +3476,297 @@
                     <input type="color" value="${getComputedStyle(document.documentElement).getPropertyValue('--marquee-color').trim() || '#b6a6d0'}" onchange="updateMarqueeParam('color', this.value)" style="width:32px;height:20px;border:none;cursor:pointer;padding:0;">
                     <span class="params-slider-value">${getComputedStyle(document.documentElement).getPropertyValue('--marquee-color').trim() || '#b6a6d0'}</span>
                 </div>
+                <div class="params-section-title">MARQUEE MOBILE</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Mobile Speed (s)</span>
+                    <input type="range" class="params-slider" min="5" max="60" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-speed')) || 20}" onchange="updateMarqueeParam('mobileSpeed', this.value)">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-speed')) || 20}s</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Mobile Font (px)</span>
+                    <input type="range" class="params-slider" min="4" max="18" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-font-size')) || 7}" onchange="updateMarqueeParam('mobileFontSize', this.value)">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-font-size')) || 7}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Mobile Top (px)</span>
+                    <input type="range" class="params-slider" min="0" max="50" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-top-offset')) || 12}" onchange="updateMarqueeParam('mobileTopOffset', this.value)">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-top-offset')) || 12}px</span>
+                </div>
+                <div class="params-section-title">CAMERA LIMITS</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Min Polar Angle (°)</span>
+                    <input type="range" class="params-slider" min="0" max="90" step="1" value="${runtimeParams.cameraMinPolarAngle}" onchange="updateSceneSliderParam('cameraMinPolarAngle', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cameraMinPolarAngle')">${runtimeParams.cameraMinPolarAngle}°</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Max Polar Angle (°)</span>
+                    <input type="range" class="params-slider" min="0" max="90" step="1" value="${runtimeParams.cameraMaxPolarAngle}" onchange="updateSceneSliderParam('cameraMaxPolarAngle', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cameraMaxPolarAngle')">${runtimeParams.cameraMaxPolarAngle}°</span>
+                </div>
+                <div class="params-section-title">CAMERA GENERAL</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">FOV</span>
+                    <input type="range" class="params-slider" min="10" max="120" step="1" value="${PARAMS.cameraFov}" onchange="updateSceneSliderParam('cameraFov', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cameraFov')">${PARAMS.cameraFov}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Min Distance</span>
+                    <input type="range" class="params-slider" min="1" max="5000" step="10" value="${PARAMS.cameraMinDist}" onchange="updateSceneSliderParam('cameraMinDist', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cameraMinDist')">${PARAMS.cameraMinDist}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Max Distance</span>
+                    <input type="range" class="params-slider" min="1000" max="100000" step="500" value="${PARAMS.cameraMaxDist}" onchange="updateSceneSliderParam('cameraMaxDist', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cameraMaxDist')">${PARAMS.cameraMaxDist}</span>
+                </div>
+                <span class="params-label">Enable Pan</span>
+                <span class="params-value ${PARAMS.enablePan ? 'on' : 'off'}">${PARAMS.enablePan ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${PARAMS.enablePan ? 'on' : ''}" onclick="PARAMS.enablePan = !PARAMS.enablePan; if(controls) controls.enablePan = PARAMS.enablePan; if(controlsOrtho) controlsOrtho.enablePan = PARAMS.enablePan; buildSceneParametersPanel()"></div>
+                <div class="params-section-title">CAM LOOK-AT</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">X</span>
+                    <input type="range" class="params-slider" min="-5000" max="5000" step="10" value="${PARAMS.camLookX}" onchange="updateSceneSliderParam('camLookX', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'camLookX')">${PARAMS.camLookX}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Y</span>
+                    <input type="range" class="params-slider" min="-5000" max="5000" step="10" value="${PARAMS.camLookY}" onchange="updateSceneSliderParam('camLookY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'camLookY')">${PARAMS.camLookY}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Z</span>
+                    <input type="range" class="params-slider" min="-5000" max="5000" step="10" value="${PARAMS.camLookZ}" onchange="updateSceneSliderParam('camLookZ', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'camLookZ')">${PARAMS.camLookZ}</span>
+                </div>
+                <div class="params-section-title">HOVER ANIMATION</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Lift Distance</span>
+                    <input type="range" class="params-slider" min="0" max="500" step="5" value="${PARAMS.hoverLiftDistance}" onchange="updateSceneSliderParam('hoverLiftDistance', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLiftDistance')">${PARAMS.hoverLiftDistance}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Anim Duration (ms)</span>
+                    <input type="range" class="params-slider" min="100" max="2000" step="50" value="${PARAMS.hoverAnimationDuration}" onchange="updateSceneSliderParam('hoverAnimationDuration', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverAnimationDuration')">${PARAMS.hoverAnimationDuration}ms</span>
+                </div>
+                <div class="params-section-title">HOVER LABEL STYLE</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Letter Spacing</span>
+                    <input type="range" class="params-slider" min="-5" max="20" step="0.5" value="${PARAMS.hoverLabelLetterSpacing}" onchange="updateSceneSliderParam('hoverLabelLetterSpacing', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelLetterSpacing')">${PARAMS.hoverLabelLetterSpacing}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Label Color</span>
+                    <input type="color" value="${PARAMS.hoverLabelColor}" onchange="PARAMS.hoverLabelColor = this.value; buildSceneParametersPanel()" style="width:32px;height:20px;border:none;cursor:pointer;padding:0;">
+                    <span class="params-slider-value">${PARAMS.hoverLabelColor}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Label Opacity</span>
+                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${PARAMS.hoverLabelOpacity}" onchange="updateSceneSliderParam('hoverLabelOpacity', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelOpacity')">${PARAMS.hoverLabelOpacity}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Font Box</span>
+                    <input type="range" class="params-slider" min="100" max="5000" step="50" value="${PARAMS.hoverLabelFontBox}" onchange="updateSceneSliderParam('hoverLabelFontBox', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelFontBox')">${PARAMS.hoverLabelFontBox}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Rotation X (°)</span>
+                    <input type="range" class="params-slider" min="-180" max="180" step="5" value="${PARAMS.hoverLabelRotationX}" onchange="updateSceneSliderParam('hoverLabelRotationX', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelRotationX')">${PARAMS.hoverLabelRotationX}°</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Rotation Y (°)</span>
+                    <input type="range" class="params-slider" min="-180" max="180" step="5" value="${PARAMS.hoverLabelRotationY}" onchange="updateSceneSliderParam('hoverLabelRotationY', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelRotationY')">${PARAMS.hoverLabelRotationY}°</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Rotation Z (°)</span>
+                    <input type="range" class="params-slider" min="-180" max="180" step="5" value="${PARAMS.hoverLabelRotationZ}" onchange="updateSceneSliderParam('hoverLabelRotationZ', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelRotationZ')">${PARAMS.hoverLabelRotationZ}°</span>
+                </div>
+                <div class="params-section-title">HOVER ARTIST LABEL</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Font Size</span>
+                    <input type="range" class="params-slider" min="8" max="120" step="1" value="${PARAMS.hoverArtistFontSize}" onchange="updateSceneSliderParam('hoverArtistFontSize', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverArtistFontSize')">${PARAMS.hoverArtistFontSize}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Letter Spacing</span>
+                    <input type="range" class="params-slider" min="-5" max="20" step="0.5" value="${PARAMS.hoverArtistLetterSpacing}" onchange="updateSceneSliderParam('hoverArtistLetterSpacing', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverArtistLetterSpacing')">${PARAMS.hoverArtistLetterSpacing}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Artist Color</span>
+                    <input type="color" value="${PARAMS.hoverArtistColor}" onchange="PARAMS.hoverArtistColor = this.value; buildSceneParametersPanel()" style="width:32px;height:20px;border:none;cursor:pointer;padding:0;">
+                    <span class="params-slider-value">${PARAMS.hoverArtistColor}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Artist Opacity</span>
+                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${PARAMS.hoverArtistOpacity}" onchange="updateSceneSliderParam('hoverArtistOpacity', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverArtistOpacity')">${PARAMS.hoverArtistOpacity}</span>
+                </div>
+                <div class="params-section-title">MOBILE HOVER LABELS</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Font Size</span>
+                    <input type="range" class="params-slider" min="10" max="120" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-font-size')) || 60}" onchange="document.documentElement.style.setProperty('--mobile-hover-label-font-size', this.value+'px'); buildSceneParametersPanel()">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-font-size')) || 60}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Opacity</span>
+                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-opacity')) || 0.9}" onchange="document.documentElement.style.setProperty('--mobile-hover-label-opacity', this.value); buildSceneParametersPanel()">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-opacity')) || 0.9}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Offset Y</span>
+                    <input type="range" class="params-slider" min="-200" max="200" step="5" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-offset-y')) || 40}" onchange="document.documentElement.style.setProperty('--mobile-hover-label-offset-y', this.value+'px'); buildSceneParametersPanel()">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-offset-y')) || 40}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Name Offset Y</span>
+                    <input type="range" class="params-slider" min="-200" max="200" step="5" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-name-offset-y')) || 80}" onchange="document.documentElement.style.setProperty('--mobile-hover-label-name-offset-y', this.value+'px'); buildSceneParametersPanel()">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-name-offset-y')) || 80}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Rotation X</span>
+                    <input type="range" class="params-slider" min="-180" max="180" step="5" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-rotation-x')) || 0}" onchange="document.documentElement.style.setProperty('--mobile-hover-label-rotation-x', this.value+'deg'); buildSceneParametersPanel()">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-rotation-x')) || 0}°</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Rotation Y</span>
+                    <input type="range" class="params-slider" min="-180" max="180" step="5" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-rotation-y')) || 90}" onchange="document.documentElement.style.setProperty('--mobile-hover-label-rotation-y', this.value+'deg'); buildSceneParametersPanel()">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-rotation-y')) || 90}°</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Rotation Z</span>
+                    <input type="range" class="params-slider" min="-180" max="180" step="5" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-rotation-z')) || 0}" onchange="document.documentElement.style.setProperty('--mobile-hover-label-rotation-z', this.value+'deg'); buildSceneParametersPanel()">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-label-rotation-z')) || 0}°</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Artist Font Size</span>
+                    <input type="range" class="params-slider" min="10" max="100" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-artist-font-size')) || 35}" onchange="document.documentElement.style.setProperty('--mobile-hover-artist-font-size', this.value+'px'); buildSceneParametersPanel()">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-artist-font-size')) || 35}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Artist Opacity</span>
+                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-artist-opacity')) || 0.7}" onchange="document.documentElement.style.setProperty('--mobile-hover-artist-opacity', this.value); buildSceneParametersPanel()">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mobile-hover-artist-opacity')) || 0.7}</span>
+                </div>
+                <div class="params-section-title">PANEL LAYOUT</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Right Offset</span>
+                    <input type="range" class="params-slider" min="0" max="100" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-right-offset')) || 20}" onchange="document.documentElement.style.setProperty('--panel-right-offset', this.value+'px'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'px'">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-right-offset')) || 20}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Bottom Offset</span>
+                    <input type="range" class="params-slider" min="0" max="100" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-bottom-offset')) || 30}" onchange="document.documentElement.style.setProperty('--panel-bottom-offset', this.value+'px'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'px'">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-bottom-offset')) || 30}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Border Radius</span>
+                    <input type="range" class="params-slider" min="0" max="50" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-border-radius')) || 24}" onchange="document.documentElement.style.setProperty('--panel-border-radius', this.value+'px'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'px'">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-border-radius')) || 24}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">BG Opacity</span>
+                    <input type="range" class="params-slider" min="0" max="1" step="0.05" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-bg-opacity')) || 0.4}" onchange="document.documentElement.style.setProperty('--panel-bg-opacity', this.value); this.parentElement.querySelector('.params-slider-value').textContent=this.value">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-bg-opacity')) || 0.4}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Blur (px)</span>
+                    <input type="range" class="params-slider" min="0" max="30" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-blur')) || 8}" onchange="document.documentElement.style.setProperty('--panel-blur', this.value+'px'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'px'">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-blur')) || 8}px</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Anim Duration (s)</span>
+                    <input type="range" class="params-slider" min="0.1" max="3" step="0.1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-animation-duration')) || 0.8}" onchange="document.documentElement.style.setProperty('--panel-animation-duration', this.value+'s'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'s'">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-animation-duration')) || 0.8}s</span>
+                </div>
+                <div class="params-section-title">PANEL MEDIA</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Padding H (%)</span>
+                    <input type="range" class="params-slider" min="0" max="25" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-media-padding-horizontal')) || 10}" onchange="document.documentElement.style.setProperty('--panel-media-padding-horizontal', this.value+'%'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'%'">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-media-padding-horizontal')) || 10}%</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Padding Top (rem)</span>
+                    <input type="range" class="params-slider" min="0" max="5" step="0.25" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-media-padding-top')) || 2}" onchange="document.documentElement.style.setProperty('--panel-media-padding-top', this.value+'rem'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'rem'">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-media-padding-top')) || 2}rem</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Spacing (px)</span>
+                    <input type="range" class="params-slider" min="0" max="50" step="2" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-media-spacing')) || 20}" onchange="document.documentElement.style.setProperty('--panel-media-spacing', this.value+'px'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'px'">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-media-spacing')) || 20}px</span>
+                </div>
+                <div class="params-section-title">PANEL TYPOGRAPHY</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Title Font Size (rem)</span>
+                    <input type="range" class="params-slider" min="0.5" max="4" step="0.1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-title-font-size')) || 2}" onchange="document.documentElement.style.setProperty('--panel-title-font-size', this.value+'rem'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'rem'">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-title-font-size')) || 2}rem</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Meta Font Size (rem)</span>
+                    <input type="range" class="params-slider" min="0.3" max="2" step="0.05" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-meta-font-size')) || 0.9}" onchange="document.documentElement.style.setProperty('--panel-meta-font-size', this.value+'rem'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'rem'">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-meta-font-size')) || 0.9}rem</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Desc Font Size (rem)</span>
+                    <input type="range" class="params-slider" min="0.3" max="2" step="0.05" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-desc-font-size')) || 0.95}" onchange="document.documentElement.style.setProperty('--panel-desc-font-size', this.value+'rem'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'rem'">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-desc-font-size')) || 0.95}rem</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Text Spacing (rem)</span>
+                    <input type="range" class="params-slider" min="0.5" max="4" step="0.1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-text-spacing')) || 1.5}" onchange="document.documentElement.style.setProperty('--panel-text-spacing', this.value+'rem'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'rem'">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-text-spacing')) || 1.5}rem</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Content Padding (rem)</span>
+                    <input type="range" class="params-slider" min="0.5" max="5" step="0.25" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-content-padding')) || 2}" onchange="document.documentElement.style.setProperty('--panel-content-padding', this.value+'rem'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'rem'">
+                    <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--panel-content-padding')) || 2}rem</span>
+                </div>
+                <div class="params-section-title">SELECTION & ZOOM</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Zoom Factor</span>
+                    <input type="range" class="params-slider" min="0.05" max="1" step="0.05" value="${PARAMS.selectionZoomFactor}" onchange="updateSceneSliderParam('selectionZoomFactor', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'selectionZoomFactor')">${PARAMS.selectionZoomFactor}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Zoom Factor Mobile</span>
+                    <input type="range" class="params-slider" min="0.05" max="1" step="0.05" value="${PARAMS.selectionZoomFactorMobile}" onchange="updateSceneSliderParam('selectionZoomFactorMobile', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'selectionZoomFactorMobile')">${PARAMS.selectionZoomFactorMobile}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Zoom In Duration (ms)</span>
+                    <input type="range" class="params-slider" min="200" max="3000" step="100" value="${PARAMS.zoomInAnimationDuration}" onchange="updateSceneSliderParam('zoomInAnimationDuration', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'zoomInAnimationDuration')">${PARAMS.zoomInAnimationDuration}ms</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Zoom Out Duration (ms)</span>
+                    <input type="range" class="params-slider" min="200" max="3000" step="100" value="${PARAMS.zoomOutAnimationDuration}" onchange="updateSceneSliderParam('zoomOutAnimationDuration', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'zoomOutAnimationDuration')">${PARAMS.zoomOutAnimationDuration}ms</span>
+                </div>
+                <span class="params-label">Show Price</span>
+                <span class="params-value ${PARAMS.showPrice ? 'on' : 'off'}">${PARAMS.showPrice ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${PARAMS.showPrice ? 'on' : ''}" onclick="PARAMS.showPrice = !PARAMS.showPrice; buildSceneParametersPanel()"></div>
+                <div class="params-section-title">COLORS</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">UI Color</span>
+                    <input type="color" value="${getComputedStyle(document.documentElement).getPropertyValue('--ui-color').trim() || '#000000'}" onchange="document.documentElement.style.setProperty('--ui-color', this.value); this.parentElement.querySelector('.params-slider-value').textContent=this.value" style="width:32px;height:20px;border:none;cursor:pointer;padding:0;">
+                    <span class="params-slider-value">${getComputedStyle(document.documentElement).getPropertyValue('--ui-color').trim() || '#000000'}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">BG Color</span>
+                    <input type="color" value="${getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim() || '#ffffff'}" onchange="document.documentElement.style.setProperty('--bg-color', this.value); document.getElementById('scene-container').style.background=this.value; this.parentElement.querySelector('.params-slider-value').textContent=this.value" style="width:32px;height:20px;border:none;cursor:pointer;padding:0;">
+                    <span class="params-slider-value">${getComputedStyle(document.documentElement).getPropertyValue('--bg-color').trim() || '#ffffff'}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Accent Color</span>
+                    <input type="color" value="${getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#FF006A'}" onchange="document.documentElement.style.setProperty('--accent-color', this.value); this.parentElement.querySelector('.params-slider-value').textContent=this.value" style="width:32px;height:20px;border:none;cursor:pointer;padding:0;">
+                    <span class="params-slider-value">${getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim() || '#FF006A'}</span>
+                </div>
             `;
+            attachValueEditing(grid);
         }
         window.updateMarqueeParam = function(param, value) {
             const root = document.documentElement;
@@ -3364,6 +3784,16 @@
             } else if (param === 'color') {
                 root.style.setProperty('--marquee-color', value);
                 if (valueSpan) valueSpan.textContent = value;
+            } else if (param === 'mobileSpeed') {
+                root.style.setProperty('--marquee-mobile-speed', value + 's');
+                if (valueSpan) valueSpan.textContent = value + 's';
+            } else if (param === 'mobileFontSize') {
+                root.style.setProperty('--marquee-mobile-font-size', value + 'px');
+                if (valueSpan) valueSpan.textContent = value + 'px';
+            } else if (param === 'mobileTopOffset') {
+                root.style.setProperty('--marquee-mobile-top-offset', value + 'px');
+                if (valueSpan) valueSpan.textContent = value + 'px';
+                positionMarquee();
             }
         };
         window.updateSceneSliderParam = function(paramName, value) {
@@ -3372,10 +3802,34 @@
             const slider = event.target;
             const valueSpan = slider.parentElement.querySelector('.params-slider-value');
             if (valueSpan) {
-                const suffix = ['panelWidth', 'panelTopOffset', 'hoverLabelFontSize', 'hoverLabelOffsetY', 'hoverLabelNameOffsetY'].includes(paramName) ? 'px' : '';
+                const pxParams = ['panelWidth', 'panelTopOffset', 'hoverLabelFontSize', 'hoverLabelOffsetY', 'hoverLabelNameOffsetY', 'hoverLiftDistance', 'hoverLabelFontBox', 'hoverArtistFontSize'];
+                const degParams = ['cameraMinPolarAngle', 'cameraMaxPolarAngle', 'hoverLabelRotationX', 'hoverLabelRotationY', 'hoverLabelRotationZ'];
+                const msParams = ['hoverAnimationDuration', 'zoomInAnimationDuration', 'zoomOutAnimationDuration'];
+                let suffix = '';
+                if (pxParams.includes(paramName)) suffix = 'px';
+                else if (degParams.includes(paramName)) suffix = '°';
+                else if (msParams.includes(paramName)) suffix = 'ms';
                 valueSpan.textContent = value + suffix;
             }
-            if (paramName.startsWith('cam1') && currentCameraIndex === 1) {
+            if (paramName === 'cameraFov') {
+                camera.fov = parseFloat(value);
+                camera.updateProjectionMatrix();
+            } else if (paramName === 'cameraMinDist') {
+                if (controls) controls.minDistance = parseFloat(value);
+                if (controlsOrtho) controlsOrtho.minDistance = parseFloat(value);
+            } else if (paramName === 'cameraMaxDist') {
+                if (controls) controls.maxDistance = parseFloat(value);
+                if (controlsOrtho) controlsOrtho.maxDistance = parseFloat(value);
+            } else if (paramName.startsWith('camLook')) {
+                const target = new THREE.Vector3(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+                if (currentCameraMode === 'persp') {
+                    controls.target.copy(target);
+                    controls.update();
+                } else {
+                    controlsOrtho.target.copy(target);
+                    controlsOrtho.update();
+                }
+            } else if (paramName.startsWith('cam1') && currentCameraIndex === 1) {
                 cameraOrtho.position.set(runtimeParams.cam1PosX, runtimeParams.cam1PosY, runtimeParams.cam1PosZ);
                 cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             } else if (paramName.startsWith('cam2') && currentCameraIndex === 2) {
@@ -3526,8 +3980,8 @@
                 const useSSAO = isMobile ? runtimeParams.ssaoEnabledMobile : runtimeParams.ssaoEnabledDesktop;
                 ssaoPass.enabled = useSSAO;
                 ssaoPass.kernelRadius = runtimeParams.ssaoKernelRadius;
-                ssaoPass.minDistance = 0.001 * (1 / Math.max(0.1, runtimeParams.ssaoIntensity));
-                ssaoPass.maxDistance = 0.1 * runtimeParams.ssaoIntensity;
+                ssaoPass.minDistance = 0.001;
+                ssaoPass.maxDistance = 0.05 + runtimeParams.ssaoIntensity * 0.2;
             }
             if (bloomPass) {
                 const useBloom = isMobile ? runtimeParams.bloomEnabledMobile : runtimeParams.bloomEnabledDesktop;
@@ -3581,6 +4035,14 @@
                     }
                 });
             });
+            if (controls) {
+                controls.minPolarAngle = runtimeParams.cameraMinPolarAngle * Math.PI / 180;
+                controls.maxPolarAngle = runtimeParams.cameraMaxPolarAngle * Math.PI / 180;
+            }
+            if (controlsOrtho) {
+                controlsOrtho.minPolarAngle = runtimeParams.cameraMinPolarAngle * Math.PI / 180;
+                controlsOrtho.maxPolarAngle = runtimeParams.cameraMaxPolarAngle * Math.PI / 180;
+            }
             applyColorFilters();
         }
         function applyColorFilters() {
