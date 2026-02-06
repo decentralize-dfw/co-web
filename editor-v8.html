@@ -951,9 +951,40 @@
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
         }
-        #wire-toggle {
+        #right-toggles {
             position: fixed;
+            top: 20px;
+            right: 20px;
             z-index: 999;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 6px;
+        }
+        #right-toggle-row1 {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        #right-toggle-row2 {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        #right-toggles .lock-btn {
+            width: 12px; height: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            padding: 2px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s;
+        }
+        #right-toggles .lock-btn:hover { background: rgba(0, 0, 0, 0.6); }
+        #right-toggles .lock-btn svg { width: 8px; height: 8px; fill: #fff; }
+        #wire-toggle {
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -987,21 +1018,9 @@
             box-shadow: 0 0 8px rgba(74,29,150,0.5);
         }
         #cam-toggle {
-            position: fixed;
-            z-index: 999;
             cursor: pointer;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 3px;
-        }
-        #cam-toggle .cam-toggle-label {
-            font-family: var(--font-headers);
-            font-size: calc(var(--wire-toggle-size) * 0.3);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #999;
-            pointer-events: none;
         }
         #cam-toggle .cam-toggle-dots {
             display: flex;
@@ -1014,6 +1033,7 @@
             background: #ccc;
             transition: background 0.4s ease, box-shadow 0.4s ease, opacity 5s ease;
             box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+            cursor: pointer;
         }
         #cam-toggle .cam-dot.active {
             background: #4a1d96;
@@ -1100,6 +1120,15 @@
             .info-btn img { width: 12px; height: 12px; }
             #ui-container { display: none; }
             #ui-container.editor-visible { display: flex !important; }
+            #right-toggles {
+                position: fixed;
+                top: auto;
+                right: 12px;
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            #right-toggle-row1 { display: none; }
+            #right-toggle-row2 { display: flex; }
             #marquee-bar {
                 display: flex;
                 height: auto;
@@ -1298,16 +1327,24 @@
     <div id="marquee-bar">
         <div class="marquee-track" id="marquee-track"></div>
     </div>
-    <div id="cam-toggle">
-        <span class="cam-toggle-label">VIEW</span>
-        <div class="cam-toggle-dots">
-            <div class="cam-dot active" id="cam-dot-1" onclick="switchCamera(1)"></div>
-            <div class="cam-dot" id="cam-dot-2" onclick="switchCamera(2)"></div>
+    <div id="right-toggles">
+        <div id="right-toggle-row1">
+            <button class="lock-btn" id="btn-lock-icon-public" onclick="toggleCameraLock()" title="Lock/Unlock Camera">
+                <svg viewBox="0 0 24 24"><path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z"/></svg>
+            </button>
+            <div id="cam-toggle">
+                <div class="cam-toggle-dots">
+                    <div class="cam-dot active" id="cam-dot-1" onclick="switchCamera(1)"></div>
+                    <div class="cam-dot" id="cam-dot-2" onclick="switchCamera(2)"></div>
+                </div>
+            </div>
         </div>
-    </div>
-    <div id="wire-toggle" onclick="toggleWireMode()">
-        <div class="wire-toggle-track">
-            <div class="wire-toggle-thumb"></div>
+        <div id="right-toggle-row2">
+            <div id="wire-toggle" onclick="toggleWireMode()">
+                <div class="wire-toggle-track">
+                    <div class="wire-toggle-thumb"></div>
+                </div>
+            </div>
         </div>
     </div>
     <!-- UI CONTAINER (NEW STRUCTURE) -->
@@ -2051,45 +2088,20 @@
             }
         };
         function positionWireToggle() {
-            const wireToggle = document.getElementById('wire-toggle');
-            const camToggle = document.getElementById('cam-toggle');
+            const rightToggles = document.getElementById('right-toggles');
+            if (!rightToggles) return;
             const isMobileNow = window.innerWidth <= 768;
-            const infoButtons = document.getElementById('info-buttons');
-            const bar = document.getElementById('marquee-bar');
-            const uiContainer = document.getElementById('ui-container');
             if (isMobileNow) {
-                if (camToggle) camToggle.style.display = 'none';
-                if (wireToggle) {
-                    wireToggle.style.display = 'flex';
-                    if (bar && bar.style.display !== 'none') {
-                        const barRect = bar.getBoundingClientRect();
-                        wireToggle.style.top = (barRect.bottom + 8) + 'px';
-                    } else if (infoButtons) {
-                        wireToggle.style.top = (infoButtons.getBoundingClientRect().bottom + 8) + 'px';
-                    }
-                    wireToggle.style.right = '12px';
-                    wireToggle.style.left = 'auto';
+                const bar = document.getElementById('marquee-bar');
+                const infoButtons = document.getElementById('info-buttons');
+                if (bar && bar.style.display !== 'none') {
+                    const barRect = bar.getBoundingClientRect();
+                    rightToggles.style.top = (barRect.bottom + 8) + 'px';
+                } else if (infoButtons) {
+                    rightToggles.style.top = (infoButtons.getBoundingClientRect().bottom + 8) + 'px';
                 }
             } else {
-                if (camToggle) camToggle.style.display = 'flex';
-                const leftMargin = infoButtons ? infoButtons.getBoundingClientRect().left : 20;
-                const rightPos = leftMargin;
-                if (wireToggle) {
-                    wireToggle.style.display = 'flex';
-                    wireToggle.style.right = rightPos + 'px';
-                    wireToggle.style.left = 'auto';
-                    if (bar && bar.style.display !== 'none') {
-                        const barRect = bar.getBoundingClientRect();
-                        wireToggle.style.top = (barRect.bottom + 8) + 'px';
-                    } else {
-                        wireToggle.style.top = '35px';
-                    }
-                }
-                if (camToggle) {
-                    camToggle.style.right = '20px';
-                    camToggle.style.top = '20px';
-                    camToggle.style.left = 'auto';
-                }
+                rightToggles.style.top = '20px';
             }
         }
         function buildScene(isMobile) {
@@ -2742,16 +2754,11 @@
             const isMobileNow = window.innerWidth <= 768;
             const infoButtons = document.getElementById('info-buttons');
             if (!infoButtons) return;
-            const wireToggle = document.getElementById('wire-toggle');
             if (isMobileNow && !mobileMarqueeEnabled) {
                 bar.style.display = 'none';
                 infoButtons.style.left = '50%';
                 infoButtons.style.transform = 'translateX(-50%)';
-                if (wireToggle) {
-                    wireToggle.style.top = (infoButtons.getBoundingClientRect().bottom + 8) + 'px';
-                    wireToggle.style.right = '12px';
-                    wireToggle.style.left = 'auto';
-                }
+                positionWireToggle();
                 return;
             }
             if (isMobileNow) {
@@ -2765,16 +2772,13 @@
                 const mobileTopOffset = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-top-offset')) || 12;
                 bar.style.top = mobileTopOffset + 'px';
                 rightEnd = window.innerWidth - 12;
-                if (wireToggle) {
-                    const barRect = bar.getBoundingClientRect();
-                    wireToggle.style.top = (barRect.bottom + 8) + 'px';
-                    wireToggle.style.right = '12px';
-                    wireToggle.style.left = 'auto';
-                }
             } else {
-                const uiContainer = document.getElementById('ui-container');
-                if (!uiContainer) return;
-                rightEnd = uiContainer.getBoundingClientRect().left - 15;
+                const rightToggles = document.getElementById('right-toggles');
+                if (rightToggles) {
+                    rightEnd = rightToggles.getBoundingClientRect().left - 15;
+                } else {
+                    rightEnd = window.innerWidth - 80;
+                }
             }
             const width = rightEnd - leftEnd;
             if (width < 50) { bar.style.display = 'none'; return; }
@@ -2794,11 +2798,16 @@
         }
         window.toggleCameraLock = function() {
             isCameraLocked = !isCameraLocked;
-            const btnIcon = document.getElementById('btn-lock-icon');
-            const svgPath = btnIcon.querySelector('path');
+            const lockedPath = 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z';
+            const unlockedPath = 'M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z';
+            const lockBtns = [document.getElementById('btn-lock-icon'), document.getElementById('btn-lock-icon-public')];
+            lockBtns.forEach(btn => {
+                if (!btn) return;
+                const path = btn.querySelector('path');
+                if (path) path.setAttribute('d', isCameraLocked ? lockedPath : unlockedPath);
+                btn.style.opacity = isCameraLocked ? '1' : '0.5';
+            });
             if (isCameraLocked) {
-                svgPath.setAttribute('d', 'M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z');
-                btnIcon.style.opacity = '1';
                 controls.enableRotate = false;
                 controls.enablePan = false;
                 controls.enableZoom = false;
@@ -2806,8 +2815,6 @@
                 controlsOrtho.enablePan = false;
                 controlsOrtho.enableZoom = false;
             } else {
-                svgPath.setAttribute('d', 'M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z');
-                btnIcon.style.opacity = '0.5';
                 const isMobileNow = window.innerWidth <= 768;
                 controls.enableRotate = true;
                 controls.enablePan = isMobileNow && PARAMS.mobilePanEnabled;
