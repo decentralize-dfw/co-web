@@ -199,7 +199,14 @@
             display: flex;
             gap: 3px;
         }
-        .ui-view-group,
+        .ui-view-group {
+            display: none;
+            align-items: center;
+            gap: 3px;
+        }
+        .editor-visible .ui-view-group {
+            display: flex;
+        }
         .ui-graphics-group {
             display: flex;
             align-items: center;
@@ -983,10 +990,46 @@
             background: #4a1d96;
             box-shadow: 0 0 8px rgba(74,29,150,0.5);
         }
-        #footer {
+        #cam-toggle {
             position: fixed;
-            bottom: 4px;
-            left: 0;
+            z-index: 999;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+        #cam-toggle .cam-toggle-label {
+            font-family: var(--font-headers);
+            font-size: calc(var(--wire-toggle-size) * 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+            pointer-events: none;
+        }
+        #cam-toggle .cam-toggle-dots {
+            display: flex;
+            gap: calc(var(--wire-toggle-size) * 0.25);
+        }
+        #cam-toggle .cam-dot {
+            width: var(--wire-toggle-size);
+            height: var(--wire-toggle-size);
+            border-radius: 50%;
+            background: #ccc;
+            transition: background 0.4s ease, box-shadow 0.4s ease, opacity 5s ease;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+        }
+        #cam-toggle .cam-dot.active {
+            background: #4a1d96;
+            box-shadow: 0 0 8px rgba(74,29,150,0.5);
+            opacity: 1;
+            transition: background 0.15s ease, box-shadow 0.15s ease, opacity 5s ease;
+        }
+        #cam-toggle .cam-dot.fading {
+            opacity: 0.3;
+            transition: opacity 5s ease;
+        }
+        #footer {
             right: 0;
             display: flex;
             align-items: center;
@@ -1258,6 +1301,13 @@
     <!-- MARQUEE BAR -->
     <div id="marquee-bar">
         <div class="marquee-track" id="marquee-track"></div>
+    </div>
+    <div id="cam-toggle">
+        <span class="cam-toggle-label">VIEW</span>
+        <div class="cam-toggle-dots">
+            <div class="cam-dot active" id="cam-dot-1" onclick="switchCamera(1)"></div>
+            <div class="cam-dot" id="cam-dot-2" onclick="switchCamera(2)"></div>
+        </div>
     </div>
     <div id="wire-toggle" onclick="toggleWireMode()">
         <div class="wire-toggle-track">
@@ -1776,25 +1826,22 @@
             controlsOrtho.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
             controlsOrtho.enabled = true;
             if (isMobile && PARAMS.mobilePanEnabled) { controlsOrtho.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }; }
-            let cameraButtonFadeTimer = null;
+            let activeCamDot = 1;
+            let camDotFadeTimer = null;
+            let camSwitching = false;
             function onControlsChange() {
                 if (isCameraLocked || editorModeActive) return;
-                if (cameraJustUnlocked) {
-                    cameraJustUnlocked = false;
-                    return;
-                }
-                const activeBtn = document.querySelector('.toggle-btn.active:not(#btn-low):not(#btn-mid):not(#btn-editor):not(#btn-lock-icon)');
-                if (activeBtn && !cameraButtonFadeTimer) {
-                    cameraButtonFadeTimer = setTimeout(() => {
-                        activeBtn.style.transition = 'opacity 5s ease';
-                        activeBtn.style.opacity = '0.3';
-                    }, 100);
-                    setTimeout(() => {
-                        activeBtn.classList.remove('active');
-                        activeBtn.style.transition = '';
-                        activeBtn.style.opacity = '';
-                        cameraButtonFadeTimer = null;
-                    }, 5100);
+                if (camSwitching) return;
+                if (activeCamDot && !camDotFadeTimer) {
+                    const dot = document.getElementById('cam-dot-' + activeCamDot);
+                    if (dot) {
+                        dot.classList.add('fading');
+                        camDotFadeTimer = setTimeout(() => {
+                            dot.classList.remove('active', 'fading');
+                            activeCamDot = null;
+                            camDotFadeTimer = null;
+                        }, 5000);
+                    }
                 }
             }
             controls.addEventListener('change', onControlsChange);
@@ -1943,6 +1990,16 @@
                 scene.background = new THREE.Color(0xb6a5d0);
                 scene.environment = null;
                 applyLowModeMaterials(true);
+                if (currentSelectedObject) {
+                    currentSelectedObject.traverse(child => {
+                        if (child.isMesh && child.material) {
+                            child.material = new THREE.MeshBasicMaterial({
+                                color: 0xffffff, wireframe: true,
+                                transparent: true, opacity: 1, side: THREE.DoubleSide
+                            });
+                        }
+                    });
+                }
                 document.querySelectorAll('.marquee-content').forEach(el => el.style.color = '#ffffff');
             }
             else if (level === 'default') {
@@ -1998,30 +2055,51 @@
             }
         };
         function positionWireToggle() {
-            const toggle = document.getElementById('wire-toggle');
-            if (!toggle) return;
+            const wireToggle = document.getElementById('wire-toggle');
+            const camToggle = document.getElementById('cam-toggle');
             const isMobileNow = window.innerWidth <= 768;
             const infoButtons = document.getElementById('info-buttons');
             const bar = document.getElementById('marquee-bar');
+            const uiContainer = document.getElementById('ui-container');
             if (isMobileNow) {
-                if (bar && bar.style.display !== 'none') {
-                    const barRect = bar.getBoundingClientRect();
-                    toggle.style.top = (barRect.bottom + 8) + 'px';
-                } else if (infoButtons) {
-                    toggle.style.top = (infoButtons.getBoundingClientRect().bottom + 8) + 'px';
+                if (camToggle) camToggle.style.display = 'none';
+                if (wireToggle) {
+                    wireToggle.style.display = 'flex';
+                    if (bar && bar.style.display !== 'none') {
+                        const barRect = bar.getBoundingClientRect();
+                        wireToggle.style.top = (barRect.bottom + 8) + 'px';
+                    } else if (infoButtons) {
+                        wireToggle.style.top = (infoButtons.getBoundingClientRect().bottom + 8) + 'px';
+                    }
+                    wireToggle.style.right = '12px';
+                    wireToggle.style.left = 'auto';
                 }
-                toggle.style.right = '12px';
-                toggle.style.left = 'auto';
             } else {
+                if (camToggle) camToggle.style.display = 'flex';
                 const leftMargin = infoButtons ? infoButtons.getBoundingClientRect().left : 20;
-                toggle.style.right = leftMargin + 'px';
-                if (bar && bar.style.display !== 'none') {
-                    const barRect = bar.getBoundingClientRect();
-                    toggle.style.top = (barRect.bottom + 8) + 'px';
-                } else {
-                    toggle.style.top = '35px';
+                const rightPos = leftMargin;
+                if (wireToggle) {
+                    wireToggle.style.display = 'flex';
+                    wireToggle.style.right = rightPos + 'px';
+                    wireToggle.style.left = 'auto';
+                    if (bar && bar.style.display !== 'none') {
+                        const barRect = bar.getBoundingClientRect();
+                        wireToggle.style.top = (barRect.bottom + 8) + 'px';
+                    } else {
+                        wireToggle.style.top = '35px';
+                    }
                 }
-                toggle.style.left = 'auto';
+                if (camToggle) {
+                    if (uiContainer && uiContainer.style.display !== 'none') {
+                        const uiRect = uiContainer.getBoundingClientRect();
+                        camToggle.style.right = (window.innerWidth - uiRect.right) + 'px';
+                        camToggle.style.top = (uiRect.top) + 'px';
+                    } else {
+                        camToggle.style.right = '20px';
+                        camToggle.style.top = '20px';
+                    }
+                    camToggle.style.left = 'auto';
+                }
             }
         }
         function buildScene(isMobile) {
@@ -2295,6 +2373,29 @@
                     position: activeCam.position.clone(),
                     locked: isCameraLocked
                 };
+            }
+            if (currentSelectedObject && currentSelectedObject !== obj) {
+                if (currentSelectedObject.userData._originalRotation) {
+                    const origRot = currentSelectedObject.userData._originalRotation;
+                    currentSelectedObject.rotation.set(origRot.x, origRot.y, origRot.z);
+                    currentSelectedObject.userData._originalRotation = null;
+                }
+                if (currentSelectedObject.userData.originalPosition) {
+                    currentSelectedObject.position.y = currentSelectedObject.userData.originalPosition.y;
+                }
+                if (isWireMode) {
+                    currentSelectedObject.traverse(child => {
+                        if (child.isMesh && originalMaterials.has(child.uuid)) {
+                            const origMat = originalMaterials.get(child.uuid);
+                            child.material = new THREE.MeshBasicMaterial({
+                                color: 0x29174d, wireframe: true,
+                                transparent: origMat.transparent || false,
+                                opacity: origMat.opacity || 1,
+                                side: origMat.side || THREE.FrontSide
+                            });
+                        }
+                    });
+                }
             }
             currentSelectedObject = obj;
             if (!obj.userData._originalRotation) {
@@ -2628,7 +2729,9 @@
             const firstSpan = track.children[0];
             let offset = 0;
             const getSpeed = () => {
-                const s = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-speed')) || 20;
+                const isMobileNow = window.innerWidth <= 768;
+                const prop = isMobileNow ? '--marquee-mobile-speed' : '--marquee-speed';
+                const s = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(prop)) || 20;
                 return 80 / s;
             };
             function tick() {
@@ -2699,7 +2802,6 @@
             composer.setSize(window.innerWidth, window.innerHeight);
             positionMarquee();
         }
-        let cameraJustUnlocked = false;
         window.toggleCameraLock = function() {
             isCameraLocked = !isCameraLocked;
             const btnIcon = document.getElementById('btn-lock-icon');
@@ -2713,7 +2815,6 @@
                 controlsOrtho.enableRotate = false;
                 controlsOrtho.enablePan = false;
                 controlsOrtho.enableZoom = false;
-                cameraJustUnlocked = false;
             } else {
                 svgPath.setAttribute('d', 'M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z');
                 btnIcon.style.opacity = '0.5';
@@ -2724,7 +2825,6 @@
                 controlsOrtho.enableRotate = true;
                 controlsOrtho.enablePan = isMobileNow && PARAMS.mobilePanEnabled;
                 controlsOrtho.enableZoom = true;
-                cameraJustUnlocked = true;
             }
         };
         function animate() {
@@ -3119,10 +3219,20 @@
             const btnCamMobile = document.getElementById('btn-cam-mobile');
             const btnLockIcon = document.getElementById('btn-lock-icon');
             [btnCam3p, btnCam1, btnCam2, btnCamMobile].forEach(b => { if(b) b.classList.remove('active') });
-            isCameraLocked = false;
-            const svgPath = btnLockIcon.querySelector('path');
-            svgPath.setAttribute('d', 'M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6h1.9c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm0 12H6V10h12v10z');
-            btnLockIcon.style.opacity = '0.5';
+
+            camSwitching = true;
+            if (camDotFadeTimer) { clearTimeout(camDotFadeTimer); camDotFadeTimer = null; }
+            const dot1 = document.getElementById('cam-dot-1');
+            const dot2 = document.getElementById('cam-dot-2');
+            if (dot1) dot1.classList.remove('active', 'fading');
+            if (dot2) dot2.classList.remove('active', 'fading');
+            activeCamDot = null;
+            if (mode === 1 || mode === 2) {
+                const dot = document.getElementById('cam-dot-' + mode);
+                if (dot) dot.classList.add('active');
+                activeCamDot = mode;
+            }
+            setTimeout(() => { camSwitching = false; }, 100);
             if (mode === 'mobile') {
                 currentCameraMode = 'ortho';
                 currentCameraIndex = 'mobile';
@@ -3667,22 +3777,22 @@
                 <div class="params-section-title">MARQUEE TEXT</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Speed (s)</span>
-                    <input type="range" class="params-slider" min="5" max="60" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-speed')) || 20}" onchange="updateMarqueeParam('speed', this.value)">
+                    <input type="range" class="params-slider" min="5" max="60" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-speed')) || 20}" onchange="updateMarqueeParam('speed', this.value, this)">
                     <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-speed')) || 20}s</span>
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Font Size (px)</span>
-                    <input type="range" class="params-slider" min="6" max="24" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-font-size')) || 9}" onchange="updateMarqueeParam('fontSize', this.value)">
+                    <input type="range" class="params-slider" min="6" max="24" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-font-size')) || 9}" onchange="updateMarqueeParam('fontSize', this.value, this)">
                     <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-font-size')) || 9}px</span>
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Vertical Gap (px)</span>
-                    <input type="range" class="params-slider" min="0" max="30" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-vertical-gap')) || 6}" onchange="updateMarqueeParam('verticalGap', this.value)">
+                    <input type="range" class="params-slider" min="0" max="30" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-vertical-gap')) || 6}" onchange="updateMarqueeParam('verticalGap', this.value, this)">
                     <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-vertical-gap')) || 6}px</span>
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Color</span>
-                    <input type="color" value="${getComputedStyle(document.documentElement).getPropertyValue('--marquee-color').trim() || '#b6a6d0'}" onchange="updateMarqueeParam('color', this.value)" style="width:32px;height:20px;border:none;cursor:pointer;padding:0;">
+                    <input type="color" value="${getComputedStyle(document.documentElement).getPropertyValue('--marquee-color').trim() || '#b6a6d0'}" onchange="updateMarqueeParam('color', this.value, this)" style="width:32px;height:20px;border:none;cursor:pointer;padding:0;">
                     <span class="params-slider-value">${getComputedStyle(document.documentElement).getPropertyValue('--marquee-color').trim() || '#b6a6d0'}</span>
                 </div>
                 <div class="params-section-title">MARQUEE MOBILE</div>
@@ -3691,17 +3801,17 @@
                 <div class="params-toggle ${mobileMarqueeEnabled ? 'on' : ''}" onclick="mobileMarqueeEnabled = !mobileMarqueeEnabled; positionMarquee(); buildSceneParametersPanel()"></div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Mobile Speed (s)</span>
-                    <input type="range" class="params-slider" min="5" max="60" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-speed')) || 20}" onchange="updateMarqueeParam('mobileSpeed', this.value)">
+                    <input type="range" class="params-slider" min="5" max="60" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-speed')) || 20}" onchange="updateMarqueeParam('mobileSpeed', this.value, this)">
                     <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-speed')) || 20}s</span>
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Mobile Font (px)</span>
-                    <input type="range" class="params-slider" min="4" max="18" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-font-size')) || 7}" onchange="updateMarqueeParam('mobileFontSize', this.value)">
+                    <input type="range" class="params-slider" min="4" max="18" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-font-size')) || 7}" onchange="updateMarqueeParam('mobileFontSize', this.value, this)">
                     <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-font-size')) || 7}px</span>
                 </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Mobile Top (px)</span>
-                    <input type="range" class="params-slider" min="0" max="50" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-top-offset')) || 12}" onchange="updateMarqueeParam('mobileTopOffset', this.value)">
+                    <input type="range" class="params-slider" min="0" max="50" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-top-offset')) || 12}" onchange="updateMarqueeParam('mobileTopOffset', this.value, this)">
                     <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-mobile-top-offset')) || 12}px</span>
                 </div>
                 <div class="params-section-title">CAMERA LIMITS</div>
@@ -4010,10 +4120,10 @@
             `;
             attachValueEditing(grid);
         }
-        window.updateMarqueeParam = function(param, value) {
+        window.updateMarqueeParam = function(param, value, el) {
             const root = document.documentElement;
-            const slider = event.target;
-            const valueSpan = slider.parentElement.querySelector('.params-slider-value');
+            const slider = el || (typeof event !== 'undefined' ? event.target : null);
+            const valueSpan = slider ? slider.parentElement.querySelector('.params-slider-value') : null;
             if (param === 'speed') {
                 root.style.setProperty('--marquee-speed', value + 's');
                 if (valueSpan) valueSpan.textContent = value + 's';
