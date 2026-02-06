@@ -129,6 +129,7 @@
             --marquee-speed: 20s;
             --marquee-font-size: 9px;
             --marquee-vertical-gap: 6px;
+            --marquee-color: #b6a6d0;
             --panel-width: 480px;
             --panel-right-offset: 20px;
             --panel-top-offset: 120px; 
@@ -488,6 +489,7 @@
         .panel-media-section {
             padding: 0 var(--panel-media-padding-horizontal) var(--panel-media-spacing);
             display: flex; flex-direction: column; align-items: center;
+            position: relative;
         }
         .media-carousel-container {
             width: 100%;
@@ -514,7 +516,6 @@
         }
         .carousel-nav-btn {
             position: absolute;
-            top: 0;
             width: 36px; height: 36px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.4);
@@ -526,9 +527,10 @@
             z-index: 10;
             transition: all 0.2s ease;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transform: translateY(-50%);
         }
-        .carousel-nav-btn.nav-left { left: 0; }
-        .carousel-nav-btn.nav-right { right: 0; }
+        .carousel-nav-btn.nav-left { left: 1.5rem; }
+        .carousel-nav-btn.nav-right { right: 1.5rem; }
         .carousel-nav-btn:hover { background: rgba(0, 0, 0, 0.05); }
         .carousel-nav-btn svg { width: 14px; height: 14px; stroke: black; fill: none; }
         .carousel-dots {
@@ -611,9 +613,10 @@
         #editor-panel {
             position: fixed;
             left: 10px;
-            top: 140px;
+            top: 10vh;
+            height: 80vh;
             max-width: calc(100vw - 520px);
-            max-height: calc(100vh - 160px);
+            max-height: 80vh;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
@@ -923,7 +926,7 @@
         #marquee-bar .marquee-content {
             font-family: var(--font-headers);
             font-size: var(--marquee-font-size);
-            color: var(--ui-color);
+            color: var(--marquee-color);
             text-transform: uppercase;
             letter-spacing: 1px;
             white-space: nowrap;
@@ -1009,7 +1012,8 @@
                 flex-shrink: 0;
             }
             .info-btn img { width: 12px; height: 12px; }
-            #ui-container { display: none !important; }
+            #ui-container { display: none; }
+            #ui-container.editor-visible { display: flex !important; }
             #marquee-bar { display: none; }
             #mobile-labels-toggle.visible {
                 display: flex;
@@ -1049,15 +1053,15 @@
             }
             #editor-panel {
                 left: 0;
-                top: 0;
+                top: 10vh;
                 width: 25vw;
-                max-width: 25vw;
-                height: 100vh;
-                max-height: 100vh;
-                border-radius: 0;
-                overflow-y: auto;
-                overflow-x: hidden;
+                max-width: 80vw;
+                height: 80vh;
+                max-height: 80vh;
+                border-radius: 8px;
+                overflow: auto;
                 font-size: 1.2vw;
+                resize: both;
             }
             #editor-panel .editor-table {
                 font-size: 1.1vw;
@@ -2269,9 +2273,17 @@
                     }
                 });
                 mediaContainer.appendChild(carouselDiv);
-                if (btnLeft) carouselDiv.appendChild(btnLeft);
-                if (btnRight) carouselDiv.appendChild(btnRight);
+                if (btnLeft) mediaContainer.appendChild(btnLeft);
+                if (btnRight) mediaContainer.appendChild(btnRight);
                 if (dotsDiv) mediaContainer.appendChild(dotsDiv);
+                const positionCarouselArrows = () => {
+                    if (!carouselDiv.offsetHeight) return;
+                    const centerY = carouselDiv.offsetTop + carouselDiv.offsetHeight / 2;
+                    if (btnLeft) btnLeft.style.top = centerY + 'px';
+                    if (btnRight) btnRight.style.top = centerY + 'px';
+                };
+                requestAnimationFrame(() => requestAnimationFrame(positionCarouselArrows));
+                window.addEventListener('resize', positionCarouselArrows);
             }
             models.forEach(m => {
                 const item = document.createElement('div');
@@ -2665,9 +2677,11 @@
             const transformGroup = document.getElementById('transform-group');
             const btnCam3 = document.getElementById('btn-cam3');
             const btnCamMobile = document.getElementById('btn-cam-mobile');
+            const uiContainer = document.getElementById('ui-container');
             if (editorModeActive) {
                 if(btnEditor) btnEditor.classList.add('active');
                 editorPanel.classList.add('open');
+                if(uiContainer) uiContainer.classList.add('editor-visible');
                 transformGroup.style.display = 'flex';
                 transformControls.visible = true;
                 transformControls.enabled = true;
@@ -2685,6 +2699,7 @@
             } else {
                 if(btnEditor) btnEditor.classList.remove('active');
                 editorPanel.classList.remove('open');
+                if(uiContainer) uiContainer.classList.remove('editor-visible');
                 transformGroup.style.display = 'none';
                 transformControls.visible = false;
                 transformControls.enabled = false;
@@ -3326,6 +3341,11 @@
                     <input type="range" class="params-slider" min="0" max="30" step="1" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-vertical-gap')) || 6}" onchange="updateMarqueeParam('verticalGap', this.value)">
                     <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-vertical-gap')) || 6}px</span>
                 </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Color</span>
+                    <input type="color" value="${getComputedStyle(document.documentElement).getPropertyValue('--marquee-color').trim() || '#b6a6d0'}" onchange="updateMarqueeParam('color', this.value)" style="width:32px;height:20px;border:none;cursor:pointer;padding:0;">
+                    <span class="params-slider-value">${getComputedStyle(document.documentElement).getPropertyValue('--marquee-color').trim() || '#b6a6d0'}</span>
+                </div>
             `;
         }
         window.updateMarqueeParam = function(param, value) {
@@ -3341,6 +3361,9 @@
             } else if (param === 'verticalGap') {
                 root.style.setProperty('--marquee-vertical-gap', value + 'px');
                 if (valueSpan) valueSpan.textContent = value + 'px';
+            } else if (param === 'color') {
+                root.style.setProperty('--marquee-color', value);
+                if (valueSpan) valueSpan.textContent = value;
             }
         };
         window.updateSceneSliderParam = function(paramName, value) {
@@ -3373,6 +3396,7 @@
         };
         window.makeSceneEditable = function(span, paramName) {
             const currentValue = runtimeParams[paramName];
+            const parentRow = span.parentElement;
             const input = document.createElement('input');
             input.type = 'number';
             input.className = 'params-slider-input';
@@ -3383,7 +3407,7 @@
                 if (!isNaN(newValue)) {
                     runtimeParams[paramName] = newValue;
                     PARAMS[paramName] = newValue;
-                    const slider = span.parentElement.querySelector('.params-slider');
+                    const slider = parentRow ? parentRow.querySelector('.params-slider') : null;
                     if (slider) slider.value = newValue;
                     if (paramName.startsWith('cam1') && currentCameraIndex === 1) {
                         cameraOrtho.position.set(runtimeParams.cam1PosX, runtimeParams.cam1PosY, runtimeParams.cam1PosZ);
@@ -3437,6 +3461,7 @@
         };
         window.makeEditable = function(span, paramName) {
             const currentValue = runtimeParams[paramName];
+            const parentRow = span.parentElement;
             const input = document.createElement('input');
             input.type = 'number';
             input.className = 'params-slider-input';
@@ -3447,7 +3472,7 @@
                 if (!isNaN(newValue)) {
                     runtimeParams[paramName] = newValue;
                     applyRuntimeParameters();
-                    const slider = span.parentElement.querySelector('.params-slider');
+                    const slider = parentRow ? parentRow.querySelector('.params-slider') : null;
                     if (slider) slider.value = newValue;
                 }
                 buildParametersPanel();
