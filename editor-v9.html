@@ -1826,6 +1826,7 @@
         window.PARAMS = PARAMS;
         window.THREE = THREE;
         let camera, cameraOrtho, scene, renderer, controls, controlsOrtho, raycaster, mouse, composer, globalEnvMap;
+        let cubeRenderTarget, cubeCamera;
         let bloomPass, ssaoPass, fxaaPass;
         let lightHemi, lightSun, lightFill, lightRim, lightAccent;
         let rectLight1, rectLight2;
@@ -2082,6 +2083,13 @@
             fxaaPass.material.uniforms['resolution'].value.set(1/(window.innerWidth*pr), 1/(window.innerHeight*pr));
             fxaaPass.enabled = useFXAA;
             composer.addPass(fxaaPass);
+            cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256, {
+                format: THREE.RGBAFormat,
+                generateMipmaps: true,
+                minFilter: THREE.LinearMipmapLinearFilter
+            });
+            cubeCamera = new THREE.CubeCamera(1, 100000, cubeRenderTarget);
+            scene.add(cubeCamera);
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
             buildScene(isMobile);
@@ -2306,6 +2314,7 @@
                         buildBoundingBoxes();
                         buildClickableZones();
                         updateCam3Visibility();
+                        setTimeout(() => updateSceneReflections(), 500);
                     }
                 }, undefined, (err) => {
                     console.error("Error loading model:", item.src, err);
@@ -3004,6 +3013,26 @@
                 }
             }
         };
+        window.updateSceneReflections = function() {
+            if (!cubeCamera || !cubeRenderTarget || !scene || !renderer) return;
+            cubeCamera.position.set(0, 0, 0);
+            const prevBg = scene.background;
+            scene.background = globalEnvMap || null;
+            cubeCamera.update(renderer, scene);
+            scene.background = prevBg;
+            const reflectionMap = cubeRenderTarget.texture;
+            clickableObjects.forEach(obj => {
+                obj.traverse(child => {
+                    if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
+                        if (child.material.metalness > 0.3) {
+                            child.material.envMap = reflectionMap;
+                            child.material.needsUpdate = true;
+                        }
+                    }
+                });
+            });
+            console.log('Scene reflections updated');
+        };
         function animate() {
             requestAnimationFrame(animate);
             if (currentCameraMode === 'persp') {
@@ -3495,9 +3524,13 @@
                 let targetUp = new THREE.Vector3(0, 1, 0);
                 if(mode === 1) {
                     tx = runtimeParams.cam1PosX; ty = runtimeParams.cam1PosY; tz = runtimeParams.cam1PosZ;
+                    cameraOrtho.zoom = runtimeParams.initialCameraZoom * (45 / (runtimeParams.cam1Fov || 45));
+                    cameraOrtho.updateProjectionMatrix();
                 }
                 else if(mode === 2) {
                     tx = runtimeParams.cam2PosX; ty = runtimeParams.cam2PosY; tz = runtimeParams.cam2PosZ;
+                    cameraOrtho.zoom = runtimeParams.initialCameraZoom * (45 / (runtimeParams.cam2Fov || 45));
+                    cameraOrtho.updateProjectionMatrix();
                 }
                 const startPos = cameraOrtho.position.clone();
                 const startRot = cameraOrtho.quaternion.clone();
@@ -3752,6 +3785,7 @@
                 <span class="params-value ${runtimeParams.anisotropyEnabledMobile ? 'on' : 'off'}">${runtimeParams.anisotropyEnabledMobile ? 'YES' : 'NO'}</span>
                 <div class="params-toggle ${runtimeParams.anisotropyEnabledMobile ? 'on' : ''}" onclick="toggleParam('anisotropyEnabledMobile')"></div>
                 <div class="params-section-title">ENVIRONMENT MAP</div>
+                <button class="editor-footer-btn" onclick="updateSceneReflections()" style="margin:4px 0 8px 0;width:100%;font-size:9px;">REFRESH REFLECTIONS</button>
                 <span class="params-label">EnvMap Desktop</span>
                 <span class="params-value ${runtimeParams.envmapEnabledDesktop ? 'on' : 'off'}">${runtimeParams.envmapEnabledDesktop ? 'YES' : 'NO'}</span>
                 <div class="params-toggle ${runtimeParams.envmapEnabledDesktop ? 'on' : ''}" onclick="toggleParam('envmapEnabledDesktop')"></div>
@@ -4389,9 +4423,16 @@
                 valueSpan.textContent = value + suffix;
             }
             if (paramName === 'cam1Fov' || paramName === 'cam2Fov' || paramName === 'cam3Fov') {
+                const fovVal = parseFloat(value);
                 if (paramName === 'cam3Fov' && currentCameraIndex === 3) {
-                    camera.fov = parseFloat(value);
+                    camera.fov = fovVal;
                     camera.updateProjectionMatrix();
+                } else if (paramName === 'cam1Fov' && currentCameraIndex === 1) {
+                    cameraOrtho.zoom = runtimeParams.initialCameraZoom * (45 / fovVal);
+                    cameraOrtho.updateProjectionMatrix();
+                } else if (paramName === 'cam2Fov' && currentCameraIndex === 2) {
+                    cameraOrtho.zoom = runtimeParams.initialCameraZoom * (45 / fovVal);
+                    cameraOrtho.updateProjectionMatrix();
                 }
             } else if (paramName === 'cameraMinDist') {
                 if (controls) controls.minDistance = parseFloat(value);
@@ -4454,6 +4495,12 @@
                         if (paramName === 'cam3Fov' && currentCameraIndex === 3) {
                             camera.fov = newValue;
                             camera.updateProjectionMatrix();
+                        } else if (paramName === 'cam1Fov' && currentCameraIndex === 1) {
+                            cameraOrtho.zoom = runtimeParams.initialCameraZoom * (45 / newValue);
+                            cameraOrtho.updateProjectionMatrix();
+                        } else if (paramName === 'cam2Fov' && currentCameraIndex === 2) {
+                            cameraOrtho.zoom = runtimeParams.initialCameraZoom * (45 / newValue);
+                            cameraOrtho.updateProjectionMatrix();
                         }
                     } else if (paramName.startsWith('cam1') && currentCameraIndex === 1) {
                         cameraOrtho.position.set(runtimeParams.cam1PosX, runtimeParams.cam1PosY, runtimeParams.cam1PosZ);
