@@ -57,6 +57,8 @@
 --envmap-enabled-mobile: yes;
 --envmap-intensity-desktop: 1.0;
 --envmap-intensity-mobile: 1.0;
+--scene-reflections-enabled-desktop: yes;
+--scene-reflections-enabled-mobile: no;
 --rectarealight-enabled-desktop: no;
 --rectarealight-enabled-mobile: no;
 --rectarealight-intensity: 2.0;
@@ -1726,6 +1728,8 @@
             envmapEnabledMobile: getParamBool('--envmap-enabled-mobile'),
             envmapIntensityDesktop: getParamNum('--envmap-intensity-desktop') || 1.0,
             envmapIntensityMobile: getParamNum('--envmap-intensity-mobile') || 1.0,
+            sceneReflectionsDesktop: getParamBool('--scene-reflections-enabled-desktop'),
+            sceneReflectionsMobile: getParamBool('--scene-reflections-enabled-mobile'),
             rectarealightEnabledDesktop: getParamBool('--rectarealight-enabled-desktop'),
             rectarealightEnabledMobile: getParamBool('--rectarealight-enabled-mobile'),
             rectarealightIntensity: getParamNum('--rectarealight-intensity') || 2.0,
@@ -3015,23 +3019,47 @@
         };
         window.updateSceneReflections = function() {
             if (!cubeCamera || !cubeRenderTarget || !scene || !renderer) return;
-            cubeCamera.position.set(0, 0, 0);
-            const prevBg = scene.background;
-            scene.background = globalEnvMap || null;
-            cubeCamera.update(renderer, scene);
-            scene.background = prevBg;
-            const reflectionMap = cubeRenderTarget.texture;
-            clickableObjects.forEach(obj => {
-                obj.traverse(child => {
-                    if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
-                        if (child.material.metalness > 0.3) {
-                            child.material.envMap = reflectionMap;
+            const isMobile = window.innerWidth <= 768;
+            const enabled = isMobile ? runtimeParams.sceneReflectionsMobile : runtimeParams.sceneReflectionsDesktop;
+            if (!enabled) {
+                // Remove custom envMap so objects fall back to scene.environment (HDRI)
+                clickableObjects.forEach(obj => {
+                    obj.traverse(child => {
+                        if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
+                            child.material.envMap = null;
                             child.material.needsUpdate = true;
                         }
+                    });
+                });
+                console.log('Scene reflections disabled');
+                return;
+            }
+            // Find environment object (table/masa) and hide it from CubeCamera capture
+            const envObj = sceneObjects.find(o => o.modalContent && o.modalContent.name === 'Environment');
+            const envIndex = envObj ? sceneObjects.indexOf(envObj) : -1;
+            const envMesh = envIndex >= 0 ? loadedObjectsMap.get(envIndex) : null;
+            if (envMesh) envMesh.visible = false;
+            // Render CubeCamera without background - only scene objects
+            cubeCamera.position.set(0, 0, 0);
+            const prevBg = scene.background;
+            const prevEnv = scene.environment;
+            scene.background = null;
+            scene.environment = null;
+            cubeCamera.update(renderer, scene);
+            scene.background = prevBg;
+            scene.environment = prevEnv;
+            if (envMesh) envMesh.visible = true;
+            // Apply reflection cubemap to environment object's metallic surfaces (the table)
+            const reflectionMap = cubeRenderTarget.texture;
+            if (envMesh) {
+                envMesh.traverse(child => {
+                    if (child.isMesh && child.material && child.material.isMeshStandardMaterial) {
+                        child.material.envMap = reflectionMap;
+                        child.material.needsUpdate = true;
                     }
                 });
-            });
-            console.log('Scene reflections updated');
+            }
+            console.log('Scene reflections updated (objects reflected on environment surface)');
         };
         function animate() {
             requestAnimationFrame(animate);
@@ -3785,6 +3813,12 @@
                 <span class="params-value ${runtimeParams.anisotropyEnabledMobile ? 'on' : 'off'}">${runtimeParams.anisotropyEnabledMobile ? 'YES' : 'NO'}</span>
                 <div class="params-toggle ${runtimeParams.anisotropyEnabledMobile ? 'on' : ''}" onclick="toggleParam('anisotropyEnabledMobile')"></div>
                 <div class="params-section-title">ENVIRONMENT MAP</div>
+                <span class="params-label">Scene Reflections Desktop</span>
+                <span class="params-value ${runtimeParams.sceneReflectionsDesktop ? 'on' : 'off'}">${runtimeParams.sceneReflectionsDesktop ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.sceneReflectionsDesktop ? 'on' : ''}" onclick="toggleParam('sceneReflectionsDesktop'); updateSceneReflections(); buildParametersPanel()"></div>
+                <span class="params-label">Scene Reflections Mobile</span>
+                <span class="params-value ${runtimeParams.sceneReflectionsMobile ? 'on' : 'off'}">${runtimeParams.sceneReflectionsMobile ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.sceneReflectionsMobile ? 'on' : ''}" onclick="toggleParam('sceneReflectionsMobile'); updateSceneReflections(); buildParametersPanel()"></div>
                 <button class="editor-footer-btn" onclick="updateSceneReflections()" style="margin:4px 0 8px 0;width:100%;font-size:9px;">REFRESH REFLECTIONS</button>
                 <span class="params-label">EnvMap Desktop</span>
                 <span class="params-value ${runtimeParams.envmapEnabledDesktop ? 'on' : 'off'}">${runtimeParams.envmapEnabledDesktop ? 'YES' : 'NO'}</span>
@@ -4780,6 +4814,9 @@
             output += "/* ANISOTROPY */\n";
             output += `--anisotropy-enabled-desktop: ${runtimeParams.anisotropyEnabledDesktop ? 'yes' : 'no'};\n`;
             output += `--anisotropy-enabled-mobile: ${runtimeParams.anisotropyEnabledMobile ? 'yes' : 'no'};\n\n`;
+            output += "/* SCENE REFLECTIONS */\n";
+            output += `--scene-reflections-enabled-desktop: ${runtimeParams.sceneReflectionsDesktop ? 'yes' : 'no'};\n`;
+            output += `--scene-reflections-enabled-mobile: ${runtimeParams.sceneReflectionsMobile ? 'yes' : 'no'};\n\n`;
             output += "/* ENVIRONMENT MAP */\n";
             output += `--envmap-enabled-desktop: ${runtimeParams.envmapEnabledDesktop ? 'yes' : 'no'};\n`;
             output += `--envmap-enabled-mobile: ${runtimeParams.envmapEnabledMobile ? 'yes' : 'no'};\n`;
@@ -4940,6 +4977,38 @@
                 alert('Copy failed. Check console for data.');
             });
         };
+        let _envLoadGeneration = 0;
+        function disposeObject3D(obj) {
+            obj.traverse(c => {
+                if (c.geometry) c.geometry.dispose();
+                if (c.material) {
+                    const materials = Array.isArray(c.material) ? c.material : [c.material];
+                    materials.forEach(mat => {
+                        if (mat.map) mat.map.dispose();
+                        if (mat.normalMap) mat.normalMap.dispose();
+                        if (mat.roughnessMap) mat.roughnessMap.dispose();
+                        if (mat.metalnessMap) mat.metalnessMap.dispose();
+                        if (mat.aoMap) mat.aoMap.dispose();
+                        if (mat.emissiveMap) mat.emissiveMap.dispose();
+                        if (mat.envMap && mat.envMap !== cubeRenderTarget?.texture) mat.envMap.dispose();
+                        mat.dispose();
+                    });
+                }
+            });
+        }
+        function removeEnvMesh(envIndex) {
+            const oldMesh = loadedObjectsMap.get(envIndex);
+            if (!oldMesh) return;
+            if (selectedEditorObject === oldMesh) {
+                transformControls.detach();
+                selectedEditorObject = null;
+            }
+            scene.remove(oldMesh);
+            const oldIdx = clickableObjects.indexOf(oldMesh);
+            if (oldIdx !== -1) clickableObjects.splice(oldIdx, 1);
+            disposeObject3D(oldMesh);
+            loadedObjectsMap.delete(envIndex);
+        }
         window.selectEnvOption = function(optNum) {
             runtimeParams.envOption = optNum;
             const envObj = sceneObjects.find(o => o.modalContent && o.modalContent.name === 'Environment');
@@ -4947,17 +5016,9 @@
             const opt = envObj.envOptions[optNum - 1];
             if (!opt || !opt.src) return;
             const envIndex = sceneObjects.indexOf(envObj);
-            const oldMesh = loadedObjectsMap.get(envIndex);
-            if (oldMesh) {
-                if (selectedEditorObject === oldMesh) {
-                    transformControls.detach();
-                    selectedEditorObject = null;
-                }
-                scene.remove(oldMesh);
-                const oldIdx = clickableObjects.indexOf(oldMesh);
-                if (oldIdx !== -1) clickableObjects.splice(oldIdx, 1);
-                oldMesh.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) { if (Array.isArray(c.material)) c.material.forEach(m => m.dispose()); else c.material.dispose(); } });
-            }
+            _envLoadGeneration++;
+            const thisGeneration = _envLoadGeneration;
+            removeEnvMesh(envIndex);
             envObj.src = opt.src;
             const loader = new GLTFLoader();
             const draco = new DRACOLoader();
@@ -4965,6 +5026,17 @@
             loader.setDRACOLoader(draco);
             loader.setMeshoptDecoder(MeshoptDecoder);
             loader.load(opt.src, (gltf) => {
+                if (thisGeneration !== _envLoadGeneration) {
+                    gltf.scene.traverse(c => {
+                        if (c.geometry) c.geometry.dispose();
+                        if (c.material) {
+                            const mats = Array.isArray(c.material) ? c.material : [c.material];
+                            mats.forEach(mt => { if (mt.map) mt.map.dispose(); mt.dispose(); });
+                        }
+                    });
+                    return;
+                }
+                removeEnvMesh(envIndex);
                 const m = gltf.scene;
                 m.position.set(envObj.position.x, envObj.position.y || 0, envObj.position.z);
                 if (envObj.rotation) m.rotation.set(envObj.rotation.x * Math.PI / 180, envObj.rotation.y * Math.PI / 180, envObj.rotation.z * Math.PI / 180);
@@ -4975,6 +5047,7 @@
                 clickableObjects.push(m);
                 loadedObjectsMap.set(envIndex, m);
                 buildEditorPanel();
+                setTimeout(() => updateSceneReflections(), 200);
             }, undefined, (err) => { console.error("Error loading env option:", opt.src, err); });
             buildSceneParametersPanel();
         };
