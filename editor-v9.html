@@ -1996,6 +1996,11 @@
             });
             transformControls.addEventListener('change', () => {
                 if (selectedEditorObject && editorModeActive) {
+                    if (!selectedEditorObject.parent) {
+                        transformControls.detach();
+                        selectedEditorObject = null;
+                        return;
+                    }
                     updateEditorPanelValues();
                 }
             });
@@ -3345,6 +3350,7 @@
         }
         function selectEditorObject(obj) {
             if (lockedObjects.has(obj.userData.sceneObjectIndex)) return;
+            if (!obj.parent) return;
             selectedEditorObject = obj;
             document.querySelectorAll('#editor-table-body tr').forEach(row => {
                 row.classList.remove('selected');
@@ -4869,6 +4875,8 @@
                     selectedEditorObject = null;
                 }
                 scene.remove(oldMesh);
+                const oldIdx = clickableObjects.indexOf(oldMesh);
+                if (oldIdx !== -1) clickableObjects.splice(oldIdx, 1);
                 oldMesh.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) { if (Array.isArray(c.material)) c.material.forEach(m => m.dispose()); else c.material.dispose(); } });
             }
             envObj.src = opt.src;
@@ -4885,6 +4893,7 @@
                 m.userData = { modalContent: envObj.modalContent, clickable: false, includeInFit: true, originalPosition: m.position.clone(), sceneObjectIndex: envIndex, originalScale: envObj.scale };
                 m.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
                 scene.add(m);
+                clickableObjects.push(m);
                 loadedObjectsMap.set(envIndex, m);
                 buildEditorPanel();
             }, undefined, (err) => { console.error("Error loading env option:", opt.src, err); });
