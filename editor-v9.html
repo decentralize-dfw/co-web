@@ -96,6 +96,7 @@
             --cam3-pos-y: 5000;
             --cam3-pos-z: 5000;
 
+            --cam2-show-public: yes;
             --cam3-show-public: no;
 
             --mobile-labels-show-public: no;
@@ -148,7 +149,7 @@
 
             --marquee-speed: 250s;
             --marquee-font-size: 16px;
-            --marquee-vertical-gap: -3px;
+            --marquee-vertical-gap: -2px;
             --marquee-color: #b6a6d0;
             --wire-toggle-size: 12px;
             --marquee-mobile-enabled: yes;
@@ -974,20 +975,23 @@
         }
         #right-toggles {
             position: fixed;
-            top: 20px;
+            top: 0;
             right: 20px;
             z-index: 999;
             display: flex;
             flex-direction: column;
             align-items: flex-end;
-            gap: 6px;
         }
         #right-toggle-row1 {
+            position: absolute;
+            right: 0;
             display: flex;
             align-items: center;
             gap: 6px;
         }
         #right-toggle-row2 {
+            position: absolute;
+            right: 0;
             display: flex;
             align-items: center;
             justify-content: flex-end;
@@ -1012,7 +1016,7 @@
             transition: all 0.4s ease;
         }
         #wire-toggle .wire-toggle-track {
-            width: calc(var(--wire-toggle-size) * 1.8);
+            width: calc(var(--wire-toggle-size) * 2 + var(--wire-toggle-size) * 0.25);
             height: var(--wire-toggle-size);
             border-radius: calc(var(--wire-toggle-size) / 2);
             background: rgba(200,200,200,0.3);
@@ -1034,7 +1038,6 @@
             box-shadow: 0 1px 4px rgba(0,0,0,0.2);
         }
         #wire-toggle.active .wire-toggle-thumb {
-            left: calc(var(--wire-toggle-size) * 0.8);
             background: #4a1d96;
             box-shadow: 0 0 8px rgba(74,29,150,0.5);
         }
@@ -1150,9 +1153,10 @@
                 right: 12px;
                 flex-direction: column;
                 align-items: flex-end;
+                gap: 6px;
             }
-            #right-toggle-row1 { display: none; }
-            #right-toggle-row2 { display: flex; }
+            #right-toggle-row1 { display: none; position: relative !important; top: auto !important; }
+            #right-toggle-row2 { display: flex; position: relative !important; top: auto !important; }
             #marquee-bar {
                 display: flex;
                 height: auto;
@@ -1360,6 +1364,7 @@
                 <div class="cam-toggle-dots">
                     <div class="cam-dot active" id="cam-dot-1" onclick="switchCamera(1)"></div>
                     <div class="cam-dot" id="cam-dot-2" onclick="switchCamera(2)"></div>
+                    <div class="cam-dot" id="cam-dot-3" onclick="switchCamera('persp')" style="display:none"></div>
                 </div>
             </div>
         </div>
@@ -1663,6 +1668,7 @@
             filterContrast: getParamNum('--filter-contrast') || 1.0,
             filterSaturation: getParamNum('--filter-saturation') || 1.0,
             filterHueRotate: getParamNum('--filter-hue-rotate') || 0,
+            cam2ShowPublic: getParamBool('--cam2-show-public'),
             cam3ShowPublic: getParamBool('--cam3-show-public'),
             mobileLabelsShowPublic: getParamBool('--mobile-labels-show-public'),
             hdriPreset: getParamNum('--hdri-preset') || 1,
@@ -2106,16 +2112,32 @@
             if (isWireMode) {
                 applyLightingPreset('default');
                 toggle.classList.remove('active');
+                const thumb = toggle.querySelector('.wire-toggle-thumb');
+                if (thumb) thumb.style.left = '0px';
             } else {
                 applyLightingPreset('low');
                 toggle.classList.add('active');
+                const track = toggle.querySelector('.wire-toggle-track');
+                const thumb = toggle.querySelector('.wire-toggle-thumb');
+                if (thumb && track && track.dataset.thumbActiveLeft) {
+                    thumb.style.left = track.dataset.thumbActiveLeft;
+                }
             }
         };
         function positionWireToggle() {
+            positionRightToggles();
+        }
+        function positionRightToggles() {
             const rightToggles = document.getElementById('right-toggles');
             if (!rightToggles) return;
             const isMobileNow = window.innerWidth <= 768;
+            const row1 = document.getElementById('right-toggle-row1');
+            const row2 = document.getElementById('right-toggle-row2');
             if (isMobileNow) {
+                if (row1) { row1.style.position = 'relative'; row1.style.top = ''; }
+                if (row2) { row2.style.position = 'relative'; row2.style.top = ''; }
+                rightToggles.style.flexDirection = 'column';
+                rightToggles.style.gap = '6px';
                 const bar = document.getElementById('marquee-bar');
                 const infoButtons = document.getElementById('info-buttons');
                 if (bar && bar.style.display !== 'none') {
@@ -2124,8 +2146,25 @@
                 } else if (infoButtons) {
                     rightToggles.style.top = (infoButtons.getBoundingClientRect().bottom + 8) + 'px';
                 }
-            } else {
-                rightToggles.style.top = '20px';
+                return;
+            }
+            rightToggles.style.top = '0px';
+            rightToggles.style.gap = '0';
+            const btnStatus = document.getElementById('btn-status');
+            const btnAbout = document.getElementById('btn-about');
+            if (row1 && btnStatus) {
+                const statusRect = btnStatus.getBoundingClientRect();
+                const statusCenterY = statusRect.top + statusRect.height / 2;
+                const row1Height = row1.getBoundingClientRect().height;
+                row1.style.position = 'absolute';
+                row1.style.top = (statusCenterY - row1Height / 2) + 'px';
+            }
+            if (row2 && btnAbout) {
+                const aboutRect = btnAbout.getBoundingClientRect();
+                const aboutCenterY = aboutRect.top + aboutRect.height / 2;
+                const row2Height = row2.getBoundingClientRect().height;
+                row2.style.position = 'absolute';
+                row2.style.top = (aboutCenterY - row2Height / 2) + 'px';
             }
         }
         function buildScene(isMobile) {
@@ -2184,7 +2223,7 @@
             document.querySelector('.loader-bar').style.width = p+'%';
             if(loadedAssets>=totalAssets) setTimeout(()=> {
                  document.getElementById('loader').style.opacity='0';
-                setTimeout(()=>document.getElementById('loader').style.display='none', 800);
+                setTimeout(()=>{ document.getElementById('loader').style.display='none'; positionRightToggles(); }, 800);
             }, 500);
         }
         function onMouseMove(e) {
@@ -2773,6 +2812,7 @@
         }
         window.mobileMarqueeEnabled = getParam('--marquee-mobile-enabled') === 'yes';
         function positionMarquee() {
+            positionRightToggles();
             const bar = document.getElementById('marquee-bar');
             if (!bar) return;
             const isMobileNow = window.innerWidth <= 768;
@@ -2782,7 +2822,6 @@
                 bar.style.display = 'none';
                 infoButtons.style.left = '50%';
                 infoButtons.style.transform = 'translateX(-50%)';
-                positionWireToggle();
                 return;
             }
             if (isMobileNow) {
@@ -2797,19 +2836,24 @@
                 bar.style.top = mobileTopOffset + 'px';
                 rightEnd = window.innerWidth - 12;
             } else {
-                const rightToggles = document.getElementById('right-toggles');
-                if (rightToggles) {
-                    rightEnd = rightToggles.getBoundingClientRect().left - 15;
-                } else {
-                    rightEnd = window.innerWidth - 80;
+                const row1 = document.getElementById('right-toggle-row1');
+                const row2 = document.getElementById('right-toggle-row2');
+                let minLeft = window.innerWidth - 80;
+                if (row1 && row1.style.display !== 'none') {
+                    const r = row1.getBoundingClientRect();
+                    if (r.width > 0) minLeft = Math.min(minLeft, r.left);
                 }
+                if (row2 && row2.style.display !== 'none') {
+                    const r = row2.getBoundingClientRect();
+                    if (r.width > 0) minLeft = Math.min(minLeft, r.left);
+                }
+                rightEnd = minLeft - 15;
             }
             const width = rightEnd - leftEnd;
             if (width < 50) { bar.style.display = 'none'; return; }
             bar.style.left = leftEnd + 'px';
             bar.style.width = width + 'px';
             bar.style.transform = 'none';
-            positionWireToggle();
         }
         function onWindowResize() {
             const aspect = window.innerWidth / window.innerHeight;
@@ -2838,14 +2882,30 @@
                 controlsOrtho.enableRotate = false;
                 controlsOrtho.enablePan = false;
                 controlsOrtho.enableZoom = false;
+                if (camDotFadeTimer) {
+                    clearTimeout(camDotFadeTimer);
+                    camDotFadeTimer = null;
+                }
+                if (activeCamDot) {
+                    const dot = document.getElementById('cam-dot-' + activeCamDot);
+                    if (dot) {
+                        dot.classList.remove('fading');
+                        dot.classList.add('active');
+                    }
+                }
             } else {
                 const isMobileNow = window.innerWidth <= 768;
-                controls.enableRotate = true;
-                controls.enablePan = isMobileNow && PARAMS.mobilePanEnabled;
-                controls.enableZoom = true;
-                controlsOrtho.enableRotate = true;
-                controlsOrtho.enablePan = isMobileNow && PARAMS.mobilePanEnabled;
-                controlsOrtho.enableZoom = true;
+                if (currentCameraMode === 'persp') {
+                    controls.enabled = true;
+                    controls.enableRotate = true;
+                    controls.enablePan = isMobileNow && PARAMS.mobilePanEnabled;
+                    controls.enableZoom = true;
+                } else {
+                    controlsOrtho.enabled = true;
+                    controlsOrtho.enableRotate = true;
+                    controlsOrtho.enablePan = isMobileNow && PARAMS.mobilePanEnabled;
+                    controlsOrtho.enableZoom = true;
+                }
             }
         };
         function animate() {
@@ -3245,15 +3305,19 @@
             if (camDotFadeTimer) { clearTimeout(camDotFadeTimer); camDotFadeTimer = null; }
             const dot1 = document.getElementById('cam-dot-1');
             const dot2 = document.getElementById('cam-dot-2');
+            const dot3 = document.getElementById('cam-dot-3');
             if (dot1) dot1.classList.remove('active', 'fading');
             if (dot2) dot2.classList.remove('active', 'fading');
+            if (dot3) dot3.classList.remove('active', 'fading');
             activeCamDot = null;
             if (mode === 1 || mode === 2) {
                 const dot = document.getElementById('cam-dot-' + mode);
                 if (dot) dot.classList.add('active');
                 activeCamDot = mode;
+            } else if (mode === 'persp' && runtimeParams.cam3ShowPublic) {
+                if (dot3) dot3.classList.add('active');
+                activeCamDot = 3;
             }
-            setTimeout(() => { camSwitching = false; }, 100);
             if (mode === 'mobile') {
                 currentCameraMode = 'ortho';
                 currentCameraIndex = 'mobile';
@@ -3288,13 +3352,16 @@
                         cameraOrtho.quaternion.slerpQuaternions(startRot, endRot, k);
                     })
                     .onComplete(() => {
+                        camSwitching = false;
                         cameraOrtho.position.copy(endPos);
                         cameraOrtho.up.copy(targetUp);
                         cameraOrtho.lookAt(0,0,0);
                         controlsOrtho.target.set(0, 0, 0);
                         controlsOrtho.update();
-                        controlsOrtho.enabled = true;
-                        controlsOrtho.enableRotate = true;
+                        if (!isCameraLocked) {
+                            controlsOrtho.enabled = true;
+                            controlsOrtho.enableRotate = true;
+                        }
                     })
                     .start();
             } else if (mode === 'persp') {
@@ -3302,13 +3369,16 @@
                 currentCameraIndex = 3;
                 if(btnCam3p) btnCam3p.classList.add('active');
                 controlsOrtho.enabled = false;
-                controls.enabled = true;
-                controls.enableRotate = true;
+                if (!isCameraLocked) {
+                    controls.enabled = true;
+                    controls.enableRotate = true;
+                }
                 if (transformControls) transformControls.camera = camera;
                 camera.position.set(runtimeParams.cam3PosX, runtimeParams.cam3PosY, runtimeParams.cam3PosZ);
                 camera.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
                 controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
                 controls.update();
+                camSwitching = false;
             } else {
                 currentCameraMode = 'ortho';
                 currentCameraIndex = mode;
@@ -3346,13 +3416,16 @@
                         cameraOrtho.quaternion.slerpQuaternions(startRot, endRot, k);
                     })
                     .onComplete(() => {
+                        camSwitching = false;
                         cameraOrtho.position.copy(endPos);
                         cameraOrtho.up.copy(targetUp);
                         cameraOrtho.lookAt(0,0,0);
                         controlsOrtho.target.set(0, 0, 0);
                         controlsOrtho.update();
-                        controlsOrtho.enabled = true;
-                        controlsOrtho.enableRotate = true;
+                        if (!isCameraLocked) {
+                            controlsOrtho.enabled = true;
+                            controlsOrtho.enableRotate = true;
+                        }
                     })
                     .start();
             }
@@ -3695,6 +3768,9 @@
                     <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam1PosZ}" onchange="updateSceneSliderParam('cam1PosZ', this.value)">
                     <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam1PosZ')">${runtimeParams.cam1PosZ}</span>
                 </div>
+                <span class="params-label">Show Cam 2 Public</span>
+                <span class="params-value ${runtimeParams.cam2ShowPublic ? 'on' : 'off'}">${runtimeParams.cam2ShowPublic ? 'YES' : 'NO'}</span>
+                <div class="params-toggle ${runtimeParams.cam2ShowPublic ? 'on' : ''}" onclick="toggleParam('cam2ShowPublic'); updateCameraDotsVisibility(); buildSceneParametersPanel()"></div>
                 <div class="params-section-title">CAMERA 2 POSITION</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">X</span>
@@ -3729,7 +3805,7 @@
                 </div>
                 <span class="params-label">Show Cam 3 Public</span>
                 <span class="params-value ${runtimeParams.cam3ShowPublic ? 'on' : 'off'}">${runtimeParams.cam3ShowPublic ? 'YES' : 'NO'}</span>
-                <div class="params-toggle ${runtimeParams.cam3ShowPublic ? 'on' : ''}" onclick="toggleParam('cam3ShowPublic'); updateCam3Visibility(); buildSceneParametersPanel()"></div>
+                <div class="params-toggle ${runtimeParams.cam3ShowPublic ? 'on' : ''}" onclick="toggleParam('cam3ShowPublic'); updateCam3Visibility(); updateCameraDotsVisibility(); buildSceneParametersPanel()"></div>
                 <span class="params-label">Mobile Labels Public</span>
                 <span class="params-value ${runtimeParams.mobileLabelsShowPublic ? 'on' : 'off'}">${runtimeParams.mobileLabelsShowPublic ? 'YES' : 'NO'}</span>
                 <div class="params-toggle ${runtimeParams.mobileLabelsShowPublic ? 'on' : ''}" onclick="toggleParam('mobileLabelsShowPublic'); buildSceneParametersPanel()"></div>
@@ -4119,7 +4195,7 @@
                 <div class="params-section-title">WIREFRAME TOGGLE</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Toggle Size (px)</span>
-                    <input type="range" class="params-slider" min="16" max="60" step="2" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--wire-toggle-size')) || 28}" onchange="document.documentElement.style.setProperty('--wire-toggle-size', this.value+'px'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'px'; positionWireToggle()">
+                    <input type="range" class="params-slider" min="16" max="60" step="2" value="${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--wire-toggle-size')) || 28}" onchange="document.documentElement.style.setProperty('--wire-toggle-size', this.value+'px'); this.parentElement.querySelector('.params-slider-value').textContent=this.value+'px'; updateCameraDotsVisibility(); positionMarquee()">
                     <span class="params-slider-value">${parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--wire-toggle-size')) || 28}px</span>
                 </div>
                 <div class="params-section-title">COLORS</div>
@@ -4336,6 +4412,56 @@
                     btnCam3p.style.display = 'none';
                 }
             }
+            updateCameraDotsVisibility();
+        };
+        window.updateCameraDotsVisibility = function() {
+            const isMobileNow = window.innerWidth <= 768;
+            const dot1 = document.getElementById('cam-dot-1');
+            const dot2 = document.getElementById('cam-dot-2');
+            const dot3 = document.getElementById('cam-dot-3');
+            const camToggle = document.getElementById('cam-toggle');
+            const wireToggle = document.getElementById('wire-toggle');
+            const row1 = document.getElementById('right-toggle-row1');
+            const row2 = document.getElementById('right-toggle-row2');
+            const btnCam2 = document.getElementById('btn-cam2');
+            if (isMobileNow) return;
+            if (dot1) dot1.style.display = '';
+            if (dot2) dot2.style.display = runtimeParams.cam2ShowPublic ? '' : 'none';
+            if (dot3) dot3.style.display = runtimeParams.cam3ShowPublic ? '' : 'none';
+            if (btnCam2) btnCam2.style.display = runtimeParams.cam2ShowPublic || editorModeActive ? '' : 'none';
+            let visibleCount = 1;
+            if (runtimeParams.cam2ShowPublic) visibleCount++;
+            if (runtimeParams.cam3ShowPublic) visibleCount++;
+            if (visibleCount <= 1) {
+                if (camToggle) camToggle.style.display = 'none';
+                if (row2) row2.style.display = 'none';
+                if (wireToggle && row1) {
+                    row1.appendChild(wireToggle);
+                }
+            } else {
+                if (camToggle) camToggle.style.display = '';
+                if (row2) row2.style.display = 'flex';
+                if (wireToggle && row2 && wireToggle.parentElement !== row2) {
+                    row2.appendChild(wireToggle);
+                }
+            }
+            const toggleTrack = wireToggle ? wireToggle.querySelector('.wire-toggle-track') : null;
+            if (toggleTrack && visibleCount > 1) {
+                const size = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--wire-toggle-size')) || 12;
+                const totalWidth = visibleCount * size + (visibleCount - 1) * size * 0.25;
+                toggleTrack.style.width = totalWidth + 'px';
+                const thumbActiveLeft = (visibleCount - 1) * 1.25 * size;
+                toggleTrack.dataset.thumbActiveLeft = thumbActiveLeft + 'px';
+                const thumb = toggleTrack.querySelector('.wire-toggle-thumb');
+                if (thumb && wireToggle.classList.contains('active')) {
+                    thumb.style.left = thumbActiveLeft + 'px';
+                }
+            } else if (toggleTrack) {
+                const size = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--wire-toggle-size')) || 12;
+                toggleTrack.style.width = (size * 1.8) + 'px';
+                toggleTrack.dataset.thumbActiveLeft = (size * 0.8) + 'px';
+            }
+            positionRightToggles();
         };
         function applyRuntimeParameters() {
             const isMobile = window.innerWidth <= 768;
@@ -4495,6 +4621,7 @@
             output += "\n";
             output += `--hdri-preset: ${currentHdriPreset};\n\n`;
             output += "\n";
+            output += `--cam2-show-public: ${runtimeParams.cam2ShowPublic ? 'yes' : 'no'};\n`;
             output += `--cam3-show-public: ${runtimeParams.cam3ShowPublic ? 'yes' : 'no'};\n`;
             navigator.clipboard.writeText(output).then(() => {
                 alert('RENDER PARAMETERS COPIED!\n\nPaste into your :root CSS section.');
@@ -4514,6 +4641,7 @@
             output += `--cam3-pos-x: ${runtimeParams.cam3PosX};\n`;
             output += `--cam3-pos-y: ${runtimeParams.cam3PosY};\n`;
             output += `--cam3-pos-z: ${runtimeParams.cam3PosZ};\n`;
+            output += `--cam2-show-public: ${runtimeParams.cam2ShowPublic ? 'yes' : 'no'};\n`;
             output += `--cam3-show-public: ${runtimeParams.cam3ShowPublic ? 'yes' : 'no'};\n`;
             output += `--mobile-labels-show-public: ${runtimeParams.mobileLabelsShowPublic ? 'yes' : 'no'};\n`;
             output += `--cam-mobile-pos-x: ${runtimeParams.camMobilePosX};\n`;
