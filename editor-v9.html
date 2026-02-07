@@ -89,12 +89,15 @@
             --cam1-pos-x: 5000;
             --cam1-pos-y: 5000;
             --cam1-pos-z: -5000;
+            --cam1-fov: 45;
             --cam2-pos-x: 5000;
             --cam2-pos-y: 5000;
             --cam2-pos-z: 5000;
+            --cam2-fov: 45;
             --cam3-pos-x: 5000;
             --cam3-pos-y: 5000;
             --cam3-pos-z: 5000;
+            --cam3-fov: 45;
 
             --cam2-show-public: yes;
             --cam3-show-public: no;
@@ -112,7 +115,6 @@
             --cam-lookat-x: 0;
             --cam-lookat-y: 0;
             --cam-lookat-z: 0;
-            --camera-fov: 45;
 
              --camera-min-distance: 100;
             --camera-max-distance: 45000;
@@ -1755,6 +1757,9 @@
             camMobilePosX: getParamNum('--cam-mobile-pos-x'),
             camMobilePosY: getParamNum('--cam-mobile-pos-y'),
             camMobilePosZ: getParamNum('--cam-mobile-pos-z'),
+            cam1Fov: getParamNum('--cam1-fov'),
+            cam2Fov: getParamNum('--cam2-fov'),
+            cam3Fov: getParamNum('--cam3-fov'),
             camMobileFov: getParamNum('--cam-mobile-fov'),
             initialCameraZoom: getParamNum('--initial-camera-zoom'),
             initialCameraZoomMobile: getParamNum('--initial-camera-zoom-mobile'),
@@ -1798,7 +1803,9 @@
             zoomOutAnimationDuration: parseFloat(getParam('--zoom-out-animation-duration')) * 1000,
             initialCameraZoom: getParamNum('--initial-camera-zoom'),
             initialCameraZoomMobile: getParamNum('--initial-camera-zoom-mobile'),
-            cameraFov: getParamNum('--camera-fov'),
+            cam1Fov: getParamNum('--cam1-fov'),
+            cam2Fov: getParamNum('--cam2-fov'),
+            cam3Fov: getParamNum('--cam3-fov'),
             cameraMinDist: getParamNum('--camera-min-distance'),
             cameraMaxDist: getParamNum('--camera-max-distance'),
             enablePan: getParam('--enable-pan') === 'yes',
@@ -1925,7 +1932,7 @@
             renderer.setClearColor(0xffffff, 0);
             container.appendChild(renderer.domElement);
             const aspect = window.innerWidth / window.innerHeight;
-            camera = new THREE.PerspectiveCamera(PARAMS.cameraFov, aspect, 10, 100000);
+            camera = new THREE.PerspectiveCamera(PARAMS.cam3Fov, aspect, 10, 100000);
             camera.position.set(5000, 5000, 5000);
             cameraOrtho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100000);
             if (isMobile) {
@@ -3261,6 +3268,10 @@
                 activeCamera.fov = fov;
                 activeCamera.updateProjectionMatrix();
             }
+            if (currentCameraIndex === 1) { runtimeParams.cam1Fov = fov; PARAMS.cam1Fov = fov; }
+            else if (currentCameraIndex === 2) { runtimeParams.cam2Fov = fov; PARAMS.cam2Fov = fov; }
+            else if (currentCameraIndex === 3) { runtimeParams.cam3Fov = fov; PARAMS.cam3Fov = fov; }
+            else if (currentCameraIndex === 'mobile') { runtimeParams.camMobileFov = fov; }
         };
         window.updateCameraPosition = function() {
             const x = parseFloat(document.getElementById('cam-pos-x').value) || 0;
@@ -3465,6 +3476,8 @@
                 }
                 if (transformControls) transformControls.camera = camera;
                 camera.position.set(runtimeParams.cam3PosX, runtimeParams.cam3PosY, runtimeParams.cam3PosZ);
+                camera.fov = runtimeParams.cam3Fov || 45;
+                camera.updateProjectionMatrix();
                 camera.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
                 controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
                 controls.update();
@@ -3873,6 +3886,11 @@
                     <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam1PosZ}" onchange="updateSceneSliderParam('cam1PosZ', this.value)">
                     <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam1PosZ')">${runtimeParams.cam1PosZ}</span>
                 </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">FOV</span>
+                    <input type="range" class="params-slider" min="10" max="120" step="1" value="${runtimeParams.cam1Fov}" onchange="updateSceneSliderParam('cam1Fov', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam1Fov')">${runtimeParams.cam1Fov}</span>
+                </div>
                 <span class="params-label">Show Cam 2 Public</span>
                 <span class="params-value ${runtimeParams.cam2ShowPublic ? 'on' : 'off'}">${runtimeParams.cam2ShowPublic ? 'YES' : 'NO'}</span>
                 <div class="params-toggle ${runtimeParams.cam2ShowPublic ? 'on' : ''}" onclick="toggleParam('cam2ShowPublic'); updateCameraDotsVisibility(); buildSceneParametersPanel()"></div>
@@ -3892,6 +3910,11 @@
                     <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam2PosZ}" onchange="updateSceneSliderParam('cam2PosZ', this.value)">
                     <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam2PosZ')">${runtimeParams.cam2PosZ}</span>
                 </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">FOV</span>
+                    <input type="range" class="params-slider" min="10" max="120" step="1" value="${runtimeParams.cam2Fov}" onchange="updateSceneSliderParam('cam2Fov', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam2Fov')">${runtimeParams.cam2Fov}</span>
+                </div>
                 <div class="params-section-title">CAMERA 3 POSITION</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">X</span>
@@ -3907,6 +3930,11 @@
                     <span class="params-slider-label">Z</span>
                     <input type="range" class="params-slider" min="-10000" max="10000" step="100" value="${runtimeParams.cam3PosZ}" onchange="updateSceneSliderParam('cam3PosZ', this.value)">
                     <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam3PosZ')">${runtimeParams.cam3PosZ}</span>
+                </div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">FOV</span>
+                    <input type="range" class="params-slider" min="10" max="120" step="1" value="${runtimeParams.cam3Fov}" onchange="updateSceneSliderParam('cam3Fov', this.value)">
+                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cam3Fov')">${runtimeParams.cam3Fov}</span>
                 </div>
                 <span class="params-label">Show Cam 3 Public</span>
                 <span class="params-value ${runtimeParams.cam3ShowPublic ? 'on' : 'off'}">${runtimeParams.cam3ShowPublic ? 'YES' : 'NO'}</span>
@@ -4028,11 +4056,6 @@
                     <span class="params-slider-value" onclick="makeSceneEditable(this, 'cameraMaxPolarAngle')">${runtimeParams.cameraMaxPolarAngle}°</span>
                 </div>
                 <div class="params-section-title">CAMERA GENERAL</div>
-                <div class="params-slider-row">
-                    <span class="params-slider-label">FOV</span>
-                    <input type="range" class="params-slider" min="10" max="120" step="1" value="${PARAMS.cameraFov}" onchange="updateSceneSliderParam('cameraFov', this.value)">
-                    <span class="params-slider-value" onclick="makeSceneEditable(this, 'cameraFov')">${PARAMS.cameraFov}</span>
-                </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Min Distance</span>
                     <input type="range" class="params-slider" min="1" max="5000" step="10" value="${PARAMS.cameraMinDist}" onchange="updateSceneSliderParam('cameraMinDist', this.value)">
@@ -4365,9 +4388,11 @@
                 else if (msParams.includes(paramName)) suffix = 'ms';
                 valueSpan.textContent = value + suffix;
             }
-            if (paramName === 'cameraFov') {
-                camera.fov = parseFloat(value);
-                camera.updateProjectionMatrix();
+            if (paramName === 'cam1Fov' || paramName === 'cam2Fov' || paramName === 'cam3Fov') {
+                if (paramName === 'cam3Fov' && currentCameraIndex === 3) {
+                    camera.fov = parseFloat(value);
+                    camera.updateProjectionMatrix();
+                }
             } else if (paramName === 'cameraMinDist') {
                 if (controls) controls.minDistance = parseFloat(value);
                 if (controlsOrtho) controlsOrtho.minDistance = parseFloat(value);
@@ -4425,7 +4450,12 @@
                     PARAMS[paramName] = newValue;
                     const slider = parentRow ? parentRow.querySelector('.params-slider') : null;
                     if (slider) slider.value = newValue;
-                    if (paramName.startsWith('cam1') && currentCameraIndex === 1) {
+                    if (paramName === 'cam1Fov' || paramName === 'cam2Fov' || paramName === 'cam3Fov') {
+                        if (paramName === 'cam3Fov' && currentCameraIndex === 3) {
+                            camera.fov = newValue;
+                            camera.updateProjectionMatrix();
+                        }
+                    } else if (paramName.startsWith('cam1') && currentCameraIndex === 1) {
                         cameraOrtho.position.set(runtimeParams.cam1PosX, runtimeParams.cam1PosY, runtimeParams.cam1PosZ);
                         cameraOrtho.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
                     } else if (paramName.startsWith('cam2') && currentCameraIndex === 2) {
@@ -4745,15 +4775,18 @@
             output += `--cam1-pos-x: ${runtimeParams.cam1PosX};\n`;
             output += `--cam1-pos-y: ${runtimeParams.cam1PosY};\n`;
             output += `--cam1-pos-z: ${runtimeParams.cam1PosZ};\n`;
+            output += `--cam1-fov: ${runtimeParams.cam1Fov};\n`;
             output += `--cam2-show-public: ${runtimeParams.cam2ShowPublic ? 'yes' : 'no'};\n\n`;
             output += "/* CAMERA 2 POSITION */\n";
             output += `--cam2-pos-x: ${runtimeParams.cam2PosX};\n`;
             output += `--cam2-pos-y: ${runtimeParams.cam2PosY};\n`;
-            output += `--cam2-pos-z: ${runtimeParams.cam2PosZ};\n\n`;
+            output += `--cam2-pos-z: ${runtimeParams.cam2PosZ};\n`;
+            output += `--cam2-fov: ${runtimeParams.cam2Fov};\n\n`;
             output += "/* CAMERA 3 POSITION */\n";
             output += `--cam3-pos-x: ${runtimeParams.cam3PosX};\n`;
             output += `--cam3-pos-y: ${runtimeParams.cam3PosY};\n`;
             output += `--cam3-pos-z: ${runtimeParams.cam3PosZ};\n`;
+            output += `--cam3-fov: ${runtimeParams.cam3Fov};\n`;
             output += `--cam3-show-public: ${runtimeParams.cam3ShowPublic ? 'yes' : 'no'};\n`;
             output += `--mobile-labels-show-public: ${runtimeParams.mobileLabelsShowPublic ? 'yes' : 'no'};\n\n`;
             output += "/* MOBILE CAMERA */\n";
@@ -4785,7 +4818,6 @@
             output += `--camera-min-polar-angle: ${runtimeParams.cameraMinPolarAngle};\n`;
             output += `--camera-max-polar-angle: ${runtimeParams.cameraMaxPolarAngle};\n\n`;
             output += "/* CAMERA GENERAL */\n";
-            output += `--camera-fov: ${PARAMS.cameraFov};\n`;
             output += `--camera-min-distance: ${PARAMS.cameraMinDist};\n`;
             output += `--camera-max-distance: ${PARAMS.cameraMaxDist};\n`;
             output += `--enable-pan: ${PARAMS.enablePan ? 'yes' : 'no'};\n`;
