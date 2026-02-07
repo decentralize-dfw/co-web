@@ -911,74 +911,47 @@
         .params-slider-input:focus {
             border-color: var(--accent-color);
         }
-        .joints-grid {
-            padding: 8px;
-            font-family: var(--font-body);
-            font-size: 11px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .joint-table-group {
-            margin-bottom: 8px;
-            border: 1px solid rgba(0,0,0,0.08);
-            border-radius: 6px;
-            overflow: hidden;
-        }
-        .joint-table-header {
+        .env-option-bar {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 8px;
-            background: rgba(0,0,0,0.05);
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 8px;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+        }
+        .env-option-bar .env-option-label {
+            font-size: 9px;
             font-weight: bold;
-            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            color: rgba(0,0,0,0.5);
+            width: 100%;
+            margin-bottom: 2px;
         }
-        .joint-copy-btn {
-            font-size: 8px;
-            padding: 2px 8px;
-            border: 1px solid rgba(0,0,0,0.15);
-            border-radius: 4px;
-            background: rgba(255,255,255,0.6);
-            cursor: pointer;
+        .env-option-btn {
+            width: 28px;
+            height: 24px;
+            font-size: 9px;
             font-family: var(--font-headers);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 4px;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
             transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .joint-copy-btn:hover {
+        .env-option-btn:hover {
+            background: rgba(0,0,0,0.06);
+        }
+        .env-option-btn.active {
             background: rgba(0,0,0,0.85);
             color: #fff;
+            border-color: rgba(0,0,0,0.85);
         }
-        .joint-table-row {
-            display: flex;
-            align-items: center;
-            padding: 4px 8px;
-            border-top: 1px solid rgba(0,0,0,0.05);
-        }
-        .joint-param-name {
-            flex: 0 0 36px;
-            font-weight: bold;
-            font-size: 10px;
-            color: rgba(0,0,0,0.6);
-        }
-        .joint-param-value {
-            flex: 1;
-            font-size: 10px;
-            font-family: monospace;
-            background: rgba(0,0,0,0.03);
-            border: 1px solid rgba(0,0,0,0.08);
-            border-radius: 3px;
-            padding: 3px 6px;
-            outline: none;
-            cursor: text;
-            -webkit-user-select: all;
-            user-select: all;
-        }
-        .joint-param-value:focus {
-            border-color: var(--accent-color, #000);
-            background: #fff;
+        .env-option-btn.disabled {
+            opacity: 0.25;
+            pointer-events: none;
         }
         .editor-btn, .camera-btn, .transform-btn {
             padding: 6px 12px; font-family: var(--font-headers); font-size: 9px;
@@ -1479,7 +1452,6 @@
             <button class="editor-tab active" data-tab="products" onclick="switchEditorTab('products')">Products</button>
             <button class="editor-tab" data-tab="parameters" onclick="switchEditorTab('parameters')">Render</button>
             <button class="editor-tab" data-tab="scene" onclick="switchEditorTab('scene')">Scene</button>
-            <button class="editor-tab" data-tab="joints" onclick="switchEditorTab('joints')">Joints</button>
         </div>
         <!-- PRODUCTS TAB -->
         <div class="editor-tab-content active" id="tab-products">
@@ -1521,15 +1493,6 @@
             <div class="editor-footer">
                 <button class="editor-footer-btn" onclick="resetSceneParameters()">RESET</button>
                 <button class="editor-footer-btn print-btn" onclick="printSceneParameters()">PRINT</button>
-            </div>
-        </div>
-        <!-- JOINTS TAB -->
-        <div class="editor-tab-content" id="tab-joints">
-            <div class="joints-grid" id="joints-grid">
-                <!-- Dynamic content will be inserted here -->
-            </div>
-            <div class="editor-footer">
-                <button class="editor-footer-btn print-btn" onclick="printJointsData()">COPY ALL</button>
             </div>
         </div>
     </div>
@@ -1689,13 +1652,32 @@
                     };
                     envScale = parseFloat(getVal(envRow, 33, 'number')) || 400;
                 }
-                const jointParamNames = ['J1','J2','J3','J4','L1','L2','L3','L4','N1','N2','N3','N4','P1','P2','P3','P4'];
-                const jointParams = [];
-                if (rows[0]) {
-                    for (let jp = 0; jp < 16; jp++) {
-                        const val = getVal(rows[0], 38 + jp);
-                        if (!val || val === '') { jointParams.push(null); }
-                        else { jointParams.push(val); }
+                const envOptionMap = [
+                    { name: 'J1', row: 0, col: 9 },
+                    { name: 'J2', row: 1, col: 9 },
+                    { name: 'J3', row: 2, col: 9 },
+                    { name: 'J4', row: 3, col: 9 },
+                    { name: 'L1', row: 0, col: 11 },
+                    { name: 'L2', row: 1, col: 11 },
+                    { name: 'L3', row: 2, col: 11 },
+                    { name: 'L4', row: 3, col: 11 },
+                    { name: 'N1', row: 0, col: 13 },
+                    { name: 'N2', row: 1, col: 13 },
+                    { name: 'N3', row: 2, col: 13 },
+                    { name: 'N4', row: 3, col: 13 },
+                    { name: 'P1', row: 0, col: 15 },
+                    { name: 'P2', row: 1, col: 15 },
+                    { name: 'P3', row: 2, col: 15 },
+                    { name: 'P4', row: 3, col: 15 }
+                ];
+                const envOptions = [];
+                for (let i = 0; i < envOptionMap.length; i++) {
+                    const m = envOptionMap[i];
+                    if (!rows[m.row] || !rows[m.row].c[m.col] || !rows[m.row].c[m.col].v ||
+                        rows[m.row].c[m.col].v === 'null' || rows[m.row].c[m.col].v.toString().trim() === '') {
+                        envOptions.push(null);
+                    } else {
+                        envOptions.push({ name: m.name, src: rows[m.row].c[m.col].v });
                     }
                 }
                 sceneObjects.push({
@@ -1705,8 +1687,7 @@
                     rotation: envRot,
                     scale: envScale,
                     clickable: false,
-                    jointParams: jointParams,
-                    jointParamNames: jointParamNames,
+                    envOptions: envOptions,
                     modalContent: { name: "Environment", artist: "VEA", description: "Environment" }
                 });
             } catch (err) {
@@ -1783,7 +1764,8 @@
             panelWidth: getParamNum('--panel-width') || 280,
             panelTopOffset: getParamNum('--panel-top-offset') || 60,
             cameraMinPolarAngle: getParamNum('--camera-min-polar-angle') || 0,
-            cameraMaxPolarAngle: getParamNum('--camera-max-polar-angle') || 80
+            cameraMaxPolarAngle: getParamNum('--camera-max-polar-angle') || 80,
+            envOption: getParamNum('--env-option') || 1
         };
         let runtimeParams = { ...RENDER_PARAMS };
         const PARAMS = {
@@ -2263,6 +2245,13 @@
             draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
             loader.setDRACOLoader(draco);
             loader.setMeshoptDecoder(MeshoptDecoder);
+            const envObj = sceneObjects.find(o => o.modalContent && o.modalContent.name === 'Environment');
+            if (envObj && envObj.envOptions) {
+                const optIdx = (runtimeParams.envOption || 1) - 1;
+                if (envObj.envOptions[optIdx] && envObj.envOptions[optIdx].src) {
+                    envObj.src = envObj.envOptions[optIdx].src;
+                }
+            }
             const validObjects = sceneObjects.filter(item => !(isMobile && item.showOnMobile === false));
             totalAssets = validObjects.length;
             if(totalAssets === 0) {
@@ -3598,8 +3587,6 @@
                 buildParametersPanel();
             } else if (tabName === 'scene') {
                 buildSceneParametersPanel();
-            } else if (tabName === 'joints') {
-                buildJointsPanel();
             }
         };
         function attachValueEditing(container) {
@@ -3843,7 +3830,22 @@
         }
         window.buildSceneParametersPanel = function() {
             const grid = document.getElementById('scene-params-grid');
-            grid.innerHTML = `
+            const envObj = sceneObjects.find(o => o.modalContent && o.modalContent.name === 'Environment');
+            let envBarHtml = '';
+            if (envObj && envObj.envOptions) {
+                const opts = envObj.envOptions;
+                let btns = '';
+                let stopped = false;
+                for (let i = 0; i < 16; i++) {
+                    if (stopped || opts[i] === null || opts[i] === undefined) { stopped = true; continue; }
+                    const isActive = (runtimeParams.envOption || 1) === (i + 1);
+                    btns += `<button class="env-option-btn${isActive ? ' active' : ''}" data-env-idx="${i + 1}" onclick="selectEnvOption(${i + 1})">${i + 1}</button>`;
+                }
+                if (btns) {
+                    envBarHtml = `<div class="env-option-bar"><span class="env-option-label">Environment Option</span>${btns}</div>`;
+                }
+            }
+            grid.innerHTML = envBarHtml + `
                 <div class="params-section-title">CAMERA 1 POSITION</div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">X</span>
@@ -4747,6 +4749,7 @@
             output += `--hover-label-name-offset-y: ${runtimeParams.hoverLabelNameOffsetY}px;\n`;
             output += `--panel-width: ${runtimeParams.panelWidth}px;\n`;
             output += `--panel-top-offset: ${runtimeParams.panelTopOffset}px;\n`;
+            output += `--env-option: ${runtimeParams.envOption || 1};\n`;
             navigator.clipboard.writeText(output).then(() => {
                 alert('SCENE PARAMETERS COPIED!\n\nPaste into your :root CSS section.');
             }).catch(err => {
@@ -4754,92 +4757,36 @@
                 alert('Copy failed. Check console for data.');
             });
         };
-        function buildJointsPanel() {
-            const grid = document.getElementById('joints-grid');
-            grid.innerHTML = '';
+        window.selectEnvOption = function(optNum) {
+            runtimeParams.envOption = optNum;
             const envObj = sceneObjects.find(o => o.modalContent && o.modalContent.name === 'Environment');
-            if (!envObj || !envObj.jointParams) {
-                grid.innerHTML = '<div style="padding:8px;color:#888;font-size:11px;">No joint parameters found.</div>';
-                return;
+            if (!envObj || !envObj.envOptions) return;
+            const opt = envObj.envOptions[optNum - 1];
+            if (!opt || !opt.src) return;
+            const envIndex = sceneObjects.indexOf(envObj);
+            const oldMesh = loadedObjectsMap.get(envIndex);
+            if (oldMesh) {
+                scene.remove(oldMesh);
+                oldMesh.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) { if (Array.isArray(c.material)) c.material.forEach(m => m.dispose()); else c.material.dispose(); } });
             }
-            const params = envObj.jointParams;
-            const names = envObj.jointParamNames;
-            const tableNames = ['Table 1','Table 2','Table 3','Table 4','Table 5','Table 6','Table 7','Table 8'];
-            let stopped = false;
-            for (let t = 0; t < 8; t++) {
-                if (stopped) break;
-                const idx1 = t * 2;
-                const idx2 = t * 2 + 1;
-                if (params[idx1] === null || params[idx1] === undefined) { stopped = true; break; }
-                const tableDiv = document.createElement('div');
-                tableDiv.className = 'joint-table-group';
-                let headerHtml = `<div class="joint-table-header">
-                    <span>${tableNames[t]}</span>
-                    <button class="joint-copy-btn" data-table="${t}" title="Copy ${tableNames[t]}">COPY</button>
-                </div>`;
-                let rowsHtml = `<div class="joint-table-row">
-                    <span class="joint-param-name">${names[idx1]}</span>
-                    <input type="text" class="joint-param-value" data-joint="${idx1}" value="${params[idx1]}" readonly>
-                </div>`;
-                if (params[idx2] !== null && params[idx2] !== undefined) {
-                    rowsHtml += `<div class="joint-table-row">
-                        <span class="joint-param-name">${names[idx2]}</span>
-                        <input type="text" class="joint-param-value" data-joint="${idx2}" value="${params[idx2]}" readonly>
-                    </div>`;
-                } else {
-                    stopped = true;
-                }
-                tableDiv.innerHTML = headerHtml + rowsHtml;
-                grid.appendChild(tableDiv);
-            }
-            grid.querySelectorAll('.joint-copy-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const t = parseInt(this.dataset.table);
-                    const idx1 = t * 2;
-                    const idx2 = t * 2 + 1;
-                    let output = '';
-                    if (params[idx1] !== null && params[idx1] !== undefined) {
-                        output += `${names[idx1]}: ${params[idx1]}`;
-                    }
-                    if (params[idx2] !== null && params[idx2] !== undefined) {
-                        output += `\n${names[idx2]}: ${params[idx2]}`;
-                    }
-                    navigator.clipboard.writeText(output).then(() => {
-                        this.textContent = 'OK!';
-                        setTimeout(() => { this.textContent = 'COPY'; }, 1000);
-                    });
-                });
-            });
-        }
-        window.printJointsData = function() {
-            const envObj = sceneObjects.find(o => o.modalContent && o.modalContent.name === 'Environment');
-            if (!envObj || !envObj.jointParams) { alert('No joint parameters.'); return; }
-            const params = envObj.jointParams;
-            const names = envObj.jointParamNames;
-            const tableNames = ['Table 1','Table 2','Table 3','Table 4','Table 5','Table 6','Table 7','Table 8'];
-            let output = '';
-            let stopped = false;
-            for (let t = 0; t < 8; t++) {
-                if (stopped) break;
-                const idx1 = t * 2;
-                const idx2 = t * 2 + 1;
-                if (params[idx1] === null || params[idx1] === undefined) { stopped = true; break; }
-                output += `// ${tableNames[t]}\n`;
-                output += `${names[idx1]}: "${params[idx1]}",\n`;
-                if (params[idx2] !== null && params[idx2] !== undefined) {
-                    output += `${names[idx2]}: "${params[idx2]}",\n`;
-                } else {
-                    stopped = true;
-                }
-                output += '\n';
-            }
-            navigator.clipboard.writeText(output).then(() => {
-                alert('JOINT PARAMETERS COPIED!\n\nPaste directly into your code.');
-            }).catch(err => {
-                console.log(output);
-                alert('Copy failed. Check console for data.');
-            });
+            envObj.src = opt.src;
+            const loader = new GLTFLoader();
+            const draco = new DRACOLoader();
+            draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+            loader.setDRACOLoader(draco);
+            loader.setMeshoptDecoder(MeshoptDecoder);
+            loader.load(opt.src, (gltf) => {
+                const m = gltf.scene;
+                m.position.set(envObj.position.x, envObj.position.y || 0, envObj.position.z);
+                if (envObj.rotation) m.rotation.set(envObj.rotation.x * Math.PI / 180, envObj.rotation.y * Math.PI / 180, envObj.rotation.z * Math.PI / 180);
+                m.scale.setScalar(envObj.scale);
+                m.userData = { modalContent: envObj.modalContent, clickable: false, includeInFit: true, originalPosition: m.position.clone(), sceneObjectIndex: envIndex, originalScale: envObj.scale };
+                m.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+                scene.add(m);
+                loadedObjectsMap.set(envIndex, m);
+                buildEditorPanel();
+            }, undefined, (err) => { console.error("Error loading env option:", opt.src, err); });
+            buildSceneParametersPanel();
         };
         function saveUndoState() {
             const state = {};
