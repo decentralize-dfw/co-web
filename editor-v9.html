@@ -74,6 +74,7 @@
 --filter-hue-rotate: 0;
 --hdri-preset: 1;
 
+--env-option: 1;
 
 --mobile-hover-label-font-size: 60px;
 --mobile-hover-label-opacity: 0.9;
@@ -4083,6 +4084,15 @@
                 </div>
                 <div class="params-section-title">HOVER LABEL STYLE</div>
                 <div class="params-slider-row">
+                    <span class="params-slider-label">Font Style</span>
+                    <select onchange="PARAMS.hoverLabelFontStyle = this.value; buildSceneParametersPanel()" style="background:#111;color:#fff;border:1px solid #333;padding:2px 4px;font-size:11px;font-family:monospace;cursor:pointer;">
+                        <option value="normal" ${PARAMS.hoverLabelFontStyle === 'normal' ? 'selected' : ''}>normal</option>
+                        <option value="bold" ${PARAMS.hoverLabelFontStyle === 'bold' ? 'selected' : ''}>bold</option>
+                        <option value="italic" ${PARAMS.hoverLabelFontStyle === 'italic' ? 'selected' : ''}>italic</option>
+                    </select>
+                    <span class="params-slider-value">${PARAMS.hoverLabelFontStyle}</span>
+                </div>
+                <div class="params-slider-row">
                     <span class="params-slider-label">Letter Spacing</span>
                     <input type="range" class="params-slider" min="-5" max="20" step="0.5" value="${PARAMS.hoverLabelLetterSpacing}" onchange="updateSceneSliderParam('hoverLabelLetterSpacing', this.value)">
                     <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelLetterSpacing')">${PARAMS.hoverLabelLetterSpacing}</span>
@@ -4118,6 +4128,15 @@
                     <span class="params-slider-value" onclick="makeSceneEditable(this, 'hoverLabelRotationZ')">${PARAMS.hoverLabelRotationZ}°</span>
                 </div>
                 <div class="params-section-title">HOVER ARTIST LABEL</div>
+                <div class="params-slider-row">
+                    <span class="params-slider-label">Font Style</span>
+                    <select onchange="PARAMS.hoverArtistFontStyle = this.value; buildSceneParametersPanel()" style="background:#111;color:#fff;border:1px solid #333;padding:2px 4px;font-size:11px;font-family:monospace;cursor:pointer;">
+                        <option value="normal" ${PARAMS.hoverArtistFontStyle === 'normal' ? 'selected' : ''}>normal</option>
+                        <option value="bold" ${PARAMS.hoverArtistFontStyle === 'bold' ? 'selected' : ''}>bold</option>
+                        <option value="italic" ${PARAMS.hoverArtistFontStyle === 'italic' ? 'selected' : ''}>italic</option>
+                    </select>
+                    <span class="params-slider-value">${PARAMS.hoverArtistFontStyle}</span>
+                </div>
                 <div class="params-slider-row">
                     <span class="params-slider-label">Font Size</span>
                     <input type="range" class="params-slider" min="8" max="120" step="1" value="${PARAMS.hoverArtistFontSize}" onchange="updateSceneSliderParam('hoverArtistFontSize', this.value)">
@@ -4695,6 +4714,7 @@
             output += "/* SHADOWS */\n";
             output += `--shadows-enabled-desktop: ${runtimeParams.shadowsEnabledDesktop ? 'yes' : 'no'};\n`;
             output += `--shadows-enabled-mobile: ${runtimeParams.shadowsEnabledMobile ? 'yes' : 'no'};\n`;
+            output += `--shadow-type: ${runtimeParams.shadowType};\n`;
             output += `--shadow-bias: ${runtimeParams.shadowBias};\n`;
             output += `--shadow-normal-bias: ${runtimeParams.shadowNormalBias};\n\n`;
             output += "/* ANTI-ALIASING */\n";
@@ -4796,18 +4816,20 @@
             output += `--cam-lookat-z: ${PARAMS.camLookZ};\n\n`;
             output += "/* HOVER ANIMATION */\n";
             output += `--hover-while-selected-factor: ${PARAMS.hoverWhileSelectedFactor};\n`;
-            output += `--hover-lift-distance: ${PARAMS.hoverLiftDistance};\n`;
+            output += `--hover-lift-distance: ${PARAMS.hoverLiftDistance}px;\n`;
             output += `--hover-animation-duration: ${PARAMS.hoverAnimationDuration / 1000}s;\n\n`;
             output += "/* HOVER LABEL STYLE */\n";
+            output += `--hover-label-font-style: ${PARAMS.hoverLabelFontStyle};\n`;
             output += `--hover-label-letter-spacing: ${PARAMS.hoverLabelLetterSpacing};\n`;
             output += `--hover-label-color: ${PARAMS.hoverLabelColor};\n`;
             output += `--hover-label-opacity: ${PARAMS.hoverLabelOpacity};\n`;
-            output += `--hover-label-font-box: ${PARAMS.hoverLabelFontBox};\n`;
-            output += `--hover-label-rotation-x: ${PARAMS.hoverLabelRotationX};\n`;
-            output += `--hover-label-rotation-y: ${PARAMS.hoverLabelRotationY};\n`;
-            output += `--hover-label-rotation-z: ${PARAMS.hoverLabelRotationZ};\n\n`;
+            output += `--hover-label-font-box: ${PARAMS.hoverLabelFontBox}px;\n`;
+            output += `--hover-label-rotation-x: ${PARAMS.hoverLabelRotationX}deg;\n`;
+            output += `--hover-label-rotation-y: ${PARAMS.hoverLabelRotationY}deg;\n`;
+            output += `--hover-label-rotation-z: ${PARAMS.hoverLabelRotationZ}deg;\n\n`;
             output += "/* HOVER ARTIST LABEL */\n";
-            output += `--hover-artist-font-size: ${PARAMS.hoverArtistFontSize};\n`;
+            output += `--hover-artist-font-size: ${PARAMS.hoverArtistFontSize}px;\n`;
+            output += `--hover-artist-font-style: ${PARAMS.hoverArtistFontStyle};\n`;
             output += `--hover-artist-letter-spacing: ${PARAMS.hoverArtistLetterSpacing};\n`;
             output += `--hover-artist-color: ${PARAMS.hoverArtistColor};\n`;
             output += `--hover-artist-opacity: ${PARAMS.hoverArtistOpacity};\n\n`;
