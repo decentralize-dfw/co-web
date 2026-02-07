@@ -1012,7 +1012,7 @@
             transition: all 0.4s ease;
         }
         #wire-toggle .wire-toggle-track {
-            width: calc(var(--wire-toggle-size) * 1.8);
+            width: calc(var(--wire-toggle-size) * 2 + var(--wire-toggle-size) * 0.25);
             height: var(--wire-toggle-size);
             border-radius: calc(var(--wire-toggle-size) / 2);
             background: rgba(200,200,200,0.3);
@@ -1034,7 +1034,7 @@
             box-shadow: 0 1px 4px rgba(0,0,0,0.2);
         }
         #wire-toggle.active .wire-toggle-thumb {
-            left: calc(var(--wire-toggle-size) * 0.8);
+            left: calc(var(--wire-toggle-size) * 1.25);
             background: #4a1d96;
             box-shadow: 0 0 8px rgba(74,29,150,0.5);
         }
@@ -2838,6 +2838,17 @@
                 controlsOrtho.enableRotate = false;
                 controlsOrtho.enablePan = false;
                 controlsOrtho.enableZoom = false;
+                if (camDotFadeTimer) {
+                    clearTimeout(camDotFadeTimer);
+                    camDotFadeTimer = null;
+                }
+                if (activeCamDot) {
+                    const dot = document.getElementById('cam-dot-' + activeCamDot);
+                    if (dot) {
+                        dot.classList.remove('fading');
+                        dot.classList.add('active');
+                    }
+                }
             } else {
                 const isMobileNow = window.innerWidth <= 768;
                 controls.enableRotate = true;
@@ -3253,7 +3264,6 @@
                 if (dot) dot.classList.add('active');
                 activeCamDot = mode;
             }
-            setTimeout(() => { camSwitching = false; }, 100);
             if (mode === 'mobile') {
                 currentCameraMode = 'ortho';
                 currentCameraIndex = 'mobile';
@@ -3288,13 +3298,16 @@
                         cameraOrtho.quaternion.slerpQuaternions(startRot, endRot, k);
                     })
                     .onComplete(() => {
+                        camSwitching = false;
                         cameraOrtho.position.copy(endPos);
                         cameraOrtho.up.copy(targetUp);
                         cameraOrtho.lookAt(0,0,0);
                         controlsOrtho.target.set(0, 0, 0);
                         controlsOrtho.update();
-                        controlsOrtho.enabled = true;
-                        controlsOrtho.enableRotate = true;
+                        if (!isCameraLocked) {
+                            controlsOrtho.enabled = true;
+                            controlsOrtho.enableRotate = true;
+                        }
                     })
                     .start();
             } else if (mode === 'persp') {
@@ -3302,13 +3315,16 @@
                 currentCameraIndex = 3;
                 if(btnCam3p) btnCam3p.classList.add('active');
                 controlsOrtho.enabled = false;
-                controls.enabled = true;
-                controls.enableRotate = true;
+                if (!isCameraLocked) {
+                    controls.enabled = true;
+                    controls.enableRotate = true;
+                }
                 if (transformControls) transformControls.camera = camera;
                 camera.position.set(runtimeParams.cam3PosX, runtimeParams.cam3PosY, runtimeParams.cam3PosZ);
                 camera.lookAt(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
                 controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
                 controls.update();
+                camSwitching = false;
             } else {
                 currentCameraMode = 'ortho';
                 currentCameraIndex = mode;
@@ -3346,13 +3362,16 @@
                         cameraOrtho.quaternion.slerpQuaternions(startRot, endRot, k);
                     })
                     .onComplete(() => {
+                        camSwitching = false;
                         cameraOrtho.position.copy(endPos);
                         cameraOrtho.up.copy(targetUp);
                         cameraOrtho.lookAt(0,0,0);
                         controlsOrtho.target.set(0, 0, 0);
                         controlsOrtho.update();
-                        controlsOrtho.enabled = true;
-                        controlsOrtho.enableRotate = true;
+                        if (!isCameraLocked) {
+                            controlsOrtho.enabled = true;
+                            controlsOrtho.enableRotate = true;
+                        }
                     })
                     .start();
             }
