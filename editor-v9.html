@@ -911,6 +911,75 @@
         .params-slider-input:focus {
             border-color: var(--accent-color);
         }
+        .joints-grid {
+            padding: 8px;
+            font-family: var(--font-body);
+            font-size: 11px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .joint-table-group {
+            margin-bottom: 8px;
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .joint-table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 8px;
+            background: rgba(0,0,0,0.05);
+            font-weight: bold;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .joint-copy-btn {
+            font-size: 8px;
+            padding: 2px 8px;
+            border: 1px solid rgba(0,0,0,0.15);
+            border-radius: 4px;
+            background: rgba(255,255,255,0.6);
+            cursor: pointer;
+            font-family: var(--font-headers);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.15s;
+        }
+        .joint-copy-btn:hover {
+            background: rgba(0,0,0,0.85);
+            color: #fff;
+        }
+        .joint-table-row {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+        .joint-param-name {
+            flex: 0 0 36px;
+            font-weight: bold;
+            font-size: 10px;
+            color: rgba(0,0,0,0.6);
+        }
+        .joint-param-value {
+            flex: 1;
+            font-size: 10px;
+            font-family: monospace;
+            background: rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.08);
+            border-radius: 3px;
+            padding: 3px 6px;
+            outline: none;
+            cursor: text;
+            -webkit-user-select: all;
+            user-select: all;
+        }
+        .joint-param-value:focus {
+            border-color: var(--accent-color, #000);
+            background: #fff;
+        }
         .editor-btn, .camera-btn, .transform-btn {
             padding: 6px 12px; font-family: var(--font-headers); font-size: 9px;
             cursor: pointer; text-transform: uppercase; transition: all 0.2s ease;
@@ -1410,6 +1479,7 @@
             <button class="editor-tab active" data-tab="products" onclick="switchEditorTab('products')">Products</button>
             <button class="editor-tab" data-tab="parameters" onclick="switchEditorTab('parameters')">Render</button>
             <button class="editor-tab" data-tab="scene" onclick="switchEditorTab('scene')">Scene</button>
+            <button class="editor-tab" data-tab="joints" onclick="switchEditorTab('joints')">Joints</button>
         </div>
         <!-- PRODUCTS TAB -->
         <div class="editor-tab-content active" id="tab-products">
@@ -1451,6 +1521,15 @@
             <div class="editor-footer">
                 <button class="editor-footer-btn" onclick="resetSceneParameters()">RESET</button>
                 <button class="editor-footer-btn print-btn" onclick="printSceneParameters()">PRINT</button>
+            </div>
+        </div>
+        <!-- JOINTS TAB -->
+        <div class="editor-tab-content" id="tab-joints">
+            <div class="joints-grid" id="joints-grid">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+            <div class="editor-footer">
+                <button class="editor-footer-btn print-btn" onclick="printJointsData()">COPY ALL</button>
             </div>
         </div>
     </div>
@@ -1610,6 +1689,15 @@
                     };
                     envScale = parseFloat(getVal(envRow, 33, 'number')) || 400;
                 }
+                const jointParamNames = ['J1','J2','J3','J4','L1','L2','L3','L4','N1','N2','N3','N4','P1','P2','P3','P4'];
+                const jointParams = [];
+                if (rows[0]) {
+                    for (let jp = 0; jp < 16; jp++) {
+                        const val = getVal(rows[0], 38 + jp);
+                        if (!val || val === '') { jointParams.push(null); }
+                        else { jointParams.push(val); }
+                    }
+                }
                 sceneObjects.push({
                     type: 'model',
                     src: envGlb,
@@ -1617,6 +1705,8 @@
                     rotation: envRot,
                     scale: envScale,
                     clickable: false,
+                    jointParams: jointParams,
+                    jointParamNames: jointParamNames,
                     modalContent: { name: "Environment", artist: "VEA", description: "Environment" }
                 });
             } catch (err) {
@@ -3508,6 +3598,8 @@
                 buildParametersPanel();
             } else if (tabName === 'scene') {
                 buildSceneParametersPanel();
+            } else if (tabName === 'joints') {
+                buildJointsPanel();
             }
         };
         function attachValueEditing(container) {
@@ -4657,6 +4749,93 @@
             output += `--panel-top-offset: ${runtimeParams.panelTopOffset}px;\n`;
             navigator.clipboard.writeText(output).then(() => {
                 alert('SCENE PARAMETERS COPIED!\n\nPaste into your :root CSS section.');
+            }).catch(err => {
+                console.log(output);
+                alert('Copy failed. Check console for data.');
+            });
+        };
+        function buildJointsPanel() {
+            const grid = document.getElementById('joints-grid');
+            grid.innerHTML = '';
+            const envObj = sceneObjects.find(o => o.modalContent && o.modalContent.name === 'Environment');
+            if (!envObj || !envObj.jointParams) {
+                grid.innerHTML = '<div style="padding:8px;color:#888;font-size:11px;">No joint parameters found.</div>';
+                return;
+            }
+            const params = envObj.jointParams;
+            const names = envObj.jointParamNames;
+            const tableNames = ['Table 1','Table 2','Table 3','Table 4','Table 5','Table 6','Table 7','Table 8'];
+            let stopped = false;
+            for (let t = 0; t < 8; t++) {
+                if (stopped) break;
+                const idx1 = t * 2;
+                const idx2 = t * 2 + 1;
+                if (params[idx1] === null || params[idx1] === undefined) { stopped = true; break; }
+                const tableDiv = document.createElement('div');
+                tableDiv.className = 'joint-table-group';
+                let headerHtml = `<div class="joint-table-header">
+                    <span>${tableNames[t]}</span>
+                    <button class="joint-copy-btn" data-table="${t}" title="Copy ${tableNames[t]}">COPY</button>
+                </div>`;
+                let rowsHtml = `<div class="joint-table-row">
+                    <span class="joint-param-name">${names[idx1]}</span>
+                    <input type="text" class="joint-param-value" data-joint="${idx1}" value="${params[idx1]}" readonly>
+                </div>`;
+                if (params[idx2] !== null && params[idx2] !== undefined) {
+                    rowsHtml += `<div class="joint-table-row">
+                        <span class="joint-param-name">${names[idx2]}</span>
+                        <input type="text" class="joint-param-value" data-joint="${idx2}" value="${params[idx2]}" readonly>
+                    </div>`;
+                } else {
+                    stopped = true;
+                }
+                tableDiv.innerHTML = headerHtml + rowsHtml;
+                grid.appendChild(tableDiv);
+            }
+            grid.querySelectorAll('.joint-copy-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const t = parseInt(this.dataset.table);
+                    const idx1 = t * 2;
+                    const idx2 = t * 2 + 1;
+                    let output = '';
+                    if (params[idx1] !== null && params[idx1] !== undefined) {
+                        output += `${names[idx1]}: ${params[idx1]}`;
+                    }
+                    if (params[idx2] !== null && params[idx2] !== undefined) {
+                        output += `\n${names[idx2]}: ${params[idx2]}`;
+                    }
+                    navigator.clipboard.writeText(output).then(() => {
+                        this.textContent = 'OK!';
+                        setTimeout(() => { this.textContent = 'COPY'; }, 1000);
+                    });
+                });
+            });
+        }
+        window.printJointsData = function() {
+            const envObj = sceneObjects.find(o => o.modalContent && o.modalContent.name === 'Environment');
+            if (!envObj || !envObj.jointParams) { alert('No joint parameters.'); return; }
+            const params = envObj.jointParams;
+            const names = envObj.jointParamNames;
+            const tableNames = ['Table 1','Table 2','Table 3','Table 4','Table 5','Table 6','Table 7','Table 8'];
+            let output = '';
+            let stopped = false;
+            for (let t = 0; t < 8; t++) {
+                if (stopped) break;
+                const idx1 = t * 2;
+                const idx2 = t * 2 + 1;
+                if (params[idx1] === null || params[idx1] === undefined) { stopped = true; break; }
+                output += `// ${tableNames[t]}\n`;
+                output += `${names[idx1]}: "${params[idx1]}",\n`;
+                if (params[idx2] !== null && params[idx2] !== undefined) {
+                    output += `${names[idx2]}: "${params[idx2]}",\n`;
+                } else {
+                    stopped = true;
+                }
+                output += '\n';
+            }
+            navigator.clipboard.writeText(output).then(() => {
+                alert('JOINT PARAMETERS COPIED!\n\nPaste directly into your code.');
             }).catch(err => {
                 console.log(output);
                 alert('Copy failed. Check console for data.');
