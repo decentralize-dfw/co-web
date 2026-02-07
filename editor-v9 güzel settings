@@ -1,0 +1,216 @@
+/* PANEL 2 - RENDER */
+
+/* SSAO */
+--ssao-enabled-desktop: no;
+--ssao-enabled-mobile: no;
+--ssao-kernel-radius: 8;
+--ssao-intensity: 1.6;
+
+/* BLOOM */
+--bloom-enabled-desktop: yes;
+--bloom-enabled-mobile: no;
+--bloom-strength: 0.12;
+--bloom-threshold: 0.52;
+--bloom-radius: 1.68;
+
+/* TONE MAPPING */
+--tonemapping-enabled-desktop: yes;
+--tonemapping-enabled-mobile: no;
+--tonemapping-exposure-desktop: 0.75;
+--tonemapping-exposure-mobile: 1;
+
+/* SHADOWS */
+--shadows-enabled-desktop: yes;
+--shadows-enabled-mobile: yes;
+--shadow-bias: -0.0005;
+--shadow-normal-bias: 0.2;
+
+/* ANTI-ALIASING */
+--fxaa-enabled-desktop: yes;
+--fxaa-enabled-mobile: no;
+
+/* ANISOTROPY */
+--anisotropy-enabled-desktop: yes;
+--anisotropy-enabled-mobile: no;
+
+/* ENVIRONMENT MAP */
+--envmap-enabled-desktop: yes;
+--envmap-enabled-mobile: yes;
+--envmap-intensity-desktop: 1;
+--envmap-intensity-mobile: 1;
+
+/* RECT AREA LIGHT */
+--rectarealight-enabled-desktop: yes;
+--rectarealight-enabled-mobile: no;
+--rectarealight-intensity: 2;
+
+/* LIGHTING */
+--light-hemisphere-intensity: 0.3;
+--light-sun-intensity: 3.5;
+--light-fill-intensity: 0.1;
+--light-rim-intensity: 0;
+--light-accent-intensity: 0.1;
+
+/* PBR MATERIALS */
+--pbr-envmap-intensity: 1;
+--pbr-roughness-boost: -0.1;
+--pbr-metalness-boost: 0.2;
+
+/* COLOR CORRECTION */
+--filter-brightness: 1;
+--filter-contrast: 1;
+--filter-saturation: 1;
+--filter-hue-rotate: 0;
+
+/* HDRI PRESET */
+--hdri-preset: 4;
+
+
+
+
+
+
+
+
+
+/* PANEL 3 - SCENE */
+
+/* ENVIRONMENT OPTION */
+--env-option: 1;
+
+/* CAMERA 1 POSITION */
+--cam1-pos-x: 5000;
+--cam1-pos-y: 5000;
+--cam1-pos-z: -5000;
+--cam2-show-public: yes;
+
+/* CAMERA 2 POSITION */
+--cam2-pos-x: 5000;
+--cam2-pos-y: 5000;
+--cam2-pos-z: 5000;
+
+/* CAMERA 3 POSITION */
+--cam3-pos-x: 5000;
+--cam3-pos-y: 5000;
+--cam3-pos-z: 5000;
+--cam3-show-public: no;
+--mobile-labels-show-public: no;
+
+/* MOBILE CAMERA */
+--cam-mobile-pos-x: 5000;
+--cam-mobile-pos-y: 5000;
+--cam-mobile-pos-z: 5000;
+--cam-mobile-fov: 45;
+
+/* CAMERA SETTINGS */
+--initial-camera-zoom: 3;
+--initial-camera-zoom-mobile: 2;
+
+/* HOVER LABEL (Desktop) */
+--hover-label-font-size: 60px;
+--hover-label-offset-y: 100px;
+--hover-label-name-offset-y: 70px;
+
+/* PANEL SETTINGS */
+--panel-width: 480px;
+--panel-top-offset: 120px;
+
+/* MARQUEE TEXT */
+--marquee-speed: 250s;
+--marquee-font-size: 16px;
+--marquee-vertical-gap: -2px;
+--marquee-color: #b6a6d0;
+
+/* MARQUEE MOBILE */
+--marquee-mobile-enabled: yes;
+--marquee-mobile-speed: 250s;
+--marquee-mobile-font-size: 7px;
+--marquee-mobile-top-offset: 16px;
+
+/* CAMERA LIMITS */
+--camera-min-polar-angle: 0;
+--camera-max-polar-angle: 60;
+
+/* CAMERA GENERAL */
+--camera-fov: 39;
+--camera-min-distance: 100;
+--camera-max-distance: 45000;
+--enable-pan: no;
+--mobile-pan-enabled: yes;
+
+/* CAM LOOK-AT */
+--cam-lookat-x: 0;
+--cam-lookat-y: 0;
+--cam-lookat-z: 0;
+
+/* HOVER ANIMATION */
+--hover-while-selected-factor: 0.2;
+--hover-lift-distance: 100;
+--hover-animation-duration: 0.3s;
+
+/* HOVER LABEL STYLE */
+--hover-label-letter-spacing: 0;
+--hover-label-color: #000000;
+--hover-label-opacity: 1;
+--hover-label-font-box: 1000;
+--hover-label-rotation-x: 0;
+--hover-label-rotation-y: 90;
+--hover-label-rotation-z: 0;
+
+/* HOVER ARTIST LABEL */
+--hover-artist-font-size: 40;
+--hover-artist-letter-spacing: 2;
+--hover-artist-color: #333333;
+--hover-artist-opacity: 1;
+
+/* MOBILE HOVER LABELS */
+--mobile-hover-label-font-size: 60px;
+--mobile-hover-label-opacity: 0.9;
+--mobile-hover-label-offset-y: 40px;
+--mobile-hover-label-name-offset-y: 80px;
+--mobile-hover-label-rotation-x: 0deg;
+--mobile-hover-label-rotation-y: 90deg;
+--mobile-hover-label-rotation-z: 0deg;
+--mobile-hover-artist-font-size: 35px;
+--mobile-hover-artist-opacity: 0.7;
+
+/* PANEL LAYOUT */
+--panel-right-offset: 20px;
+--panel-bottom-offset: 30px;
+--panel-border-radius: 24px;
+--panel-bg-opacity: 0.4;
+--panel-blur: 8px;
+--panel-animation-duration: 0.8s;
+
+/* PANEL MEDIA */
+--panel-media-padding-horizontal: 10%;
+--panel-media-padding-top: 2rem;
+--panel-media-spacing: 20px;
+
+/* PANEL TYPOGRAPHY */
+--panel-title-font-size: 2rem;
+--panel-meta-font-size: 0.9rem;
+--panel-desc-font-size: 0.95rem;
+--panel-text-spacing: 1.5rem;
+--panel-content-padding: 2rem;
+
+/* SELECTED OBJECT ROTATION */
+--selected-rotate-x: 0;
+--selected-rotate-y: 0.2;
+--selected-rotate-z: 0;
+
+/* SELECTION & ZOOM */
+--selection-zoom-factor: 0.2;
+--selection-zoom-factor-mobile: 0.3;
+--zoom-in-animation-duration: 1s;
+--zoom-out-animation-duration: 1.2s;
+--show-price: yes;
+
+/* WIREFRAME TOGGLE */
+--wire-toggle-size: 12px;
+
+/* COLORS */
+--ui-color: #000000;
+--bg-color: #ffffff;
+--accent-color: #FF006A;
+
